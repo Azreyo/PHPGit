@@ -1,0 +1,13 @@
+.btn-dev {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-dev:hover {
+    background-color: #5c6a77;
+}
