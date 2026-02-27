@@ -4,6 +4,3 @@
         <p></p>
     </div>
 </footer>
-
-</body>
-</html>
