@@ -17,7 +17,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PHPGit - <?php echo $_GET['page'];?></title>
+    <title>PHPGit - <?php echo htmlspecialchars($_GET['page']); ?></title>
     <meta name="description" content="PHPGit">
     <meta name="keywords" content="git, php">
     <meta name="author" content="Azreyo">
@@ -48,7 +48,6 @@
 <?php
     if($_ENV['APP_ENV'] === 'dev') {
         include 'includes/dev_panel.php';
-        echo $_ENV['APP_ENV'];
     }
 ?>
 

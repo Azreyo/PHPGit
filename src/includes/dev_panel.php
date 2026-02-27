@@ -7,6 +7,10 @@
         return @round($size/pow(1024,($i=floor(log($size,1024)))),2).' '.$unit[$i];
     }
 
+    $queryString = $_SERVER['QUERY_STRING'];
+    $queryString = htmlspecialchars($queryString, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    parse_str($queryString, $queryParams);
+
     $status = http_response_code();
     switch ($status) {
         case 200:
@@ -38,15 +42,15 @@
     }
     ?>
         <li>
-            <span class="btn-dev"><?php echo $_SERVER['PHP_AUTH']?? 'n/a';?></span>
+            <span class="btn-dev"><?php echo htmlspecialchars($_SERVER['PHP_AUTH_USER'] ?? 'n/a'); ?></span>
         </li>
 
         <li class="align-items-end">
-            <span class="btn-dev"><?php echo $_SERVER['QUERY_STRING'];?></span>
+            <span class="btn-dev"><?php echo htmlspecialchars($queryParams['page'] ?? 'n/a'); ?></span>
         </li>
 
         <li>
-            <span class="btn-dev"><?php echo microtime(true) - $_SERVER["REQUEST_TIME_FLOAT"]; ?></span>
+            <span class="btn-dev"><?php echo round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . " ms"; ?></span>
         </li>
 
         <li>
