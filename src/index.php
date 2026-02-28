@@ -1,12 +1,10 @@
 <?php
-    require __DIR__ . '/../vendor/autoload.php';
-
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-    $dotenv->load();
-
+    require 'config.php';
+    $app_env = $_ENV['APP_ENV'] ?? 'app';
 
     $page = $_GET['page'] ?? 'home';
     $allowed_pages = ['home', 'about', 'contact', 'explore', '404', '403'];
+    $restricted_pages = ['.env', '.htaccess', 'config'];
     $pageTitles = [
             'home' => 'Home',
             'about' => 'About us',
@@ -16,12 +14,11 @@
             '403' => 'Forbidden'
     ];
     $page = preg_replace('/[^a-z0-9_]/m','', strtolower($page));
-    if (empty($page)) {
+    if (empty($page) || in_array($page, $restricted_pages, true)) {
         $page = '403';
     } else if (!in_array($page, $allowed_pages, true)) {
         $page = '404';
     }
-
 ?>
 
 <!DOCTYPE html>
@@ -57,7 +54,7 @@
 ?>
 
 <?php
-    if($_ENV['APP_ENV'] === 'dev') {
+    if(isset($app_env) && $app_env === 'dev') {
         include 'includes/dev_panel.php';
     }
 ?>
