@@ -6,18 +6,29 @@
 
 
     $page = $_GET['page'] ?? 'home';
-    $allowed_pages = ['home', 'about', 'contact'];
+    $allowed_pages = ['home', 'about', 'contact', 'explore', '404', '403'];
+    $pageTitles = [
+            'home' => 'Home',
+            'about' => 'About us',
+            'contact' => 'Contact',
+            'explore' => 'Explore',
+            '404' => 'Page not found',
+            '403' => 'Forbidden'
+    ];
+    $page = preg_replace('/[^a-z0-9_]/m','', strtolower($page));
+    if (empty($page)) {
+        $page = '403';
+    } else if (!in_array($page, $allowed_pages, true)) {
+        $page = '404';
+    }
 
-    if(!in_array($page, $allowed_pages, true)) {
-        $page = 'home';
-}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PHPGit - <?php echo htmlspecialchars($_GET['page']); ?></title>
+    <title><?php echo htmlspecialchars($pageTitles[$page] ?? 'PHPGit'); ?></title>
     <meta name="description" content="PHPGit">
     <meta name="keywords" content="git, php">
     <meta name="author" content="Azreyo">

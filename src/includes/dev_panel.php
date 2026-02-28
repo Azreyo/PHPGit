@@ -16,7 +16,7 @@
         case 200:
             ?>
         <li>
-            <span class="btn btn-success m-2 p-2">
+            <span title="HTTP status" class="btn btn-success m-2 p-2">
                 <?php echo $status; ?> OK
             </span>
         </li>
@@ -25,7 +25,7 @@
         case 400:
             ?>
         <li>
-            <span class="btn btn-danger m-2 p-2">
+            <span title="HTTP status" class="btn btn-danger m-2 p-2">
                 <?php echo $status; ?> Bad Request
             </span>
         </li>
@@ -34,7 +34,7 @@
         default:
             ?>
         <li>
-            <span class="btn btn-warning m-2 p-2">
+            <span title="HTTP status" class="btn btn-warning m-2 p-2">
                 <?php echo $status; ?> Unknown Status
             </span>
         </li>
@@ -42,19 +42,28 @@
     }
     ?>
         <li>
-            <span class="btn-dev"><?php echo htmlspecialchars($_SERVER['PHP_AUTH_USER'] ?? 'n/a'); ?></span>
+            <span title="Authenticated user" class="btn-dev"><?php echo htmlspecialchars($_SERVER['PHP_AUTH_USER'] ?? 'n/a'); ?></span>
         </li>
 
         <li class="align-items-end">
-            <span class="btn-dev"><?php echo htmlspecialchars($queryParams['page'] ?? 'n/a'); ?></span>
+            <span title="Current page" class="btn-dev"><?php echo htmlspecialchars($queryParams['page'] ?? 'n/a'); ?></span>
         </li>
 
         <li>
-            <span class="btn-dev"><?php echo round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . " ms"; ?></span>
+            <span title="Request time" class="btn-dev"><?php echo round((microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']) * 1000, 2) . " ms"; ?></span>
         </li>
 
         <li>
-            <span class="btn-dev"><?php echo convert(memory_get_usage(true));?></span>
+            <span title="Memory usage" class="btn-dev"><?php echo convert(memory_get_usage(true));?></span>
         </li>
+
+        <div class="ms-auto d-flex gap-3">
+            <li>
+                <span title="Session ID" class="btn-dev"><?php echo session_status() === PHP_SESSION_ACTIVE ? session_id() : 'no session'; ?></span>
+            </li>
+            <li>
+                <span title="Database connection" class="btn-dev"><?php echo isset($pdo) ? 'DB connected' : 'DB not connected'; ?></span>
+            </li>
+        </div>
     </ul>
 </div>
