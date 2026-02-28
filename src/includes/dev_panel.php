@@ -62,8 +62,37 @@
                 <span title="Session ID" class="btn-dev"><?php echo session_status() === PHP_SESSION_ACTIVE ? session_id() : 'no session'; ?></span>
             </li>
             <li>
-                <span title="Database connection" class="btn-dev"><?php echo isset($pdo) ? 'DB connected' : 'DB not connected'; ?></span>
+                <?php
+                // dev_panel.php
+                require_once __DIR__ . '/../config.php';
+
+                $dbStatus = isset($pdo)
+                        ? '<span class="text-success">✔ Connected</span>'
+                        : '<span class="text-danger">✘ Not connected</span>';
+
+                $dbInfo = '
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td><strong>Status:</strong></td><td>' . $dbStatus . '</td></tr>
+                        <tr><td><strong>Host</strong></td><td>' . $host . '</td></tr>
+                        <tr><td><strong>Database</strong></td><td>' . $db . '</td></tr>
+                        <tr><td><strong>User</strong></td><td>' . $user . '</td></tr>
+                        <tr><td><strong>Charset</strong></td><td>' . $charset . '</td></tr>
+                    </table>
+                ';
+                ?>
+                <span
+                        class="btn-dev db-info"
+                        data-bs-toggle="popover"
+                        data-bs-trigger="hover"
+                        data-bs-placement="top"
+                        data-bs-html="true"
+                        data-bs-content="<?php echo htmlspecialchars($dbInfo); ?>"
+                >
+                    <?php echo isset($pdo) ? 'DB connected' : 'DB not connected'; ?>
+                </span>
             </li>
         </div>
     </ul>
 </div>
+
+<script src="../scripts/dev.js"></script>

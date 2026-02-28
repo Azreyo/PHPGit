@@ -11,3 +11,27 @@
 .btn-dev:hover {
     background-color: #5c6a77;
 }
+
+.db-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.db-hidden {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 5px);
+    left: 0;
+    z-index: 100;
+    min-width: 200px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    white-space: nowrap;
+}
+
+.db-wrapper:hover .db-hidden {
+    display: block;
+}
