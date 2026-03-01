@@ -20,10 +20,8 @@
     $page = preg_replace('/[^a-z0-9_]/','', strtolower($page));
     if (empty($page) || in_array($page, $restricted_pages, true)) {
         $page = '403';
-        http_response_code(403);
     } else if (!in_array($page, $allowed_pages, true)) {
         $page = '404';
-        http_response_code(404);
     }
 ?>
 
