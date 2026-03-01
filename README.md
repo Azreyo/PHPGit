@@ -20,6 +20,35 @@ PHPGit is build as school project with clean PHP.
 - Web server (Apache, Nginx, etc.)
 - Git
 
+## Security
+1. Allow apache2 *mod_rewrite* and *mod_headers*
+```bash
+   sudo a2enmod rewrite headers
+   sudo systemctl restart apache2
+```
+2. Add security `.htaccess`
+```bash
+   Options -Indexes
+
+   <FilesMatch "(^\.env(\..*)?$|config\.php|composer\.(json|lock)$)">
+      Require all denied
+   </FilesMatch>
+
+   <IfModule mod_rewrite.c>
+      RewriteEngine On
+      RewriteBase /
+
+      RewriteRule ^(includes|pages|scripts)(/|$) - [F,L]
+   </IfModule>
+
+   <IfModule mod_headers.c>
+      Header always set X-Content-Type-Options "nosniff"
+      Header always set X-Frame-Options "SAMEORIGIN"
+      Header always set Referrer-Policy "strict-origin-when-cross-origin"
+   </IfModule>
+
+```
+
 ## Installation
 
 1. Clone the repository:

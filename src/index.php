@@ -1,24 +1,29 @@
 <?php
     require 'config.php';
-    $app_env = $_ENV['APP_ENV'] ?? 'app';
+    $app_env = $_ENV['APP_ENV'] ?? 'prod';
     require __DIR__ . '/includes/error_handler.php';
 
+
     $page = $_GET['page'] ?? 'home';
-    $allowed_pages = ['home', 'about', 'contact', 'explore', '404', '403'];
+    $allowed_pages = ['home', 'about', 'contact', 'explore', '404', '403', 'login', 'register'];
     $restricted_pages = ['.env', '.htaccess', 'config'];
     $pageTitles = [
             'home' => 'Home',
             'about' => 'About us',
             'contact' => 'Contact',
             'explore' => 'Explore',
+            'login' => 'Login',
+            'register' => 'Register',
             '404' => 'Page not found',
             '403' => 'Forbidden'
     ];
-    $page = preg_replace('/[^a-z0-9_]/m','', strtolower($page));
+    $page = preg_replace('/[^a-z0-9_]/','', strtolower($page));
     if (empty($page) || in_array($page, $restricted_pages, true)) {
         $page = '403';
+        http_response_code(403);
     } else if (!in_array($page, $allowed_pages, true)) {
         $page = '404';
+        http_response_code(404);
     }
 ?>
 
@@ -35,7 +40,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/style.css">
     <?php
-    if($_ENV['APP_ENV'] === 'dev') {
+    if($app_env === 'dev') {
         ?>
         <link rel="stylesheet" href="assets/dev.css">
         <?php
