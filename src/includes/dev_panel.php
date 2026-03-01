@@ -14,33 +14,60 @@
     $status = http_response_code();
     switch ($status) {
         case 200:
-            ?>
-        <li>
-            <span title="HTTP status" class="btn btn-success m-2 p-2">
-                <?php echo $status; ?> OK
-            </span>
-        </li>
-            <?php
+    ?>
+            <li>
+                <span title="HTTP status" class="btn btn-success m-2 p-2">
+                    <?php echo $status; ?> OK
+                </span>
+            </li>
+        <?php
             break;
         case 400:
             ?>
-        <li>
-            <span title="HTTP status" class="btn btn-danger m-2 p-2">
-                <?php echo $status; ?> Bad Request
-            </span>
-        </li>
-            <?php
+            <li>
+                <span title="HTTP status" class="btn btn-danger m-2 p-2">
+                    <?php echo $status; ?> Bad Request
+                </span>
+            </li>
+        <?php
+            break;
+        case 403:
+            ?>
+            <li>
+                <span title="HTTP status" class="btn btn-danger m-2 p-2">
+                    <?php echo $status; ?> Forbidden
+                </span>
+            </li>
+        <?php
+            break;
+        case 404:
+        ?>
+            <li>
+                <span title="HTTP status" class="btn btn-warning m-2 p-2">
+                    <?php echo $status; ?> Not Found
+                </span>
+            </li>
+        <?php
+            break;
+        case 500:
+        ?>
+            <li>
+                <span title="HTTP status" class="btn btn-danger m-2 p-2">
+                    <?php echo $status; ?> Internal Server Error
+                </span>
+            </li>
+        <?php
             break;
         default:
-            ?>
-        <li>
-            <span title="HTTP status" class="btn btn-warning m-2 p-2">
-                <?php echo $status; ?> Unknown Status
-            </span>
-        </li>
+        ?>
+            <li>
+                <span title="HTTP status" class="btn btn-warning m-2 p-2">
+                    <?php echo $status; ?> Unknown Status
+                </span>
+            </li>
         <?php
-    }
-    ?>
+        }
+        ?>
         <li>
             <span title="Authenticated user" class="btn-dev"><?php echo htmlspecialchars($_SERVER['PHP_AUTH_USER'] ?? 'n/a'); ?></span>
         </li>

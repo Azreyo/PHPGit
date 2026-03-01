@@ -179,6 +179,11 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
 
     [$variant, $label] = $errorTypes[$errno] ?? ['secondary', 'Unknown Error'];
 
+    $fatalTypes = [E_USER_ERROR, E_RECOVERABLE_ERROR];
+    if (in_array($errno, $fatalTypes, true)) {
+        http_response_code(500);
+    }
+
     $snippet = _eh_source_snippet($errfile, $errline);
     $trace   = _eh_backtrace_table(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
 
@@ -196,6 +201,8 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
     return true;
 });
 set_exception_handler(function (Throwable $e) use ($isDev): void {
+    http_response_code(500);
+    
     if (!$isDev) {
         return;
     }

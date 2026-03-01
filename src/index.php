@@ -1,7 +1,7 @@
 <?php
     require 'config.php';
-    $app_env = $_ENV['APP_ENV'] ?? 'prod';
     require __DIR__ . '/includes/error_handler.php';
+    $app_env = $_ENV['APP_ENV'] ?? 'prod';
 
 
     $page = $_GET['page'] ?? 'home';
@@ -60,7 +60,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <?php
     if(isset($app_env) && $app_env === 'dev') {
-
         include 'includes/dev_panel.php';
     }
 ?>
