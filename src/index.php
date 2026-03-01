@@ -48,6 +48,7 @@
 </head>
 <body>
 
+
 <?php
 include 'includes/header.php';
 include "pages/" . htmlspecialchars($page) . ".php";
