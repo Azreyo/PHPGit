@@ -63,12 +63,25 @@
             </li>
             <li>
                 <?php
-                // dev_panel.php
                 require_once __DIR__ . '/../config.php';
+
+                function serviceIndicator(bool $status): string {
+                    $color = $status ? 'success' : 'danger';
+                    $icon = $status ? 'Up' : 'Down';
+                    return "<span class=\"btn btn-{$color} btn-sm\">$icon</span>";
+                }
 
                 $dbStatus = isset($pdo)
                         ? '<span class="text-success">✔ Connected</span>'
-                        : '<span class="text-danger">✘ Not connected</span>';
+                        : '<span class="text-danger">✘ ' . htmlspecialchars($pdoError ?? 'Not connected') . '</span>';
+
+                $opcacheState = function_exists('opcache_get_status') && opcache_get_status() !== false;
+                $mailStatus = function_exists('mail');
+
+                $isDbRunning = serviceIndicator($dbCurrentState);
+                $isOpcacheRunning = serviceIndicator($opcacheState);
+                $isMailRunning = serviceIndicator($mailStatus);
+
 
                 $dbInfo = '
                     <table class="table table-sm table-borderless mb-0">
@@ -79,6 +92,16 @@
                         <tr><td><strong>Charset</strong></td><td>' . $charset . '</td></tr>
                     </table>
                 ';
+                $phpInfo = '
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr><td><strong>PHP version:</strong></td><td>' . PHP_VERSION . '</td></tr>
+                        <tr><td><strong>PHP SAPI</strong></td><td>' . php_sapi_name() . '</td></tr>
+                        <tr><td><strong>Database: </strong></td><td>' . $isDbRunning . '</td></tr>
+                        <tr><td><strong>Opcache: </strong></td><td>' . $isOpcacheRunning . '</td></tr>
+                        <tr><td><strong>Mail: </strong></td><td>' . $isMailRunning . '</td></tr>
+                    </table>
+                ';
+
                 ?>
                 <span
                         class="btn-dev db-info"
@@ -89,6 +112,16 @@
                         data-bs-content="<?php echo htmlspecialchars($dbInfo); ?>"
                 >
                     <?php echo isset($pdo) ? 'DB connected' : 'DB not connected'; ?>
+                </span>
+            </li>
+            <li>
+                <span class="btn-dev db-info"
+                data-bs-toggle="popover"
+                data-bs-trigger="hover"
+                data-bs-placement="top"
+                data-bs-html="true"
+                data-bs-content="<?php echo htmlspecialchars($phpInfo); ?>">
+                    version
                 </span>
             </li>
         </div>

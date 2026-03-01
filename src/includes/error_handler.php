@@ -174,7 +174,6 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
         E_USER_ERROR      => ['danger',    'User Error'],
         E_USER_WARNING    => ['warning',   'User Warning'],
         E_USER_NOTICE     => ['info',      'User Notice'],
-        E_STRICT          => ['secondary', 'Strict'],
         E_RECOVERABLE_ERROR => ['danger',  'Recoverable Error'],
     ];
 
