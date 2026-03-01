@@ -48,12 +48,9 @@
 </head>
 <body>
 
-<?php include 'includes/header.php'; ?>
-<main class="container">
-    <?php include "pages/$page.php"; ?>
-</main>
-
 <?php
+include 'includes/header.php';
+include "pages/" . htmlspecialchars($page) . ".php";
     include 'includes/footer.php';
 ?>
 

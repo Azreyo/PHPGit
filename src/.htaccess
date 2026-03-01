@@ -8,7 +8,7 @@ Options -Indexes
     RewriteEngine On
     RewriteBase /
 
-    RewriteRule ^(includes|pages|scripts)(/|$) - [F,L]
+    RewriteRule ^(includes|pages)(/|$) - [F,L]
 </IfModule>
 
 <IfModule mod_headers.c>
