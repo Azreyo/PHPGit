@@ -40,8 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
+        $existingUserId = $stmt->fetchColumn();
 
-        if ($stmt->rowCount() > 0) {
+        if ($existingUserId !== false) {
             $errors[] = 'Email already registered';
         } else {
             $hashed_password = password_hash($password, PASSWORD_BCRYPT);
