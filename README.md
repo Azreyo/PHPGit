@@ -68,7 +68,7 @@ PHPGit is build as school project with clean PHP.
 4. Configure your web server to serve the appropriate directory (`src`). 
 5. Copy the example environment file and update configuration as needed:
    ```bash
-   cp .env.example .env
+   cp src/.env.example src/.env
    ```
 6. Set appropriate permissions for storage and cache directories if required.
 
