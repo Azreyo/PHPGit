@@ -89,10 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Regenerate session ID to prevent session fixation
                 session_regenerate_id(true);
                 $_SESSION['login_attempts'] = 0;
-                $_SESSION['isLoggedIn']     = true;
+                $_SESSION['is_logged_in']   = true;
                 $_SESSION['user_id']        = $user['id'];
                 $_SESSION['username']       = $user['username'];
-                $_SESSION['role']            = $userRole['role'];
+                $_SESSION['role']           = $userRole['role'];
 
                 // Rotate CSRF token after successful login
                 unset($_SESSION['csrf_token']);
