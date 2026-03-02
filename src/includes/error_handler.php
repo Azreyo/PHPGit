@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 if (!isset($_ENV['APP_ENV'])) {
     if (class_exists(\Dotenv\Dotenv::class)) {
         $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
