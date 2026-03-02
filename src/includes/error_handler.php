@@ -203,10 +203,10 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
 
     return true;
 });
-set_exception_handler(function (Throwable $e) use ($is_dev): void {
+set_exception_handler(function (Throwable $e) use ($isDev): void {
     //http_response_code(500);
 
-    if (!$is_dev) {
+    if (!$isDev) {
         return;
     }
 
@@ -224,13 +224,13 @@ set_exception_handler(function (Throwable $e) use ($is_dev): void {
         'type'     => '',
     ]);
 
-    $snippet = ehSourceSnippet($e->getFile(), $e->getLine());
-    $trace = ehBacktraceTable($frames);
+    $snippet = _eh_source_snippet($e->getFile(), $e->getLine());
+    $trace = _eh_backtrace_table($frames);
 
     $code    = $e->getCode() ? " (code: {$e->getCode()})" : '';
     $title   = htmlspecialchars($class . ': ' . $e->getMessage() . $code, ENT_QUOTES, 'UTF-8');
 
-    ehRender(
+    _eh_render(
         $variant,
         $label,
         $title,
