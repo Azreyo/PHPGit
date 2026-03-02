@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username   = trim($_POST['username'] ?? '');
     $email      = trim($_POST['email'] ?? '');
     $password   = $_POST['password'] ?? '';
-    $agreeTerms = isset($_POST['agree-terms']);
+    $agree_terms = isset($_POST['agree-terms']);
     $role       = 'USER';
 
     if (empty($username)) {
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Password must be at least 8 characters';
     }
 
-    if (!$agreeTerms) {
+    if (!$agree_terms) {
         $errors[] = 'You must agree to the Terms of Service';
     }
 
@@ -40,10 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->rowCount() > 0) {
             $errors[] = 'Email already registered';
         } else {
-            $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+            $hashed_password = password_hash($password, PASSWORD_BCRYPT);
             $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)');
 
-            if ($stmt->execute([$username, $email, $hashedPassword, $role])) {
+            if ($stmt->execute([$username, $email, $hashed_password, $role])) {
                 header('Location: index.php?page=login&success=registered');
                 exit;
             } else {

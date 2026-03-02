@@ -10,10 +10,15 @@
             <a class="btn btn-primary text-white" href="index.php?page=contact">Contact</a>
         </div>
 
-        <?php if(!$_SESSION['isLoggedIn']):?>
+        <?php if (!$_SESSION['is_logged_in']): ?>
             <div class="d-flex gap-2">
                 <a class="btn btn-primary text-white" href="index.php?page=login">Login</a>
                 <a class="btn btn-primary text-white" href="index.php?page=register">Register</a>
+            </div>
+        <?php elseif ($_SESSION['is_logged_in']): ?>
+            <div class="d-flex gap-2">
+                <a class="btn btn-primary text-white" href="index.php?page=dashboard">Dashboard</a>
+                <a class="btn btn-primary text-white" href="index.php?page=logout">Logout</a>
             </div>
         <?php endif;?>
     </nav>

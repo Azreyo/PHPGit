@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$csrfToken = generateCsrfToken();
+$csrf_token = generateCsrfToken();
 
 ?>
 
@@ -130,7 +130,8 @@ $csrfToken = generateCsrfToken();
             <?php endif; ?>
 
             <form method="POST" novalidate>
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="csrf_token"
+                       value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
 
                 <div class="mb-3">
                     <label for="email" class="form-label">Email address</label>

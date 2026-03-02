@@ -107,7 +107,7 @@ function _eh_render(
     echo <<<HTML
     <div class="alert alert-{$variant} alert-dismissible fade show font-monospace small my-2 mx-2 shadow" role="alert" style="border-radius:6px;">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-            <span class="badge bg-{$variant} text-uppercase" style="font-size:.7rem;letter-spacing:.05em;">{$label}{$errCode}</span>
+            <span class="badge bg-{$variant} text-uppercase" style="font-size:.7rem;letter-spacing:.05em;">{$label}{$err_code}</span>
             <span class="fw-bold" style="color:inherit;">{$title}</span>
         </div>
         <p class="mb-2 opacity-75">
@@ -203,17 +203,17 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
 
     return true;
 });
-set_exception_handler(function (Throwable $e) use ($isDev): void {
+set_exception_handler(function (Throwable $e) use ($is_dev): void {
     //http_response_code(500);
-    
-    if (!$isDev) {
+
+    if (!$is_dev) {
         return;
     }
 
     $class   = get_class($e);
-    $isError = $e instanceof Error;
-    $variant = $isError ? 'danger' : 'warning';
-    $label   = $isError ? 'Error' : 'Exception';
+    $is_error = $e instanceof Error;
+    $variant = $is_error ? 'danger' : 'warning';
+    $label = $is_error ? 'Error' : 'Exception';
 
     $frames = $e->getTrace();
     array_unshift($frames, [
@@ -224,13 +224,13 @@ set_exception_handler(function (Throwable $e) use ($isDev): void {
         'type'     => '',
     ]);
 
-    $snippet = _eh_source_snippet($e->getFile(), $e->getLine());
-    $trace   = _eh_backtrace_table($frames);
+    $snippet = ehSourceSnippet($e->getFile(), $e->getLine());
+    $trace = ehBacktraceTable($frames);
 
     $code    = $e->getCode() ? " (code: {$e->getCode()})" : '';
     $title   = htmlspecialchars($class . ': ' . $e->getMessage() . $code, ENT_QUOTES, 'UTF-8');
 
-    _eh_render(
+    ehRender(
         $variant,
         $label,
         $title,

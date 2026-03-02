@@ -1,19 +1,16 @@
 <?php
-
 declare(strict_types=1);
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-    if (!isset($_SESSION['isLoggedIn'])) {
-        $_SESSION['isLoggedIn'] = false;
-    }
+session_start();
+if (!isset($_SESSION['is_logged_in'])) {
+    $_SESSION['is_logged_in'] = false;
 }
 
 require 'config.php';
 require __DIR__ . '/includes/error_handler.php';
 
 $page = $_GET['page'] ?? 'home';
-$allowedPages = ['home', 'about', 'contact', 'explore', '404', '403', 'login', 'register'];
+$allowedPages = ['home', 'about', 'contact', 'explore', '404', '403', 'login', 'register', 'logout'];
 $restrictedPages = ['.env', '.htaccess', 'config'];
 $pageTitles = [
     'home'     => 'Home',
@@ -46,7 +43,7 @@ if (empty($page) || in_array($page, $restrictedPages, true)) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/style.css">
-    <?php if ($isDev): ?>
+    <?php if ($is_dev): ?>
         <link rel="stylesheet" href="assets/dev.css">
     <?php endif; ?>
 </head>
@@ -59,7 +56,7 @@ include 'includes/footer.php';
 ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-<?php if (isset($isDev) && $isDev): ?>
+<?php if (isset($is_dev) && $is_dev): ?>
     <?php include 'includes/dev_panel.php'; ?>
 <?php endif; ?>
 

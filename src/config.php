@@ -7,7 +7,7 @@ require __DIR__ . '/../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
-$isDev = $_ENV['APP_ENV'] === 'dev';
+$is_dev = $_ENV['APP_ENV'] === 'dev';
 
 $host    = $_ENV['DB_HOST'] ?? 'n/a';
 $db      = $_ENV['DB_NAME'] ?? 'n/a';
@@ -26,14 +26,14 @@ $options = [
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 
-    if ($isDev) {
-        $dbCurrentState = true;
+    if ($is_dev) {
+        $db_current_state = true;
     }
 } catch (\PDOException $e) {
-    if (isset($_ENV['APP_ENV']) && $isDev) {
+    if (isset($_ENV['APP_ENV']) && $is_dev) {
         $pdo            = null;
-        $pdoError       = $e->getMessage();
-        $dbCurrentState = false;
+        $pdo_error = $e->getMessage();
+        $db_current_state = false;
     } else {
         throw new \PDOException($e->getMessage(), (int) $e->getCode());
     }

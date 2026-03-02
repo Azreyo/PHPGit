@@ -90,13 +90,16 @@ function checkStatus(bool $status): string {
             </li>
         <?php
         }
+    $auth_username = $_SESSION['username'] ?? 'n/a';
         ?>
         <li>
-            <span title="Authenticated user" class="btn-dev"><?php echo htmlspecialchars($_SERVER['PHP_AUTH_USER'] ?? 'n/a'); ?></span>
+            <span title="Authenticated user"
+                  class="btn-dev"><?php echo htmlspecialchars((string)$auth_username); ?></span>
         </li>
 
         <li class="align-items-end">
-            <span title="Current page" class="btn-dev"><?php echo htmlspecialchars($queryParams['page'] ?? 'n/a', ENT_QUOTES, 'UTF-8'); ?></span>
+            <span title="Current page"
+                  class="btn-dev"><?php echo htmlspecialchars($query_params['page'] ?? 'n/a', ENT_QUOTES, 'UTF-8'); ?></span>
         </li>
 
         <li>
@@ -111,23 +114,23 @@ function checkStatus(bool $status): string {
             <?php
             require_once __DIR__ . '/../config.php';
 
-            $dbStatus = isset($pdo)
+            $db_status = isset($pdo)
                     ? '<span class="text-success">✔ Connected</span>'
-                    : '<span class="text-danger">✘ ' . htmlspecialchars($pdoError ?? 'Not connected', ENT_QUOTES, 'UTF-8') . '</span>';
+                    : '<span class="text-danger">✘ ' . htmlspecialchars($pdo_error ?? 'Not connected', ENT_QUOTES, 'UTF-8') . '</span>';
 
-            $opcacheState = function_exists('opcache_get_status') && opcache_get_status() !== false;
-            $mailStatus   = function_exists('mail');
+            $opcache_state = function_exists('opcache_get_status') && opcache_get_status() !== false;
+            $mail_status = function_exists('mail');
 
-            $isDbRunning      = serviceIndicator($dbCurrentState);
-            $isLoggedIn       = checkStatus($_SESSION['isLoggedIn'] ?? false);
-            $isOpcacheRunning = serviceIndicator($opcacheState);
-            $isMailRunning    = serviceIndicator($mailStatus);
-            $sessionUsername  = $_SESSION['username'] ?? 'n/a';
-            $sessionRole      = $_SESSION['role'] ?? 'n/a';
+            $is_db_running = serviceIndicator($db_current_state);
+            $is_logged_in = checkStatus($_SESSION['is_logged_in'] ?? false);
+            $is_opcache_running = serviceIndicator($opcache_state);
+            $is_mail_running = serviceIndicator($mail_status);
+            $session_username = $_SESSION['username'] ?? 'n/a';
+            $session_role = $_SESSION['role'] ?? 'n/a';
 
-            $dbInfo = '
+            $db_info = '
                     <table class="table table-sm table-borderless mb-0">
-                        <tr><td><strong>Status:</strong></td><td>' . $dbStatus . '</td></tr>
+                        <tr><td><strong>Status:</strong></td><td>' . $db_status . '</td></tr>
                         <tr><td><strong>Host</strong></td><td>' . htmlspecialchars($host, ENT_QUOTES, 'UTF-8') . '</td></tr>
                         <tr><td><strong>Database</strong></td><td>' . htmlspecialchars($db, ENT_QUOTES, 'UTF-8') . '</td></tr>
                         <tr><td><strong>User</strong></td><td>' . htmlspecialchars((string) $user, ENT_QUOTES, 'UTF-8') . '</td></tr>
@@ -135,21 +138,21 @@ function checkStatus(bool $status): string {
                     </table>
                 ';
 
-            $phpInfo = '
+            $php_info = '
                     <table class="table table-sm table-borderless mb-0">
-                        <tr><td><strong>PHP version:</strong></td><td>' . $isLoggedIn . '</td></tr>
+                        <tr><td><strong>PHP version:</strong></td><td>' . PHP_VERSION . '</td></tr>
                         <tr><td><strong>PHP SAPI</strong></td><td>' . php_sapi_name() . '</td></tr>
-                        <tr><td><strong>Database: </strong></td><td>' . $isDbRunning . '</td></tr>
-                        <tr><td><strong>Opcache: </strong></td><td>' . $isOpcacheRunning . '</td></tr>
-                        <tr><td><strong>Mail: </strong></td><td>' . $isMailRunning . '</td></tr>
+                        <tr><td><strong>Database: </strong></td><td>' . $is_db_running . '</td></tr>
+                        <tr><td><strong>Opcache: </strong></td><td>' . $is_opcache_running . '</td></tr>
+                        <tr><td><strong>Mail: </strong></td><td>' . $is_mail_running . '</td></tr>
                     </table>
                 ';
 
-            $sessionInfo = '
+            $session_info = '
                     <table class="table table-sm table-borderless mb-0">
-                        <tr><td><strong>Authorized:</strong></td><td>' . $isLoggedIn . '</td></tr>
-                        <tr><td><strong>Username:</strong></td><td>' . $sessionUsername . '</td></tr>
-                        <tr><td><strong>Role:</strong></td><td>' . $sessionRole . '</td></tr>
+                        <tr><td><strong>Authorized:</strong></td><td>' . $is_logged_in . '</td></tr>
+                        <tr><td><strong>Username:</strong></td><td>' . $session_username . '</td></tr>
+                        <tr><td><strong>Role:</strong></td><td>' . $session_role . '</td></tr>
                     </table>
                 ';
             ?>
@@ -159,7 +162,7 @@ function checkStatus(bool $status): string {
                       data-bs-trigger="hover"
                       data-bs-placement="top"
                       data-bs-html="true"
-                      data-bs-content="<?php echo htmlspecialchars($sessionInfo, ENT_QUOTES, 'UTF-8'); ?>">
+                      data-bs-content="<?php echo htmlspecialchars($session_info, ENT_QUOTES, 'UTF-8'); ?>">
                     <?php echo session_status() === PHP_SESSION_ACTIVE ? session_id() : 'no session'; ?>
                 </span>
             </li>
@@ -170,7 +173,7 @@ function checkStatus(bool $status): string {
                     data-bs-trigger="hover"
                     data-bs-placement="top"
                     data-bs-html="true"
-                    data-bs-content="<?php echo htmlspecialchars($dbInfo, ENT_QUOTES, 'UTF-8'); ?>"
+                    data-bs-content="<?php echo htmlspecialchars($db_info, ENT_QUOTES, 'UTF-8'); ?>"
                 >
                     <?php echo isset($pdo) ? 'DB connected' : 'DB not connected'; ?>
                 </span>
@@ -182,19 +185,7 @@ function checkStatus(bool $status): string {
                     data-bs-trigger="hover"
                     data-bs-placement="top"
                     data-bs-html="true"
-                    data-bs-content="<?php echo htmlspecialchars($phpInfo, ENT_QUOTES, 'UTF-8'); ?>"
-                >
-                    version
-                </span>
-            </li>
-            <li>
-                <span
-                        class="btn-dev db-info"
-                        data-bs-toggle="popover"
-                        data-bs-trigger="hover"
-                        data-bs-placement="top"
-                        data-bs-html="true"
-                        data-bs-content="<?php echo htmlspecialchars($sessionInfo, ENT_QUOTES, 'UTF-8'); ?>"
+                    data-bs-content="<?php echo htmlspecialchars($php_info, ENT_QUOTES, 'UTF-8'); ?>"
                 >
                     version
                 </span>
