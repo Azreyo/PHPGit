@@ -7,12 +7,16 @@ require __DIR__ . '/../config.php';
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username   = trim($_POST['username'] ?? '');
-    $email      = trim($_POST['email'] ?? '');
-    $password   = $_POST['password'] ?? '';
+    $username    = trim($_POST['username'] ?? '');
+    $email       = trim($_POST['email'] ?? '');
+    $password    = $_POST['password'] ?? '';
     $agree_terms = isset($_POST['agree-terms']);
-    $role       = 'USER';
+    $role        = 'USER';
+    $csrf_token  = $_POST['csrf_token'] ?? '';
 
+    if (!isset($_SESSION['csrf_token']) || !hash_equals((string) $_SESSION['csrf_token'], (string) $csrf_token)) {
+        $errors[] = 'Invalid request. Please refresh the page and try again.';
+    }
     if (empty($username)) {
         $errors[] = 'Username cannot be empty';
     }
