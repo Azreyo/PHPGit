@@ -38,7 +38,7 @@ PHPGit is build as school project with clean PHP.
       RewriteEngine On
       RewriteBase /
 
-      RewriteRule ^(includes|pages|scripts)(/|$) - [F,L]
+      RewriteRule ^(includes|pages)(/|$) - [F,L]
    </IfModule>
 
    <IfModule mod_headers.c>
@@ -56,16 +56,21 @@ PHPGit is build as school project with clean PHP.
    git clone https://github.com/Azreyo/phpgit.git
    cd phpgit
    ```
-2. Install dependencies using Composer:
+   
+2. Install php8.*
+   ```bash
+   sudo apt install php8.4-cli php8.4-fpm php8.4-mysql php8.4-xml php8.4-mbstring php8.4-curl php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath
+   ```
+3. Install dependencies using Composer:
    ```bash
    composer install
    ```
-3. Configure your web server to serve the appropriate directory (`src`).
-4. Copy the example environment file and update configuration as needed:
+4. Configure your web server to serve the appropriate directory (`src`). 
+5. Copy the example environment file and update configuration as needed:
    ```bash
-   cp .env.example .env
+   cp src/.env.example src/.env
    ```
-5. Set appropriate permissions for storage and cache directories if required.
+6. Set appropriate permissions for storage and cache directories if required.
 
 ## Usage
 
