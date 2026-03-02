@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+    if (!isset($_SESSION['isLoggedIn'])) {
+        $_SESSION['isLoggedIn'] = false;
+    }
 }
 
 require 'config.php';
@@ -55,10 +58,10 @@ include 'pages/' . htmlspecialchars($page, ENT_QUOTES, 'UTF-8') . '.php';
 include 'includes/footer.php';
 ?>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <?php if (isset($isDev) && $isDev): ?>
     <?php include 'includes/dev_panel.php'; ?>
 <?php endif; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>

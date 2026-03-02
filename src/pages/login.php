@@ -78,6 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
+            $stmt = $pdo->prepare('SELECT role FROM users WHERE email = ? LIMIT 1');
+            $stmt->execute([$email]);
+            $userRole = $stmt->fetch();
             if ($user === false || !password_verify($password, $user['password'])) {
                 recordFailedAttempt();
                 // Generic message to prevent user enumeration
@@ -86,8 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Regenerate session ID to prevent session fixation
                 session_regenerate_id(true);
                 $_SESSION['login_attempts'] = 0;
+                $_SESSION['isLoggedIn']     = true;
                 $_SESSION['user_id']        = $user['id'];
                 $_SESSION['username']       = $user['username'];
+                $_SESSION['role']            = $userRole['role'];
 
                 // Rotate CSRF token after successful login
                 unset($_SESSION['csrf_token']);

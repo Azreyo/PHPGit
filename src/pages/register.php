@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email      = trim($_POST['email'] ?? '');
     $password   = $_POST['password'] ?? '';
     $agreeTerms = isset($_POST['agree-terms']);
+    $role       = 'USER';
 
     if (empty($username)) {
         $errors[] = 'Username cannot be empty';
@@ -40,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Email already registered';
         } else {
             $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-            $stmt = $pdo->prepare('INSERT INTO users (username, email, password) VALUES (?, ?, ?)');
+            $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)');
 
-            if ($stmt->execute([$username, $email, $hashedPassword])) {
+            if ($stmt->execute([$username, $email, $hashedPassword, $role])) {
                 header('Location: index.php?page=login&success=registered');
                 exit;
             } else {

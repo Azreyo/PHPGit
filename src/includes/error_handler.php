@@ -204,7 +204,7 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
     return true;
 });
 set_exception_handler(function (Throwable $e) use ($isDev): void {
-    http_response_code(500);
+    //http_response_code(500);
     
     if (!$isDev) {
         return;
