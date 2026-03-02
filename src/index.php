@@ -19,6 +19,7 @@ $pageTitles = [
     'explore'  => 'Explore',
     'login'    => 'Login',
     'register' => 'Register',
+    'logout'   => 'Logout',
     '404'      => 'Page not found',
     '403'      => 'Forbidden',
 ];
