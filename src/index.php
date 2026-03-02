@@ -1,8 +1,10 @@
 <?php
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
     require 'config.php';
     require __DIR__ . '/includes/error_handler.php';
-    $app_env = $_ENV['APP_ENV'] ?? 'prod';
-
 
     $page = $_GET['page'] ?? 'home';
     $allowed_pages = ['home', 'about', 'contact', 'explore', '404', '403', 'login', 'register'];
@@ -38,7 +40,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="assets/style.css">
     <?php
-    if($app_env === 'dev') {
+    if($isDev) {
         ?>
         <link rel="stylesheet" href="assets/dev.css">
         <?php
@@ -50,16 +52,16 @@
 
 
 <?php
-include 'includes/header.php';
-include "pages/" . htmlspecialchars($page) . ".php";
+    include 'includes/header.php';
+    include "pages/" . htmlspecialchars($page) . ".php";
     include 'includes/footer.php';
 ?>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <?php
-    if(isset($app_env) && $app_env === 'dev') {
+    if(isset($isDev) && $isDev) {
         include 'includes/dev_panel.php';
     }
 ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>
