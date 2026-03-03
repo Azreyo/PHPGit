@@ -101,7 +101,7 @@ function _eh_render(
     int    $errno = 0
 ): void {
     $id      = 'eh_' . substr(md5(uniqid('', true)), 0, 8);
-    $errCode = $errno > 0 ? " · E{$errno}" : '';
+    $err_code = $errno > 0 ? " · E{$errno}" : '';
 
     echo <<<HTML
     <div class="alert alert-{$variant} alert-dismissible fade show font-monospace small my-2 mx-2 shadow" role="alert" style="border-radius:6px;">
