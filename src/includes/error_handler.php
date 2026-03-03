@@ -9,9 +9,9 @@ if (!isset($_ENV['APP_ENV'])) {
     }
 }
 
-$isDev = strtolower($_ENV['APP_ENV'] ?? 'prod') === 'dev';
+$is_dev = strtolower($_ENV['APP_ENV'] ?? 'prod') === 'dev';
 
-if ($isDev) {
+if ($is_dev) {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
@@ -58,7 +58,6 @@ function _eh_source_snippet(string $file, int $errorLine, int $context = 5): str
 }
 function _eh_backtrace_table(array $frames): string
 {
-    // Remove the error handler frame
     array_shift($frames);
 
     if (empty($frames)) {
@@ -164,8 +163,8 @@ function _eh_render(
     HTML;
 }
 
-set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) use ($isDev): bool {
-    if (!$isDev) {
+set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) use ($is_dev): bool {
+    if (!$is_dev) {
         return true;
     }
 
@@ -203,10 +202,10 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
 
     return true;
 });
-set_exception_handler(function (Throwable $e) use ($isDev): void {
+set_exception_handler(function (Throwable $e) use ($is_dev): void {
     //http_response_code(500);
 
-    if (!$isDev) {
+    if (!$is_dev) {
         return;
     }
 

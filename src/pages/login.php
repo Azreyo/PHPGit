@@ -80,10 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($user === false || !password_verify($password, $user['password'])) {
                 recordFailedAttempt();
-                // Generic message to prevent user enumeration
                 $errors[] = 'Invalid email or password.';
             } else {
-                // Regenerate session ID to prevent session fixation
                 session_regenerate_id(true);
                 $_SESSION['login_attempts'] = 0;
                 $_SESSION['is_logged_in']   = true;
