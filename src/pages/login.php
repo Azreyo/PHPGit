@@ -73,26 +73,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($errors)) {
             $stmt = $pdo->prepare(
-                'SELECT id, username, password FROM users WHERE email = ? LIMIT 1'
+                'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
             );
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
-            $stmt = $pdo->prepare('SELECT role FROM users WHERE email = ? LIMIT 1');
-            $stmt->execute([$email]);
-            $userRole = $stmt->fetch();
             if ($user === false || !password_verify($password, $user['password'])) {
                 recordFailedAttempt();
-                // Generic message to prevent user enumeration
                 $errors[] = 'Invalid email or password.';
             } else {
-                // Regenerate session ID to prevent session fixation
                 session_regenerate_id(true);
                 $_SESSION['login_attempts'] = 0;
                 $_SESSION['is_logged_in']   = true;
                 $_SESSION['user_id']        = $user['id'];
                 $_SESSION['username']       = $user['username'];
-                $_SESSION['role']           = $userRole['role'];
+                $_SESSION['role']           = $user['role'];
 
                 // Rotate CSRF token after successful login
                 unset($_SESSION['csrf_token']);
