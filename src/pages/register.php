@@ -120,14 +120,14 @@ $csrf_token = generateCsrfToken();
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="agree-terms" name="agree-terms" required>
                     <label class="form-check-label" for="agree-terms">
-                        <a href="index.php?page=terms">Terms &amp; Service</a>
+                        <a href="/index.php?page=terms">Terms &amp; Service</a>
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Submit</button>
             </form>
 
             <p class="mt-3 text-center">
-                Already have an account? <a href="index.php?page=login">Login</a>
+                Already have an account? <a href="/index.php?page=login">Login</a>
             </p>
         </div>
     </div>

@@ -194,5 +194,5 @@ function checkStatus(bool $status): string {
     </ul>
 </div>
 
-<script src="../scripts/dev.js"></script>
+<script src="/scripts/dev.js"></script>
 

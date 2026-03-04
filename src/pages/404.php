@@ -11,8 +11,8 @@ http_response_code(404);
             <h2 class="fw-bold mb-2">Page Not Found</h2>
             <p class="text-secondary mb-4">The page you're looking for doesn't exist or has been moved.</p>
             <div class="d-flex gap-3 justify-content-center">
-                <a class="btn btn-primary" href="index.php?page=home">Go Home</a>
-                <a class="btn btn-outline-secondary" href="index.php?page=explore">Explore</a>
+                <a class="btn btn-primary" href="/index.php?page=home">Go Home</a>
+                <a class="btn btn-outline-secondary" href="/index.php?page=explore">Explore</a>
             </div>
         </div>
     </div>

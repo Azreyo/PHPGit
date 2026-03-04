@@ -46,9 +46,9 @@ if (empty($page) || in_array($page, $restricted_pages, true)) {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="/assets/style.css">
     <?php if ($is_dev): ?>
-        <link rel="stylesheet" href="assets/dev.css">
+        <link rel="stylesheet" href="/assets/dev.css">
     <?php endif; ?>
 </head>
 <body>
@@ -60,7 +60,7 @@ include 'includes/footer.php';
 ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-<script src="scripts/theme.js"></script>
+<script src="/scripts/theme.js"></script>
 <?php if (isset($is_dev) && $is_dev): ?>
     <?php include 'includes/dev_panel.php'; ?>
 <?php endif; ?>
