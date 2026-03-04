@@ -25,13 +25,15 @@ $page_titles = [
     'dashboard'=> 'Dashboard',
 ];
 $allowed_pages = array_keys($page_titles);
-
 $page = preg_replace('/[^a-z0-9_]/', '', strtolower($page));
-
-if (empty($page) || in_array($page, $restricted_pages, true)) {
+if (!preg_match('/^[a-z0-9_]+$/', $page)) {
     $page = '403';
-} elseif (!in_array($page, $allowed_pages, true)) {
-    $page = '404';
+} else {
+    $page = strtolower($page);
+
+    if (!array_key_exists($page, $page_titles)) {
+        $page = '404';
+    }
 }
 ?>
 
