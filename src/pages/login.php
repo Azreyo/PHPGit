@@ -3,48 +3,11 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../config.php';
+require __DIR__ . '/../includes/security.php';
+
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-}
-
-function generateCsrfToken(): string
-{
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-
-    return $_SESSION['csrf_token'];
-}
-
-function validateCsrfToken(string $token): bool
-{
-    return isset($_SESSION['csrf_token'])
-        && hash_equals($_SESSION['csrf_token'], $token);
-}
-
-function isRateLimited(): bool
-{
-    $maxAttempts = 5;
-    $windowSeconds = 900;
-    $now = time();
-
-    if (!isset($_SESSION['login_attempts'])) {
-        $_SESSION['login_attempts']     = 0;
-        $_SESSION['login_attempt_time'] = $now;
-    }
-
-    if (($now - $_SESSION['login_attempt_time']) > $windowSeconds) {
-        $_SESSION['login_attempts']     = 0;
-        $_SESSION['login_attempt_time'] = $now;
-    }
-
-    return $_SESSION['login_attempts'] >= $maxAttempts;
-}
-
-function recordFailedAttempt(): void
-{
-    $_SESSION['login_attempts'] = ($_SESSION['login_attempts'] ?? 0) + 1;
 }
 
 $errors  = [];
@@ -73,34 +36,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($errors)) {
             $stmt = $pdo->prepare(
-                'SELECT id, username, password FROM users WHERE email = ? LIMIT 1'
+                'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
             );
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
-            $stmt = $pdo->prepare('SELECT role FROM users WHERE email = ? LIMIT 1');
-            $stmt->execute([$email]);
-            $userRole = $stmt->fetch();
             if ($user === false || !password_verify($password, $user['password'])) {
                 recordFailedAttempt();
-                // Generic message to prevent user enumeration
                 $errors[] = 'Invalid email or password.';
             } else {
-                // Regenerate session ID to prevent session fixation
                 session_regenerate_id(true);
                 $_SESSION['login_attempts'] = 0;
                 $_SESSION['is_logged_in']   = true;
                 $_SESSION['user_id']        = $user['id'];
                 $_SESSION['username']       = $user['username'];
-                $_SESSION['role']           = $userRole['role'];
+                $_SESSION['role']           = $user['role'];
 
-                // Rotate CSRF token after successful login
                 unset($_SESSION['csrf_token']);
 
                 header('Location: index.php?page=home');
                 exit;
             }
         }
+    }
+}
+
+
+if ( $is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action']) && $_POST['action'] === 'reset_rate_limit') {
+        session_destroy();
     }
 }
 
@@ -166,6 +130,15 @@ $csrf_token = generateCsrfToken();
             <p class="mt-3 text-center">
                 Don't have an account? <a href="index.php?page=register">Register</a>
             </p>
+
+            <?php if ($is_dev): ?>
+                <form method="POST">
+                    <input type="hidden" name="action" value="reset_rate_limit">
+                    <button class="btn btn-primary rounded-5" type="submit">
+                        Reset Rate Limit
+                    </button>
+                </form>
+            <?php endif; ?>
         </div>
     </div>
 </main>

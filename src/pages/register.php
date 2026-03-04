@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../config.php';
-
+require __DIR__ . '/../includes/security.php';
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role        = 'USER';
     $csrf_token  = $_POST['csrf_token'] ?? '';
 
-    if (!isset($_SESSION['csrf_token']) || !hash_equals((string) $_SESSION['csrf_token'], (string) $csrf_token)) {
+    if (!validateCsrfToken($csrf_token)) {
         $errors[] = 'Invalid request. Please refresh the page and try again.';
     }
     if (empty($username)) {
@@ -57,6 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+$csrf_token = generateCsrfToken();
 ?>
 <main>
     <div class="container d-flex flex-column align-items-end justify-content-center" style="min-height: 80vh;">
@@ -74,6 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="POST" novalidate>
+                <input type="hidden" name="csrf_token"
+                       value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+
                 <div class="mb-3">
                     <label for="user" class="form-label">Username</label>
                     <input
@@ -115,14 +120,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="agree-terms" name="agree-terms" required>
                     <label class="form-check-label" for="agree-terms">
-                        <a href="index.php?page=terms">Terms &amp; Service</a>
+                        <a href="/index.php?page=terms">Terms &amp; Service</a>
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Submit</button>
             </form>
 
             <p class="mt-3 text-center">
-                Already have an account? <a href="index.php?page=login">Login</a>
+                Already have an account? <a href="/index.php?page=login">Login</a>
             </p>
         </div>
     </div>

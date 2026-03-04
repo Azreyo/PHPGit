@@ -3,23 +3,24 @@
 <header>
     <nav class="navbar navbar-expand d-flex justify-content-between align-items-center px-3 py-2">
         <a class="navbar-brand" href="index.php?page=home">PHPGit</a>
-
+        <?php if ($page !== 'logout'): ?>
         <div class="d-flex gap-2">
-            <a class="nav-item btn btn-primary text-white" href="index.php?page=explore">Explore</a>
-            <a class="btn btn-primary text-white" href="index.php?page=about">About</a>
-            <a class="btn btn-primary text-white" href="index.php?page=contact">Contact</a>
+            <a class="nav-item btn btn-primary text-white" href="/index.php?page=explore">Explore</a>
+            <a class="btn btn-primary text-white" href="/index.php?page=about">About</a>
+            <a class="btn btn-primary text-white" href="/index.php?page=contact">Contact</a>
         </div>
-
-        <?php if (!$_SESSION['is_logged_in']): ?>
-            <div class="d-flex gap-2">
-                <a class="btn btn-primary text-white" href="index.php?page=login">Login</a>
-                <a class="btn btn-primary text-white" href="index.php?page=register">Register</a>
-            </div>
-        <?php elseif ($_SESSION['is_logged_in']): ?>
-            <div class="d-flex gap-2">
-                <a class="btn btn-primary text-white" href="index.php?page=dashboard">Dashboard</a>
-                <a class="btn btn-primary text-white" href="index.php?page=logout">Logout</a>
-            </div>
-        <?php endif;?>
+            <?php if (!$_SESSION['is_logged_in']): ?>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-primary text-white" href="/index.php?page=login">Login</a>
+                    <a class="btn btn-primary text-white" href="/index.php?page=register">Register</a>
+                </div>
+            <?php else: ?>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-primary text-white" href="/index.php?page=dashboard">Dashboard</a>
+                    <a class="btn btn-primary text-white" href="/index.php?page=logout">Logout</a>
+                </div>
+            <?php endif;?>
+        <?php endif; ?>
+        <button id="theme-toggle" aria-label="Toggle theme" title="Switch to light mode"><i class="bi bi-sun"></i></button>
     </nav>
 </header>

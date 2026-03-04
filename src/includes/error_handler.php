@@ -9,9 +9,9 @@ if (!isset($_ENV['APP_ENV'])) {
     }
 }
 
-$isDev = strtolower($_ENV['APP_ENV'] ?? 'prod') === 'dev';
+$is_dev = strtolower($_ENV['APP_ENV'] ?? 'prod') === 'dev';
 
-if ($isDev) {
+if ($is_dev) {
     error_reporting(E_ALL);
     ini_set('display_errors', '1');
     ini_set('display_startup_errors', '1');
@@ -58,7 +58,6 @@ function _eh_source_snippet(string $file, int $errorLine, int $context = 5): str
 }
 function _eh_backtrace_table(array $frames): string
 {
-    // Remove the error handler frame
     array_shift($frames);
 
     if (empty($frames)) {
@@ -102,7 +101,7 @@ function _eh_render(
     int    $errno = 0
 ): void {
     $id      = 'eh_' . substr(md5(uniqid('', true)), 0, 8);
-    $errCode = $errno > 0 ? " · E{$errno}" : '';
+    $err_code = $errno > 0 ? " · E{$errno}" : '';
 
     echo <<<HTML
     <div class="alert alert-{$variant} alert-dismissible fade show font-monospace small my-2 mx-2 shadow" role="alert" style="border-radius:6px;">
@@ -164,8 +163,8 @@ function _eh_render(
     HTML;
 }
 
-set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) use ($isDev): bool {
-    if (!$isDev) {
+set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) use ($is_dev): bool {
+    if (!$is_dev) {
         return true;
     }
 
@@ -224,13 +223,13 @@ set_exception_handler(function (Throwable $e) use ($is_dev): void {
         'type'     => '',
     ]);
 
-    $snippet = ehSourceSnippet($e->getFile(), $e->getLine());
-    $trace = ehBacktraceTable($frames);
+    $snippet = _eh_source_snippet($e->getFile(), $e->getLine());
+    $trace = _eh_backtrace_table($frames);
 
     $code    = $e->getCode() ? " (code: {$e->getCode()})" : '';
     $title   = htmlspecialchars($class . ': ' . $e->getMessage() . $code, ENT_QUOTES, 'UTF-8');
 
-    ehRender(
+    _eh_render(
         $variant,
         $label,
         $title,
