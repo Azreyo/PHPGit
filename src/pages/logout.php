@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-
-if ($_SESSION['is_logged_in']) {
-    $_SESSION['is_logged_in'] = false;
-    $_SESSION = [];
-    session_destroy();
-}
+$logged_in = $_SESSION['is_logged_in'] ?? false;
 ?>
 
 <main>
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">
         <div class="text-center">
-            <?php if ($_SESSION['is_logged_in']): ?>
+            <?php if ($logged_in): ?>
+                <?php
+                    $logged_in = false;
+                    $_SESSION = [];
+                    session_destroy();
+                ?>
             <div class="logout-icon mb-4">
                 <i class="bi bi-box-arrow-right"></i>
             </div>

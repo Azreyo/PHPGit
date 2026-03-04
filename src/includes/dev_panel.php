@@ -128,14 +128,12 @@ function checkStatus(bool $status): string {
             $session_username = $_SESSION['username'] ?? 'n/a';
             $session_role = $_SESSION['role'] ?? 'n/a';
 
-            echo var_dump($user);
-
             $db_info = '
                     <table class="table table-sm table-borderless mb-0">
                         <tr><td><strong>Status:</strong></td><td>' . $db_status . '</td></tr>
                         <tr><td><strong>Host</strong></td><td>' . htmlspecialchars($host, ENT_QUOTES, 'UTF-8') . '</td></tr>
                         <tr><td><strong>Database</strong></td><td>' . htmlspecialchars($db, ENT_QUOTES, 'UTF-8') . '</td></tr>
-                        <tr><td><strong>User</strong></td><td>' . $user . '</td></tr>
+                        <tr><td><strong>User</strong></td><td>' . htmlspecialchars($db_user, ENT_QUOTES, 'UTF-8') . '</td></tr>
                         <tr><td><strong>Charset</strong></td><td>' . htmlspecialchars($charset, ENT_QUOTES, 'UTF-8') . '</td></tr>
                     </table>
                 ';

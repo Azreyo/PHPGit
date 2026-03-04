@@ -10,9 +10,9 @@ require 'config.php';
 require __DIR__ . '/includes/error_handler.php';
 
 $page = $_GET['page'] ?? 'home';
-$allowedPages = ['home', 'about', 'contact', 'explore', '404', '403', 'login', 'register', 'logout'];
-$restrictedPages = ['.env', '.htaccess', 'config'];
-$pageTitles = [
+$allowed_pages = ['home', 'about', 'contact', 'explore', '404', '403', 'login', 'register', 'logout', 'dashboard'];
+$restricted_pages = ['.env', '.htaccess', 'config'];
+$page_titles = [
     'home'     => 'Home',
     'about'    => 'About us',
     'contact'  => 'Contact',
@@ -22,13 +22,14 @@ $pageTitles = [
     'logout'   => 'Logout',
     '404'      => 'Page not found',
     '403'      => 'Forbidden',
+    'dashboard'=> 'Dashboard',
 ];
 
 $page = preg_replace('/[^a-z0-9_]/', '', strtolower($page));
 
-if (empty($page) || in_array($page, $restrictedPages, true)) {
+if (empty($page) || in_array($page, $restricted_pages, true)) {
     $page = '403';
-} elseif (!in_array($page, $allowedPages, true)) {
+} elseif (!in_array($page, $allowed_pages, true)) {
     $page = '404';
 }
 ?>
@@ -38,7 +39,7 @@ if (empty($page) || in_array($page, $restrictedPages, true)) {
 <head>
     <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
     <meta charset="UTF-8">
-    <title><?php echo htmlspecialchars($pageTitles[$page] ?? 'PHPGit', ENT_QUOTES, 'UTF-8'); ?></title>
+    <title><?php echo htmlspecialchars($page_titles[$page] ?? 'PHPGit', ENT_QUOTES, 'UTF-8'); ?></title>
     <meta name="description" content="PHPGit">
     <meta name="keywords" content="git, php">
     <meta name="author" content="Azreyo">

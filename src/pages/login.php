@@ -161,6 +161,14 @@ $csrf_token = generateCsrfToken();
             <p class="mt-3 text-center">
                 Don't have an account? <a href="index.php?page=register">Register</a>
             </p>
+
+            <?php if ($is_dev): ?>
+            <form method="POST">
+                <input type="hidden" value="<?php ?>">
+                <button class="btn btn-primary rounded-5" type="submit" >Reset Rate Limit</button>
+            </form>
+
+            <?php endif; ?>
         </div>
     </div>
 </main>

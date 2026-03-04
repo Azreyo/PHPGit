@@ -11,8 +11,8 @@ $is_dev = $_ENV['APP_ENV'] === 'dev';
 
 $host    = $_ENV['DB_HOST'] ?? 'n/a';
 $db      = $_ENV['DB_NAME'] ?? 'n/a';
-$user    = $_ENV['DB_USER'] ?? 'n/a';
-$pass    = $_ENV['DB_PASS'];
+$db_user    = $_ENV['DB_USER'] ?? 'n/a';
+$db_pass    = $_ENV['DB_PASS'];
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host={$host};dbname={$db};charset={$charset}";
@@ -24,7 +24,7 @@ $options = [
 ];
 
 try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
+    $pdo = new PDO($dsn, $db_user, $db_pass, $options);
 
     if ($is_dev) {
         $db_current_state = true;
