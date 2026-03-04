@@ -23,6 +23,7 @@ $page_titles = [
     '404'      => 'Page not found',
     '403'      => 'Forbidden',
     'dashboard'=> 'Dashboard',
+        'terms' => 'Terms of Service'
 ];
 $allowed_pages = array_keys($page_titles);
 $page = preg_replace('/[^a-z0-9_]/', '', strtolower($page));
@@ -40,7 +41,10 @@ if (!preg_match('/^[a-z0-9_]+$/', $page)) {
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
-    <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
+    <script>(function () {
+            let t = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-bs-theme', t);
+        })();</script>
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($page_titles[$page] ?? 'PHPGit', ENT_QUOTES, 'UTF-8'); ?></title>
     <meta name="description" content="PHPGit">
