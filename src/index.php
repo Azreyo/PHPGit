@@ -27,7 +27,6 @@ if ($is_dev) {
 }
 if ($is_logged_in) {
     $page_titles['settings'] = 'Settings';
-    $page_titles['dashboard'] = 'Dashboard';
 }
 
 $allowed_pages = array_keys($page_titles);

@@ -20,11 +20,11 @@ declare(strict_types=1);
 <?php else:?>
     <main>
         <div class="container d-flex flex-column align-items-start">
-            <h3 class="m-4">Welcome, <?php echo (string) htmlspecialchars($_SESSION['username'], ENT_SUBSTITUTE, 'UTF-8');?></h3>
+            <h3 class="m-4">Welcome, <?php echo htmlspecialchars($_SESSION['username'], ENT_SUBSTITUTE | ENT_QUOTES, 'UTF-8');?></h3>
             <div class="border border-secondary rounded p-4 w-100" style="max-width: 200px;">
                 <ul class="list-unstyled">
                     <li>
-                        <a class='btn btn-secondary w-100' href="/index.php?page=settings">Settings</a>
+                        <a class='btn btn-secondary w-100' href="/index.php?page=profile_settings">Profile Settings</a>
                     </li>
                 </ul>
             </div>
