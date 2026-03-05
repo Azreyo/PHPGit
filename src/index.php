@@ -2,9 +2,7 @@
 declare(strict_types=1);
 
 session_start();
-if (!isset($_SESSION['is_logged_in'])) {
-    $_SESSION['is_logged_in'] = false;
-}
+$is_logged_in = $_SESSION['is_logged_in'] ?? false;
 
 require 'config.php';
 require __DIR__ . '/includes/error_handler.php';
@@ -22,11 +20,14 @@ $page_titles = [
     'logout'   => 'Logout',
     '404'      => 'Page not found',
     '403'      => 'Forbidden',
-    'dashboard'=> 'Dashboard',
     'terms'    => 'Terms of Service',
 ];
 if ($is_dev) {
     $page_titles['phpinfo'] = 'phpinfo';
+}
+if ($is_logged_in) {
+    $page_titles['settings'] = 'Settings';
+    $page_titles['dashboard'] = 'Dashboard';
 }
 
 $allowed_pages = array_keys($page_titles);
