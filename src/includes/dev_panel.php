@@ -118,6 +118,8 @@ function checkStatus(bool $status): string {
                     ? '<span class="text-success">✔ Connected</span>'
                     : '<span class="text-danger">✘ ' . htmlspecialchars($pdo_error ?? 'Not connected', ENT_QUOTES, 'UTF-8') . '</span>';
 
+
+
             $opcache_state = function_exists('opcache_get_status') && opcache_get_status() !== false;
             $mail_status = function_exists('mail');
 
@@ -189,6 +191,9 @@ function checkStatus(bool $status): string {
                 >
                     version
                 </span>
+            </li>
+            <li>
+                <a class='btn btn-dev' href="/index.php?page=phpinfo">phpinfo</a>
             </li>
         </div>
     </ul>

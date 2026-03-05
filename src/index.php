@@ -23,8 +23,12 @@ $page_titles = [
     '404'      => 'Page not found',
     '403'      => 'Forbidden',
     'dashboard'=> 'Dashboard',
-        'terms' => 'Terms of Service'
+    'terms'    => 'Terms of Service',
 ];
+if ($is_dev) {
+    $page_titles['phpinfo'] = 'phpinfo';
+}
+
 $allowed_pages = array_keys($page_titles);
 $page = preg_replace('/[^a-z0-9_]/', '', strtolower($page));
 if (!preg_match('/^[a-z0-9_]+$/', $page)) {
