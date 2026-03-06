@@ -2,9 +2,7 @@
 declare(strict_types=1);
 
 session_start();
-if (!isset($_SESSION['is_logged_in'])) {
-    $_SESSION['is_logged_in'] = false;
-}
+$is_logged_in = $_SESSION['is_logged_in'] ?? false;
 
 require 'config.php';
 require __DIR__ . '/includes/error_handler.php';
@@ -22,8 +20,15 @@ $page_titles = [
     'logout'   => 'Logout',
     '404'      => 'Page not found',
     '403'      => 'Forbidden',
-    'dashboard'=> 'Dashboard',
+    'terms'    => 'Terms of Service',
 ];
+if ($is_dev) {
+    $page_titles['phpinfo'] = 'phpinfo';
+}
+if ($is_logged_in) {
+    $page_titles['settings'] = 'Settings';
+}
+
 $allowed_pages = array_keys($page_titles);
 $page = preg_replace('/[^a-z0-9_]/', '', strtolower($page));
 if (!preg_match('/^[a-z0-9_]+$/', $page)) {
@@ -40,7 +45,10 @@ if (!preg_match('/^[a-z0-9_]+$/', $page)) {
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
-    <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-bs-theme',t);})();</script>
+    <script>(function () {
+            let t = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-bs-theme', t);
+        })();</script>
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($page_titles[$page] ?? 'PHPGit', ENT_QUOTES, 'UTF-8'); ?></title>
     <meta name="description" content="PHPGit">

@@ -7,7 +7,7 @@ $username = $_SESSION['username'] ?? '';
     <section class="hero-section">
         <div class="container">
             <div class="row justify-content-center text-center">
-                <div class="col-lg-8">
+                <div class="col-lg-8 m-5">
                     <?php if (!empty($username)): ?>
                         <p class="welcome-back mb-2">Welcome back, <?php echo htmlspecialchars($username, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></p>
                     <?php endif; ?>
@@ -20,11 +20,11 @@ $username = $_SESSION['username'] ?? '';
                     </p>
                     <div class="d-flex gap-3 justify-content-center flex-wrap">
                         <?php if (empty($username)): ?>
-                            <a href="index.php?page=register" class="btn btn-primary btn-lg px-4">Get Started Free</a>
-                            <a href="index.php?page=explore" class="btn btn-outline-secondary btn-lg px-4">Explore Repos</a>
+                            <a href="index.php?page=register" class="btn btn-primary btn-lg px-4 m-2">Get Started Free</a>
+                            <a href="index.php?page=explore" class="btn btn-outline-secondary btn-lg px-4 m-2">Explore Repos</a>
                         <?php else: ?>
-                            <a href="index.php?page=explore" class="btn btn-primary btn-lg px-4">Explore Repos</a>
-                            <a href="index.php?page=about" class="btn btn-outline-secondary btn-lg px-4">About Us</a>
+                            <a href="index.php?page=explore" class="btn btn-primary btn-lg px-4 m-2">Explore Repos</a>
+                            <a href="index.php?page=about" class="btn btn-outline-secondary btn-lg px-4 m-2">About Us</a>
                         <?php endif; ?>
                     </div>
                 </div>

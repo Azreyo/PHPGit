@@ -1,25 +1,29 @@
 <?php
 
 declare(strict_types=1);
-
+require __DIR__ . '/../includes/security.php';
 $contact_success = false;
 $contact_errors  = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $contact_name    = trim($_POST['contact_name'] ?? '');
-    $contact_email   = trim($_POST['contact_email'] ?? '');
-    $contact_subject = trim($_POST['contact_subject'] ?? '');
-    $contact_message = trim($_POST['contact_message'] ?? '');
+    if (!validateCsrfToken($_POST['csrf_token'])) {
+        $contact_errors[] = 'Session expired, please refresh the page and try again.';
+    } else {
+        $contact_name = trim($_POST['contact_name'] ?? '');
+        $contact_email = trim($_POST['contact_email'] ?? '');
+        $contact_subject = trim($_POST['contact_subject'] ?? '');
+        $contact_message = trim($_POST['contact_message'] ?? '');
 
-    if (empty($contact_name))    $contact_errors[] = 'Name is required.';
-    if (empty($contact_email))   $contact_errors[] = 'Email is required.';
-    elseif (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) $contact_errors[] = 'Invalid email format.';
-    if (empty($contact_subject)) $contact_errors[] = 'Subject is required.';
-    if (empty($contact_message)) $contact_errors[] = 'Message is required.';
+        if (empty($contact_name)) $contact_errors[] = 'Name is required.';
+        if (empty($contact_email)) $contact_errors[] = 'Email is required.';
+        elseif (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) $contact_errors[] = 'Invalid email format.';
+        if (empty($contact_subject)) $contact_errors[] = 'Subject is required.';
+        if (empty($contact_message)) $contact_errors[] = 'Message is required.';
 
-    if (empty($contact_errors)) {
-        // TODO: implement mail sending
-        $contact_success = true;
+        if (empty($contact_errors)) {
+            // TODO: implement mail sending
+            $contact_success = true;
+        }
     }
 }
 ?>
