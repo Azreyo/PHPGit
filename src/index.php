@@ -26,7 +26,10 @@ if ($is_dev) {
     $page_titles['phpinfo'] = 'phpinfo';
 }
 if ($is_logged_in) {
-    $page_titles['settings'] = 'Settings';
+    $authenticated_user_pages = [
+            'settings' => 'Settings',
+    ];
+    $page_titles = array_merge($page_titles, $authenticated_user_pages);
 }
 
 $allowed_pages = array_keys($page_titles);
