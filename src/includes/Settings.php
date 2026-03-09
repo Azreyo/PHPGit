@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-class SettingsPage
+namespace App\includes;
+class Settings
 {
     private bool $is_logged_in;
     private string $username;
@@ -93,4 +94,4 @@ class SettingsPage
     }
 }
 
-new SettingsPage($_SESSION, $_GET)->render();
+new settings($_SESSION, $_GET)->render();

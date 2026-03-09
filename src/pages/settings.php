@@ -9,4 +9,4 @@ if (!in_array($tab, $validTabs, true)) {
     die();
 }
 
-require __DIR__ . "/../includes/settings.php";
+require __DIR__ . "/../includes/Settings.php";
