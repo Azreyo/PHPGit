@@ -15,10 +15,11 @@ managing Git repositories, users, and access controls.
 
 ## Requirements
 
-- PHP 8.0 or higher
+- PHP 8.*
+- Linux 6.17.*
 - Composer
 - Web server (Apache, Nginx, etc.)
-- Git
+- Git 2.43.*
 
 ## Security
 1. Allow apache2 *mod_rewrite* and *mod_headers*
