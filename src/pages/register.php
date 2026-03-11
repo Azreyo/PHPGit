@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)');
 
             if ($stmt->execute([$username, $email, $hashed_password, $role])) {
-                header('Location: index.php?page=login&success=registered');
+                header('Location: Index.php?page=login&success=registered');
                 exit;
             } else {
                 $errors[] = 'Registration failed. Please try again.';

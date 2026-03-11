@@ -194,7 +194,7 @@ class DevPanel
         echo $this->renderSessionPopover();
         echo $this->renderDbPopover();
         echo $this->renderPhpPopover();
-        echo '<li><a class="btn btn-dev" href="/index.php?page=phpinfo">phpinfo</a></li>';
+        echo '<li><a class="btn btn-dev" href="/Index.php?page=phpinfo">phpinfo</a></li>';
         echo '</div>';
 
         echo '</ul>';

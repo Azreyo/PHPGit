@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 unset($_SESSION['csrf_token']);
 
-                header('Location: index.php?page=home');
+                header('Location: Index.php?page=home');
                 exit;
             }
         }
