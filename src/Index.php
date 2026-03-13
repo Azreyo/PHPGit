@@ -22,7 +22,7 @@ class Index
             'terms' => 'Terms of Service',
     ];
 
-    private const array RESTRICTED_PAGES = ['.env', '.htaccess', 'config'];
+    private const array RESTRICTED_PAGES = ['env', 'htaccess', 'config'];
 
     private const array AUTHENTICATED_USER_PAGES = [
             'settings' => 'Settings',
