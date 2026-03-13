@@ -117,7 +117,7 @@ declare(strict_types=1);
                             Your use of PHPGit is also governed by our Privacy Policy, which describes how we collect, use, and protect your personal information. By using the Service, you consent to our data practices as described therein.
                         </p>
                         <p class="text-secondary mb-0">
-                            We take security seriously. We implement industry-standard measures to protect your data, but we cannot guarantee absolute security. For concerns regarding your data, please <a href="index.php?page=contact" class="text-primary">contact us</a>.
+                            We take security seriously. We implement industry-standard measures to protect your data, but we cannot guarantee absolute security. For concerns regarding your data, please <a href="Index.php?page=contact" class="text-primary">contact us</a>.
                         </p>
                     </div>
 
@@ -168,7 +168,7 @@ declare(strict_types=1);
                         <p class="text-secondary mb-4">
                             If you have any questions, concerns, or feedback about these Terms of Service, please don&rsquo;t hesitate to reach out to us.
                         </p>
-                        <a href="index.php?page=contact" class="btn btn-primary btn-lg px-4">Contact Us</a>
+                        <a href="Index.php?page=contact" class="btn btn-primary btn-lg px-4">Contact Us</a>
                     </div>
 
                 </div>

@@ -2,10 +2,11 @@
 declare(strict_types=1);
 
 namespace App;
+use \AllowDynamicProperties;
 use App\includes\DevPanel;
 require 'config.php';
 require __DIR__ . '/includes/error_handler.php';
-
+#[AllowDynamicProperties]
 class Index
 {
     private const array PAGE_TITLES = [

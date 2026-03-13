@@ -36,8 +36,8 @@ class Settings
                 <h1 class="fw-bold mb-2">Warning!</h1>
                 <p class="text-secondary mb-4">You're not logged in.</p>
                 <div class="d-flex gap-3 justify-content-center">
-                    <a class="btn btn-primary" href="/index.php?page=home">Go Home</a>
-                    <a class="btn btn-outline-secondary" href="/index.php?page=login">Login</a>
+                    <a class="btn btn-primary" href="/Index.php?page=home">Go Home</a>
+                    <a class="btn btn-outline-secondary" href="/Index.php?page=login">Login</a>
                 </div>
             </div>
         </main>
@@ -50,7 +50,7 @@ class Settings
         <div class="nav nav-tabs mb-4 w-100">
             <?php foreach (self::ALLOWED_TABS as $tab): ?>
                 <a class="nav-link <?php echo $this->current_tab === $tab ? 'active' : ''; ?>"
-                   href="/index.php?page=settings&tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
+                   href="/Index.php?page=settings&tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
                     <?php echo htmlspecialchars(ucfirst($tab), ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php endforeach; ?>
