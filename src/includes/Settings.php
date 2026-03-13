@@ -15,7 +15,11 @@ class Settings
     {
         $this->is_logged_in = !empty($session['is_logged_in']);
         $this->username = $session['username'] ?? '';
-        $this->current_tab = $this->sanitizeTab($get['tab'] ?? 'profile');
+        $tabParam = $get['tab'] ?? 'profile';
+        if (!is_string($tabParam)) {
+            $tabParam = 'profile';
+        }
+        $this->current_tab = $this->sanitizeTab($tabParam);
     }
 
     private function sanitizeTab(string $tab): string
