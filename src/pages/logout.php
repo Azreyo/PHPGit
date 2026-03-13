@@ -19,8 +19,8 @@ $logged_in = $_SESSION['is_logged_in'] ?? false;
             <h1 class="fw-bold mb-2">See you soon!</h1>
             <p class="text-secondary mb-4">You've been successfully logged out.</p>
             <div class="d-flex gap-3 justify-content-center">
-                <a class="btn btn-primary" href="/index.php?page=home">Go Home</a>
-                <a class="btn btn-outline-secondary" href="/index.php?page=login">Login Again</a>
+                <a class="btn btn-primary" href="/Index.php?page=home">Go Home</a>
+                <a class="btn btn-outline-secondary" href="/Index.php?page=login">Login Again</a>
             </div>
             <?php else: ?>
             <div class="logout-icon mb-4">
@@ -29,8 +29,8 @@ $logged_in = $_SESSION['is_logged_in'] ?? false;
             <h1 class="fw-bold mb-2">Warning!</h1>
             <p class="text-secondary mb-4">You're not logged in.</p>
             <div class="d-flex gap-3 justify-content-center">
-                <a class="btn btn-primary" href="/index.php?page=home">Go Home</a>
-                <a class="btn btn-outline-secondary" href="/index.php?page=login">Login</a>
+                <a class="btn btn-primary" href="/Index.php?page=home">Go Home</a>
+                <a class="btn btn-outline-secondary" href="/Index.php?page=login">Login</a>
             </div>
             <?php endif; ?>
         </div>
