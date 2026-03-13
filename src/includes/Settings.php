@@ -13,7 +13,7 @@ class Settings
 
     public function __construct(array $session, array $get)
     {
-        $this->is_logged_in = !empty($session['username']);
+        $this->is_logged_in = !empty($session['is_logged_in']);
         $this->username = $session['username'] ?? '';
         $this->current_tab = $this->sanitizeTab($get['tab'] ?? 'profile');
     }
