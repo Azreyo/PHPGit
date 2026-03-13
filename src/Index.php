@@ -97,7 +97,12 @@ class Index
 
     private function resolvePage(): string
     {
-        $page = preg_replace('/[^a-z0-9_]/', '', strtolower($_GET['page'] ?? 'home')) ?: 'home';
+        $rawPage = $_GET['page'] ?? 'home';
+        if (!is_string($rawPage)) {
+            $rawPage = 'home';
+        }
+
+        $page = preg_replace('/[^a-z0-9_]/', '', strtolower($rawPage)) ?: 'home';
         if ($page === '') {
             $page = 'home';
         }
