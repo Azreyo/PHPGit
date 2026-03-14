@@ -203,9 +203,17 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
     return true;
 });
 set_exception_handler(function (Throwable $e) use ($is_dev): void {
-    //http_response_code(500);
-
     if (!$is_dev) {
+        http_response_code(500);
+        error_log(sprintf(
+            'Unhandled %s: %s in %s:%d',
+            get_class($e),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine()
+        ));
+        echo '<h1>Internal Server Error</h1>';
+
         return;
     }
 
@@ -239,3 +247,4 @@ set_exception_handler(function (Throwable $e) use ($is_dev): void {
         $trace
     );
 });
+

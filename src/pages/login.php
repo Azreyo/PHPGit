@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../config.php';
+use \App\Config;
+
 require __DIR__ . '/../includes/security.php';
 
 
