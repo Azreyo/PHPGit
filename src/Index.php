@@ -126,6 +126,8 @@ class Index
         $is_logged_in = $this->is_logged_in;
         $is_dev = $this->isDev;
         $pageTitles = $this->pageTitles;
+        $pdo = $this->pdo;
+        $config = $this->config;
         $page_title = htmlspecialchars($pageTitles[$page] ?? 'PHPGit', ENT_QUOTES, 'UTF-8');
 
         ?>

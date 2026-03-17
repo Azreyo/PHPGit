@@ -1,15 +1,8 @@
-<?php
-declare(strict_types=1);
-
-$logged_in = $_SESSION['is_logged_in'] ?? false;
-?>
-
 <main>
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">
         <div class="text-center">
-            <?php if ($logged_in): ?>
-                <?php
-                    $logged_in = false;
+            <?php if ($is_logged_in):
+                $is_logged_in = false;
                     $_SESSION = [];
                     session_destroy();
                 ?>

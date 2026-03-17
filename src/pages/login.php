@@ -1,9 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
-use \App\Config;
-
 require __DIR__ . '/../includes/security.php';
 
 
@@ -35,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Password is required.';
         }
 
-        if (empty($errors)) {
+        if (empty($errors && $pdo === null)) {
             $stmt = $pdo->prepare(
                 'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
             );
@@ -58,6 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: Index.php?page=home');
                 exit;
             }
+        } else {
+            $errors[] = 'Database is currently unavailable. Please try again later.';
         }
     }
 }
