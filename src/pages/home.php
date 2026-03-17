@@ -1,8 +1,3 @@
-<?php declare(strict_types=1);
-
-$username = $_SESSION['username'] ?? '';
-?>
-
 <main>
     <section class="hero-section">
         <div class="container">

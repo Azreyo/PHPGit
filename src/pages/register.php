@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'You must agree to the Terms of Service';
     }
 
-    if (empty($errors)) {
+    if (empty($errors && !is_null($pdo)))
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $existingUserId = $stmt->fetchColumn();
@@ -54,6 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Registration failed. Please try again.';
             }
         }
+    } else {
+        $errors[] = 'Database is currently unavailable. Please try again later.';
     }
 }
 

@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Password is required.';
         }
 
-        if (empty($errors && $pdo === null)) {
+        if (empty($errors && !is_null($pdo))) {
             $stmt = $pdo->prepare(
                 'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
             );

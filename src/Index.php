@@ -40,6 +40,7 @@ class Index
     private string $host;
     private string $db;
     private string $db_user;
+    private string $username;
     private string $charset;
     private ?string $pdo_error;
     private Config $config;
@@ -61,6 +62,7 @@ class Index
         $this->is_logged_in = $this->resolveSession();
         $this->pageTitles = $this->buildPageTitles();
         $this->page = $this->resolvePage();
+        $this->username = $_SESSION['username'] ?? '';
     }
 
 
@@ -128,6 +130,7 @@ class Index
         $pageTitles = $this->pageTitles;
         $pdo = $this->pdo;
         $config = $this->config;
+        $username = $this->username;
         $page_title = htmlspecialchars($pageTitles[$page] ?? 'PHPGit', ENT_QUOTES, 'UTF-8');
 
         ?>
