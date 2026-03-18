@@ -1,7 +1,8 @@
 <?php
 
-require __DIR__ . '/../includes/security.php';
+use App\includes\Security;
 
+$security = new Security();
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -13,9 +14,9 @@ $success = isset($_GET['success']) && $_GET['success'] === 'registered';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrfToken = $_POST['csrf_token'] ?? '';
 
-    if (!validateCsrfToken($csrfToken)) {
+    if (!$security->validateCsrfToken($csrfToken)) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
-    } elseif (isRateLimited()) {
+    } elseif ($security->isRateLimited()) {
         $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
     } else {
         $email    = trim($_POST['email'] ?? '');
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $stmt->fetch();
 
             if ($user === false || !password_verify($password, $user['password'])) {
-                recordFailedAttempt();
+                $security->recordFailedAttempt();
                 $errors[] = 'Invalid email or password.';
             } else {
                 session_regenerate_id(true);
@@ -67,7 +68,7 @@ if ( $is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$csrf_token = generateCsrfToken();
+$csrf_token = $security->generateCsrfToken();
 
 ?>
 

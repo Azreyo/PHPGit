@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-require __DIR__ . '/../includes/security.php';
+require __DIR__ . '/../includes/Security.php';
 $contact_success = false;
 $contact_errors  = [];
 

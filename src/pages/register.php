@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../includes/security.php';
+use App\includes\Security;
+
+$security = new Security();
+
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -13,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role        = 'USER';
     $csrf_token  = $_POST['csrf_token'] ?? '';
 
-    if (!validateCsrfToken($csrf_token)) {
+    if (!$security->validateCsrfToken($csrf_token)) {
         $errors[] = 'Invalid request. Please refresh the page and try again.';
     }
     if (empty($username)) {
@@ -36,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'You must agree to the Terms of Service';
     }
 
-    if (empty($errors && !is_null($pdo)))
+    if (empty($errors && !is_null($pdo))) {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $existingUserId = $stmt->fetchColumn();
@@ -59,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$csrf_token = generateCsrfToken();
+$csrf_token = $security->generateCsrfToken();
 ?>
 <main>
     <div class="container d-flex flex-column align-items-end justify-content-center" style="min-height: 80vh;">

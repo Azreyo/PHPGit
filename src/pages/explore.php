@@ -1,8 +1,16 @@
 <?php
 
 declare(strict_types=1);
+use App\Config;
+
+if ((new Config)->isDbOnline()) {
+    $db_user = (new Config)->getDbUser();
+
+}
+
 
 // Sample repository data — replace with DB query when ready
+/*
 $repos = [
     ['name' => 'phpgit/core',              'desc' => 'The core engine powering PHPGit, including the Git object model and repository management layer.', 'lang' => 'PHP',   'lang_color' => '#4f5d95', 'stars' => 1240, 'forks' => 89,  'updated' => '2 hours ago'],
     ['name' => 'phpgit/ui',                'desc' => 'Frontend interface for PHPGit built with Bootstrap 5. Contributions welcome!',                     'lang' => 'HTML',  'lang_color' => '#e34c26', 'stars' => 430,  'forks' => 51,  'updated' => '5 hours ago'],
@@ -16,6 +24,7 @@ $query = trim($_GET['q'] ?? '');
 if ($query !== '') {
     $repos = array_values(array_filter($repos, fn($r) => stripos($r['name'], $query) !== false || stripos($r['desc'], $query) !== false));
 }
+*/
 ?>
 <main>
     <div class="container">
