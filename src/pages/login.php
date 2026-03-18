@@ -1,10 +1,8 @@
 <?php
 
-declare(strict_types=1);
+use App\includes\Security;
 
-require __DIR__ . '/../config.php';
-require __DIR__ . '/../includes/security.php';
-
+$security = new Security();
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -16,9 +14,9 @@ $success = isset($_GET['success']) && $_GET['success'] === 'registered';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrfToken = $_POST['csrf_token'] ?? '';
 
-    if (!validateCsrfToken($csrfToken)) {
+    if (!$security->validateCsrfToken($csrfToken)) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
-    } elseif (isRateLimited()) {
+    } elseif ($security->isRateLimited()) {
         $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
     } else {
         $email    = trim($_POST['email'] ?? '');
@@ -35,27 +33,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
-            $stmt = $pdo->prepare(
-                'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
-            );
-            $stmt->execute([$email]);
-            $user = $stmt->fetch();
+            if ($pdo !== null) {
+                $stmt = $pdo->prepare(
+                    'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
+                );
+                $stmt->execute([$email]);
+                $user = $stmt->fetch();
 
-            if ($user === false || !password_verify($password, $user['password'])) {
-                recordFailedAttempt();
-                $errors[] = 'Invalid email or password.';
+                if ($user === false || !password_verify($password, $user['password'])) {
+                    $security->recordFailedAttempt();
+                    $errors[] = 'Invalid email or password.';
+                } else {
+                    session_regenerate_id(true);
+                    $_SESSION['login_attempts'] = 0;
+                    $_SESSION['is_logged_in']   = true;
+                    $_SESSION['user_id']        = $user['id'];
+                    $_SESSION['username']       = $user['username'];
+                    $_SESSION['role']           = $user['role'];
+
+                    unset($_SESSION['csrf_token']);
+
+                    header('Location: Index.php?page=home');
+                    exit;
+                }
             } else {
-                session_regenerate_id(true);
-                $_SESSION['login_attempts'] = 0;
-                $_SESSION['is_logged_in']   = true;
-                $_SESSION['user_id']        = $user['id'];
-                $_SESSION['username']       = $user['username'];
-                $_SESSION['role']           = $user['role'];
-
-                unset($_SESSION['csrf_token']);
-
-                header('Location: Index.php?page=home');
-                exit;
+                $errors[] = 'Database is currently unavailable. Please try again later.';
             }
         }
     }
@@ -68,7 +70,7 @@ if ( $is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$csrf_token = generateCsrfToken();
+$csrf_token = $security->generateCsrfToken();
 
 ?>
 

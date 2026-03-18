@@ -1,12 +1,18 @@
 <?php
 declare(strict_types=1);
 
+use App\includes\Settings;
+
 $validTabs = ['profile', 'security'];
-$tab = filter_input(INPUT_GET, 'tab', FILTER_SANITIZE_SPECIAL_CHARS) ?? $validTabs[0];
+$rawTab = $_GET['tab'] ?? 'profile';
+if (!is_string($rawTab)) {
+    $rawTab = 'profile';
+}
+$tab = preg_replace('/[^a-z0-9_-]/', '', strtolower($rawTab));
 
 if (!in_array($tab, $validTabs, true)) {
     include __DIR__ . '/../pages/404.php';
     die();
 }
 
-require __DIR__ . "/../includes/Settings.php";
+(new Settings($_SESSION, $_GET))->render();

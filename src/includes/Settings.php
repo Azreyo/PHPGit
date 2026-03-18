@@ -98,4 +98,4 @@ class Settings
     }
 }
 
-new settings($_SESSION, $_GET)->render();
+

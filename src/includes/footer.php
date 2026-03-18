@@ -1,6 +1,6 @@
 <footer>
-    <div class="container">
-        <p>&copy; <?php echo date("Y"); ?> Azreyo</p>
-        <p></p>
+    <div class="container d-flex justify-content-between align-items-center">
+        <p class="mb-0">&copy; <?php echo date("Y"); ?> Azreyo</p>
+        <a href="/Index.php?page=terms" class="text-decoration-none">Terms of Service</a>
     </div>
 </footer>
