@@ -32,31 +32,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Password is required.';
         }
 
-        if (empty($errors && !is_null($pdo))) {
-            $stmt = $pdo->prepare(
-                'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
-            );
-            $stmt->execute([$email]);
-            $user = $stmt->fetch();
+        if (empty($errors)) {
+            if ($pdo !== null) {
+                $stmt = $pdo->prepare(
+                    'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
+                );
+                $stmt->execute([$email]);
+                $user = $stmt->fetch();
 
-            if ($user === false || !password_verify($password, $user['password'])) {
-                $security->recordFailedAttempt();
-                $errors[] = 'Invalid email or password.';
+                if ($user === false || !password_verify($password, $user['password'])) {
+                    $security->recordFailedAttempt();
+                    $errors[] = 'Invalid email or password.';
+                } else {
+                    session_regenerate_id(true);
+                    $_SESSION['login_attempts'] = 0;
+                    $_SESSION['is_logged_in']   = true;
+                    $_SESSION['user_id']        = $user['id'];
+                    $_SESSION['username']       = $user['username'];
+                    $_SESSION['role']           = $user['role'];
+
+                    unset($_SESSION['csrf_token']);
+
+                    header('Location: Index.php?page=home');
+                    exit;
+                }
             } else {
-                session_regenerate_id(true);
-                $_SESSION['login_attempts'] = 0;
-                $_SESSION['is_logged_in']   = true;
-                $_SESSION['user_id']        = $user['id'];
-                $_SESSION['username']       = $user['username'];
-                $_SESSION['role']           = $user['role'];
-
-                unset($_SESSION['csrf_token']);
-
-                header('Location: Index.php?page=home');
-                exit;
+                $errors[] = 'Database is currently unavailable. Please try again later.';
             }
-        } else {
-            $errors[] = 'Database is currently unavailable. Please try again later.';
         }
     }
 }
