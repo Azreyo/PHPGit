@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\includes;
 
+use App\includes\ErrorHandler;
 class DevPanel
 {
     private ?\PDO $pdo;

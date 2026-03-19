@@ -5,9 +5,10 @@ namespace App;
 
 use AllowDynamicProperties;
 use App\includes\DevPanel;
-
+use App\includes\ErrorHandler;
 require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . '/includes/error_handler.php';
+
+(new ErrorHandler())->register();
 #[AllowDynamicProperties]
 class Index
 {
