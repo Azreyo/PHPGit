@@ -11,10 +11,30 @@ if ($pdo !== null) {
     );
     $stmt->execute();
     $repos = $stmt->fetchAll();
-
-    print_r($repos);
 }
 
+$programming_languages = [
+        "PHP" => "#4F5D95",
+        "HTML" => "#E34C26",
+        "CSS" => "#264DE4",
+        "JavaScript" => "#F7DF1E",
+        "TypeScript" => "#3178C6",
+        "Python" => "#3776AB",
+        "Java" => "#B07219",
+        "C" => "#555555",
+        "C++" => "#F34B7D",
+        "C#" => "#178600",
+        "Go" => "#00ADD8",
+        "Ruby" => "#CC342D",
+        "Swift" => "#FA7343",
+        "Kotlin" => "#A97BFF",
+        "Rust" => "#DEA584",
+        "Dart" => "#00B4AB",
+        "Scala" => "#DC322F",
+        "Shell" => "#89E051",
+        "PowerShell" => "#012456",
+        "R" => "#198CE7",
+];
 
 // Sample repository data — replace with DB query when ready
 /*
@@ -74,7 +94,14 @@ if ($search_query !== '') {
                     <a href="Index.php?page=explore" class="btn btn-outline-secondary mt-2">Clear search</a>
                 </div>
             <?php else: ?>
-                <?php foreach ($repos as $repo): ?>
+                <?php foreach ($repos as $repo):
+                    $programming_languages = array_change_key_case($programming_languages, CASE_UPPER);
+                    $lang = strtoupper(trim($repo['lang']));
+                    $color = $programming_languages[$lang] ?? '#000000';
+                    if (array_key_exists($lang, $programming_languages)) {
+                        $repo_lang = $repo['lang'];
+                    }
+                    ?>
                 <div class="col-md-6">
                     <div class="repo-card h-100">
                         <div class="d-flex align-items-start justify-content-between mb-2">
@@ -88,8 +115,10 @@ if ($search_query !== '') {
                         <p class="text-secondary small mb-3"><?php echo htmlspecialchars($repo['descr'], ENT_QUOTES, 'UTF-8'); ?></p>
                         <div class="d-flex align-items-center gap-3 repo-meta text-secondary">
                             <span class="d-flex align-items-center gap-1">
-                                <span class="lang-dot" style="background-color:<?php echo htmlspecialchars($repo['lang_color'], ENT_QUOTES, 'UTF-8'); ?>;"></span>
-                                <?php echo htmlspecialchars($repo['lang'], ENT_QUOTES, 'UTF-8'); ?>
+                                <span class="lang-dot" style="background-color:<?php
+                                echo htmlspecialchars($color, ENT_QUOTES, 'UTF-8'); ?>;
+                                        "></span>
+                                <?php echo htmlspecialchars($repo_lang, ENT_QUOTES, 'UTF-8'); ?>
                             </span>
                             <span class="d-flex align-items-center gap-1">
                                 <i class="bi bi-star-fill text-warning" style="font-size:.75rem;"></i>
