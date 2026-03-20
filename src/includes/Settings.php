@@ -65,6 +65,7 @@ class Settings
     private function renderTabContent(): void
     {
         $path = self::TAB_DIR . $this->current_tab . '.php';
+        $username = $this->username;
         ?>
         <div class="border border-secondary rounded p-4 w-100" style="max-width: 600px;">
             <?php
