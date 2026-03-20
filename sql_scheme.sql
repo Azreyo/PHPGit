@@ -25,15 +25,18 @@ CREATE TABLE IF NOT EXISTS users
 
 CREATE TABLE IF NOT EXISTS repositories
 (
-    id             INT UNSIGNED               NOT NULL AUTO_INCREMENT,
-  owner_user_id  INT UNSIGNED               NOT NULL,
-    name           VARCHAR(100)               NOT NULL,
-    slug           VARCHAR(150)               NOT NULL,
-    description    TEXT                                DEFAULT NULL,
-    visibility     ENUM ('public', 'private') NOT NULL DEFAULT 'public',
-    default_branch VARCHAR(100)               NOT NULL DEFAULT 'main',
-    created_at     TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id               INT UNSIGNED               NOT NULL AUTO_INCREMENT,
+    owner_user_id    INT UNSIGNED               NOT NULL,
+    repo_name        VARCHAR(100)               NOT NULL,
+    slug             VARCHAR(150)               NOT NULL,
+    repo_description TEXT                                DEFAULT NULL,
+    visibility       ENUM ('public', 'private') NOT NULL DEFAULT 'public',
+    default_branch   VARCHAR(100)               NOT NULL DEFAULT 'main',
+    stars            INT(10) UNSIGNED           NULL     DEFAULT 0,
+    forks            int(10) UNSIGNED           NULL     DEFAULT 0,
+    lang             VARCHAR(50)                         DEFAULT NULL,
+    created_at       TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP                  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY ux_repositories_owner_slug (owner_user_id, slug),
     KEY ix_repositories_visibility (visibility),
@@ -197,11 +200,13 @@ ON DUPLICATE KEY UPDATE username = VALUES(username),
                         role     = VALUES(role),
                         bio      = VALUES(bio);
 
-INSERT INTO repositories (id, owner_user_id, name, slug, description, visibility, default_branch)
-VALUES (1, 1, 'phpgit-core', 'phpgit-core', 'Main PHPGit platform repository', 'public', 'main'),
-       (2, 2, 'bootstrap-theme', 'bootstrap-theme', 'Theme experiments for frontend', 'public', 'main')
-ON DUPLICATE KEY UPDATE name           = VALUES(name),
-                        description    = VALUES(description),
+INSERT INTO repositories (id, owner_user_id, repo_name, slug, repo_description, stars, forks, lang, visibility,
+                          default_branch)
+VALUES (1, 1, 'phpgit-core', 'phpgit-core', 'Main PHPGit platform repository', 255, 190, 'php', 'public', 'main'),
+       (2, 2, 'bootstrap-theme', 'bootstrap-theme', 'Theme experiments for frontend', 4980, 2094, 'javascript',
+        'public', 'main')
+ON DUPLICATE KEY UPDATE repo_name        = VALUES(repo_name),
+                        repo_description = VALUES(repo_description),
                         visibility     = VALUES(visibility),
                         default_branch = VALUES(default_branch);
 

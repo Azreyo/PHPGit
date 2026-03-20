@@ -3,9 +3,16 @@
 declare(strict_types=1);
 use App\Config;
 
-if ((new Config)->isDbOnline()) {
-    $db_user = (new Config)->getDbUser();
+$errors = [];
 
+if ($pdo !== null) {
+    $stmt = $pdo->prepare(
+            'SELECT concat(repo_name,\'/\',slug) as name, repo_description as descr, stars, forks, lang, updated_at as updated FROM repositories'
+    );
+    $stmt->execute();
+    $repos = $stmt->fetchAll();
+
+    print_r($repos);
 }
 
 
@@ -19,12 +26,12 @@ $repos = [
     ['name' => 'dev/darktheme-kit',        'desc' => 'A Bootstrap 5 dark theme starter kit with CSS variables and utility classes.',                     'lang' => 'CSS',   'lang_color' => '#563d7c', 'stars' => 670,  'forks' => 98,  'updated' => '1 week ago'],
     ['name' => 'team/deploy-scripts',      'desc' => 'Shell and PHP automation scripts for zero-downtime deployments.',                                  'lang' => 'Shell', 'lang_color' => '#89e051', 'stars' => 310,  'forks' => 45,  'updated' => '2 weeks ago'],
 ];
-
-$query = trim($_GET['q'] ?? '');
-if ($query !== '') {
-    $repos = array_values(array_filter($repos, fn($r) => stripos($r['name'], $query) !== false || stripos($r['desc'], $query) !== false));
-}
 */
+$search_query = trim($_GET['q'] ?? '');
+if ($search_query !== '') {
+    $repos = array_values(array_filter($repos, fn($r) => stripos($r['name'], $search_query) !== false || stripos($r['descr'], $search_query) !== false));
+}
+
 ?>
 <main>
     <div class="container">
@@ -44,7 +51,7 @@ if ($query !== '') {
                 <form method="GET" action="Index.php" class="d-flex gap-2">
                     <input type="hidden" name="page" value="explore">
                     <input type="search" name="q" class="form-control" placeholder="Search repositories..."
-                        value="<?php echo htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>">
+                           value="<?php echo htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8'); ?>">
                     <button type="submit" class="btn btn-primary px-4">Search</button>
                 </form>
             </div>
@@ -62,7 +69,8 @@ if ($query !== '') {
         <div class="row g-4 mb-5">
             <?php if (empty($repos)): ?>
                 <div class="col-12 text-center py-5 text-secondary">
-                    <p class="fs-5">No repositories found for &ldquo;<?php echo htmlspecialchars($query, ENT_QUOTES, 'UTF-8'); ?>&rdquo;.</p>
+                    <p class="fs-5">No repositories found for
+                        &ldquo;<?php echo htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8'); ?>&rdquo;.</p>
                     <a href="Index.php?page=explore" class="btn btn-outline-secondary mt-2">Clear search</a>
                 </div>
             <?php else: ?>
@@ -77,7 +85,7 @@ if ($query !== '') {
                                 <i class="bi bi-star"></i> Star
                             </button>
                         </div>
-                        <p class="text-secondary small mb-3"><?php echo htmlspecialchars($repo['desc'], ENT_QUOTES, 'UTF-8'); ?></p>
+                        <p class="text-secondary small mb-3"><?php echo htmlspecialchars($repo['descr'], ENT_QUOTES, 'UTF-8'); ?></p>
                         <div class="d-flex align-items-center gap-3 repo-meta text-secondary">
                             <span class="d-flex align-items-center gap-1">
                                 <span class="lang-dot" style="background-color:<?php echo htmlspecialchars($repo['lang_color'], ENT_QUOTES, 'UTF-8'); ?>;"></span>
