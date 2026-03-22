@@ -9,7 +9,7 @@ $contact_success = false;
 $contact_errors  = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!$security->validateCsrfToken($_POST['csrf_token'])) {
+    if (!$security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $contact_errors[] = 'Session expired, please refresh the page and try again.';
     } else {
         $contact_name = trim($_POST['contact_name'] ?? '');

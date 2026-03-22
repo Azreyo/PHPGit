@@ -1,9 +1,9 @@
 <?php
 
 declare(strict_types=1);
-use App\Config;
 
 $errors = [];
+$repos = [];
 
 if ($pdo !== null) {
     $stmt = $pdo->prepare(
@@ -11,6 +11,8 @@ if ($pdo !== null) {
     );
     $stmt->execute();
     $repos = $stmt->fetchAll();
+} else {
+    $errors[] = 'Error cannot open database.';
 }
 
 $programming_languages = [
@@ -49,9 +51,9 @@ $repos = [
 */
 $search_query = trim($_GET['q'] ?? '');
 if ($search_query !== '') {
-    $repos = array_values(array_filter($repos, fn($r) => stripos($r['name'], $search_query) !== false || stripos($r['descr'], $search_query) !== false));
+    $repos = array_values(array_filter($repos, fn($r) => stripos($r['name'], $search_query) !== false || stripos($r['descr'] ?? '', $search_query) !== false));
 }
-
+$programming_languages = array_change_key_case($programming_languages, CASE_UPPER);
 ?>
 <main>
     <div class="container">
@@ -95,12 +97,10 @@ if ($search_query !== '') {
                 </div>
             <?php else: ?>
                 <?php foreach ($repos as $repo):
-                    $programming_languages = array_change_key_case($programming_languages, CASE_UPPER);
-                    $lang = strtoupper(trim($repo['lang']));
-                    $color = $programming_languages[$lang] ?? '#000000';
-                    if (array_key_exists($lang, $programming_languages)) {
-                        $repo_lang = $repo['lang'];
-                    }
+                    $rawLang = $repo['lang'] ?? '';
+                    $repo_lang = (string)$rawLang;
+                    $langKey = strtoupper(trim($repo_lang));
+                    $color = $programming_languages[$langKey] ?? '[#000000](#000000)';
                     ?>
                 <div class="col-md-6">
                     <div class="repo-card h-100">

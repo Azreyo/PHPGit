@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS commit_parents
     CONSTRAINT fk_cp_commit FOREIGN KEY (repository_id, commit_hash)
         REFERENCES commits (repository_id, hash) ON DELETE CASCADE,
     CONSTRAINT fk_cp_parent FOREIGN KEY (repository_id, parent_hash)
-        REFERENCES commits (repository_id, hash) ON DELETE RESTRICT
+        REFERENCES commits (repository_id, hash) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
