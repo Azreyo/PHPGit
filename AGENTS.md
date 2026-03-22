@@ -19,7 +19,8 @@
     - `settings` only when `$_SESSION['is_logged_in']` is true
 - `src/Config.php` is a singleton used at bootstrap; it opens PDO once and exposes DB/dev-state getters used by `Index`
   and `DevPanel`.
-- Error behavior is environment-sensitive in `src/includes/error_handler.php`:
+- Error behavior is environment-sensitive in `src/includes/ErrorHandler.php` (`App\includes\ErrorHandler`),
+  registered at bootstrap in `src/Index.php`:
     - `dev`: verbose in-browser error/exception UI
     - `prod`: suppress display, log server-side, send generic 500 text
 
@@ -27,8 +28,8 @@
 
 - Auth state is session-first (`$_SESSION['is_logged_in']`, `user_id`, `username`, `role`) set in `src/pages/login.php`
   and cleared in `src/pages/logout.php`.
-- CSRF and login throttling are simple helper functions in `src/includes/security.php`; pages include that file
-  directly.
+- CSRF and login throttling are implemented in `App\includes\Security` (`src/includes/Security.php`), instantiated in
+  pages like `src/pages/login.php`, `src/pages/register.php`, and `src/pages/contact.php`.
 - Forms follow a consistent pattern: validate inputs, use prepared PDO statements, escape output with
   `htmlspecialchars(..., ENT_QUOTES, 'UTF-8')`.
 - `settings` is rendered via `App\includes\Settings` (`src/includes/Settings.php`) with tab whitelisting (`profile`,
@@ -57,5 +58,5 @@
 - Keep sanitization style consistent with existing code (`preg_replace` route/tab filtering + `htmlspecialchars` on
   output).
 - Do not edit `vendor/`; use Composer-managed dependencies and update `composer.json` only when needed.
-- If touching auth or forms, preserve CSRF token checks and rate-limit behavior from `src/includes/security.php`.
+- If touching auth or forms, preserve CSRF token checks and rate-limit behavior from `src/includes/Security.php`.
 

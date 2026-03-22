@@ -2,6 +2,8 @@
 declare(strict_types=1);
 namespace App\includes;
 
+use Random\RandomException;
+
 class Security
 {
 
@@ -17,6 +19,10 @@ class Security
             : time();
 
     }
+
+    /**
+     * @throws RandomException
+     */
     public function generateCsrfToken(): string
     {
         if (empty($this->csrf_token)) {
