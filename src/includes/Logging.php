@@ -4,36 +4,29 @@ namespace App\includes;
 
 class Logging
 {
-    private string $path;
-    private string $level_message;
-
-    private function __construct(string $path, string $level_message) {
-        $this->path = $path;
-        $this->level_message = $level_message;
-    }
-    function loggingToFile(string $message, int $level = 1, bool $isSecurityAlert = false): int
+    public static function loggingToFile(string $message, int $level = 1, bool $isSecurityAlert = false): void
     {
-        switch ($level) {
-            case 1:
-                $this->level_message = 'debug';
-                break;
-            case 2:
-                $this->level_message = 'info';
-                break;
-            case 3:
-                $this->level_message = 'warning';
-                break;
+        $level_message = match ($level) {
+            1 => 'Debug',
+            2 => 'Info',
+            3 => 'Warning',
+            4 => 'Error',
+            default => 'Unknown',
+        };
+        if (!$isSecurityAlert) {
+            $path = __DIR__ . '/../log/log-' . date('Y') . '-' . date('m') . '.log';
+            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . "\n";
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'] ?? "Cannot get IP";
+            $path = __DIR__ . '/../log/security - ' . date('Y') . '-' . date('m') . '.log';
+            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . ' [ ' . $ip . " ]\n";
         }
-        try {
-            $this->path = '../log/' . date('Y') . '/' . date('m') . '/';
-            $prefile = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $this->level_message . '] ' . $message;
-            $file = fopen($this->path, 'a');
-            fwrite($file, $prefile);
+        $file = fopen($path, 'a');
+        if ($file) {
+            fwrite($file, $pre_file);
             fclose($file);
-            return 1;
-        } catch (Exception $e) {
-            echo $e->getMessage();
-            return -1;
+        } else {
+            error_log("Cannot open log file " . $path);
         }
     }
 }

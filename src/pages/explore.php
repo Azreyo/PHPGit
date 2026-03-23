@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$errors = [];
+use App\includes\Logging;
 $repos = [];
 
 if ($pdo !== null) {
@@ -12,7 +12,7 @@ if ($pdo !== null) {
     $stmt->execute();
     $repos = $stmt->fetchAll();
 } else {
-    $errors[] = 'Error cannot open database.';
+    Logging::loggingToFile("Cannot open database", 4);
 }
 
 $programming_languages = [

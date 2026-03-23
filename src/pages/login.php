@@ -1,7 +1,7 @@
 <?php
 
 use App\includes\Security;
-
+use App\includes\Logging;
 $security = new Security();
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } elseif ($security->isRateLimited()) {
         $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
+        Logging::loggingToFile("Too many login attempts", 2, true);
     } else {
         $email    = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
