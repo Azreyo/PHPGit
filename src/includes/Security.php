@@ -34,7 +34,6 @@ class Security
 
     public function validateCsrfToken(string $token): bool
     {
-        echo $this->csrf_token;
         return isset($this->csrf_token) && hash_equals($this->csrf_token, $token);
     }
 

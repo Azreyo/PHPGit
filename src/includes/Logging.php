@@ -21,6 +21,10 @@ class Logging
             $path = __DIR__ . '/../log/security - ' . date('Y') . '-' . date('m') . '.log';
             $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . ' [ ' . $ip . " ]\n";
         }
+
+        if(!is_dir(__DIR__ . '/../log/')) {
+            mkdir(__DIR__ . '/../log/', 0775, true);
+        }
         $file = fopen($path, 'a');
         if ($file) {
             fwrite($file, $pre_file);
