@@ -14,16 +14,18 @@ class Logging
             default => 'Unknown',
         };
         if (!$isSecurityAlert) {
-            $path = __DIR__ . '/../log/log-' . date('Y') . '-' . date('m') . '.log';
+            $path = __DIR__ . '/../log/log-' . date('d-m-Y') . '.log';
             $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . "\n";
         } else {
             $ip = $_SERVER['REMOTE_ADDR'] ?? "Cannot get IP";
-            $path = __DIR__ . '/../log/security - ' . date('Y') . '-' . date('m') . '.log';
-            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . ' [ ' . $ip . " ]\n";
+            $path = __DIR__ . '/../log/security - ' . date('d-m-Y') . '.log';
+            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . ' [ ' . $ip . ' ]' . "\n";
         }
 
-        if(!is_dir(__DIR__ . '/../log/')) {
-            mkdir(__DIR__ . '/../log/', 0775, true);
+        if (!is_dir(__DIR__ . '/../log/')) {
+            if (!mkdir(__DIR__ . '/../log/', 0775, true)) {
+                error_log("Cannot create directory log: invalid permissions");
+            }
         }
         $file = fopen($path, 'a');
         if ($file) {
