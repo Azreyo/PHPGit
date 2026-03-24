@@ -18,6 +18,11 @@
                     <a class="btn btn-primary text-white" href="/Index.php?page=logout">Logout</a>
                 </div>
             <?php endif;?>
+            <?php if ($role === "ADMIN"): ?>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-primary text-white" href="/Index.php?page=dashboard">Dashboard</a>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
         <button id="theme-toggle" aria-label="Toggle theme" title="Switch to light mode"><i class="bi bi-sun"></i></button>
     </nav>

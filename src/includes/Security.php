@@ -25,16 +25,17 @@ class Security
      */
     public function generateCsrfToken(): string
     {
-        if (empty($this->csrf_token)) {
+        if ($this->csrf_token === 'n/a') {
             $this->csrf_token = bin2hex(random_bytes(32));
         }
-
+        $_SESSION['csrf_token'] = $this->csrf_token;
         return $this->csrf_token;
     }
 
     public function validateCsrfToken(string $token): bool
     {
-        return isset($this->csrf_token) && hash_equals($this->csrf_token, $token);
+        if ($this->csrf_token === 'n/a' || !hash_equals($this->csrf_token, $token)) return false;
+        return true;
     }
 
     public function isRateLimited(): bool
@@ -43,12 +44,6 @@ class Security
         $windowSeconds = 900;
         $now = time();
 
-        if (!isset($this->login_attempts)) {
-            $this->login_attempts = 0;
-            $this->login_attempt_time = $now;
-            $_SESSION['login_attempt_time'] = $this->login_attempt_time;
-            $_SESSION['login_attempts'] = $this->login_attempts;
-        }
 
         if (($now - $this->login_attempt_time) > $windowSeconds) {
             $this->login_attempts = 0;

@@ -45,6 +45,7 @@ class Index
     private string $charset;
     private ?string $pdo_error;
     private Config $config;
+    private string $role;
 
     public function __construct(?Config $config = null)
     {
@@ -64,6 +65,7 @@ class Index
         $this->pageTitles = $this->buildPageTitles();
         $this->page = $this->resolvePage();
         $this->username = $_SESSION['username'] ?? '';
+        $this->role = $_SESSION['role'] ?? '';
     }
 
 
@@ -132,6 +134,7 @@ class Index
         $pdo = $this->pdo;
         $config = $this->config;
         $username = $this->username;
+        $role = $this->role;
         $page_title = htmlspecialchars($pageTitles[$page] ?? 'PHPGit', ENT_QUOTES, 'UTF-8');
 
         ?>
