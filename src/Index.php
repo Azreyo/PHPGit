@@ -8,11 +8,11 @@ use App\includes\DevPanel;
 use App\includes\ErrorHandler;
 require __DIR__ . '/../vendor/autoload.php';
 
-(new ErrorHandler())->register();
+new ErrorHandler()->register();
 #[AllowDynamicProperties]
 class Index
 {
-    private const PAGE_TITLES = [
+    private const array PAGE_TITLES = [
             'home' => 'Home',
             'about' => 'About us',
             'contact' => 'Contact',
@@ -22,12 +22,13 @@ class Index
             'logout' => 'Logout',
             '404' => 'Page not found',
             '403' => 'Forbidden',
+            '414' => 'URI too long',
             'terms' => 'Terms of Service',
     ];
 
-    private const RESTRICTED_PAGES = ['env', 'htaccess', 'config'];
+    private const array RESTRICTED_PAGES = ['env', 'htaccess', 'config'];
 
-    private const AUTHENTICATED_USER_PAGES = [
+    private const array AUTHENTICATED_USER_PAGES = [
             'settings' => 'Settings',
     ];
 

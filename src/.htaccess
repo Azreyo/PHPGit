@@ -21,3 +21,4 @@ php_value opcache.enable 1
 
 ErrorDocument 404 /Index.php?page=404
 ErrorDocument 403 /Index.php?page=403
+ErrorDocument 414 /Index.php?page=414
