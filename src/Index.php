@@ -70,10 +70,25 @@ class Index
     }
 
 
-    private function startSession(): void
+    public function startSession(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
+            $cookieLifetime = 30 * 24 * 60 * 60; // 30 days
+            session_set_cookie_params([
+                    'lifetime' => $cookieLifetime,
+                    'path' => '/',
+                    'domain' => 'phpgit.local',
+                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+            ]);
+
+            ini_set('session.gc_maxlifetime', $cookieLifetime);
             session_start();
+            if (!isset($_SESSION['initiated'])) {
+                session_regenerate_id(true);
+                $_SESSION['initiated'] = true;
+            }
         }
     }
 
@@ -176,7 +191,7 @@ class Index
         <script src="/scripts/theme.js"></script>
         <?php if ($is_dev): ?>
             <?php
-            (new DevPanel(
+            new DevPanel(
                     $this->pdo,
                     $this->db_current_state,
                     $this->host,
@@ -184,7 +199,7 @@ class Index
                     $this->db_user,
                     $this->charset,
                     $this->pdo_error
-            ))->render();
+            )->render();
             ?>
         <?php endif; ?>
 
@@ -194,4 +209,4 @@ class Index
     }
 }
 
-(new Index())->run();
+new Index()->run();

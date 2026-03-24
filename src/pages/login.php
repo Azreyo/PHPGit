@@ -3,13 +3,12 @@
 use App\includes\Security;
 use App\includes\Logging;
 use App\Config;
+use App\Index;
+use Random\RandomException;
 
 $config = new Config();
 $security = new Security();
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+new Index()->startSession();
 
 $errors  = [];
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';
@@ -75,7 +74,11 @@ if ( $is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$csrf_token = $security->generateCsrfToken();
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+}
 
 ?>
 
