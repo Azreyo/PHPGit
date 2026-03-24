@@ -3,7 +3,11 @@
 declare(strict_types=1);
 
 use App\includes\Security;
+use App\includes\Logging;
+use App\Config;
+use Random\RandomException;
 
+$config = new Config();
 $security = new Security();
 
 $errors = [];
@@ -39,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'You must agree to the Terms of Service';
     }
 
-    if (empty($errors && $pdo !== null)) {
+    if (empty($errors) && $pdo !== null) {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $existingUserId = $stmt->fetchColumn();
@@ -59,12 +63,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else if ($pdo === null) {
         $errors[] = 'Database is currently unavailable. Please try again later.';
+        Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . $config->getHost(), 4);
     } else {
         $errors[] = 'Unknown error occurred.';
+        Logging::loggingToFile("Unknown error occurred", -1);
     }
 }
 
-$csrf_token = $security->generateCsrfToken();
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+}
 ?>
 <main>
     <div class="container d-flex flex-column align-items-end justify-content-center" style="min-height: 80vh;">
@@ -126,7 +136,7 @@ $csrf_token = $security->generateCsrfToken();
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="agree-terms" name="agree-terms" required>
                     <label class="form-check-label" for="agree-terms">
-                        <a href="/Index.php?page=terms">Terms &amp; Service</a>
+                        <a href="/Index.php?page=terms">Terms &amp; Conditions</a>
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Submit</button>

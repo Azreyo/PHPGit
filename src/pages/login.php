@@ -2,6 +2,9 @@
 
 use App\includes\Security;
 use App\includes\Logging;
+use App\Config;
+
+$config = new Config();
 $security = new Security();
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -59,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } else {
                 $errors[] = 'Database is currently unavailable. Please try again later.';
+                Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . " " . $config->getHost(), 4);
             }
         }
     }
