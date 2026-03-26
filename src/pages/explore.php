@@ -2,17 +2,21 @@
 
 declare(strict_types=1);
 
-$errors = [];
+use App\includes\Logging;
 $repos = [];
 
 if ($pdo !== null) {
-    $stmt = $pdo->prepare(
-            'SELECT concat(repo_name,\'/\',slug) as name, repo_description as descr, stars, forks, lang, updated_at as updated FROM repositories'
-    );
-    $stmt->execute();
-    $repos = $stmt->fetchAll();
+    try {
+        $stmt = $pdo->prepare(
+                'SELECT concat(repo_name,\'/\',slug) as name, repo_description as descr, stars, forks, lang, updated_at as updated FROM repositories'
+        );
+        $stmt->execute();
+        $repos = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+    }
 } else {
-    $errors[] = 'Error cannot open database.';
+    Logging::loggingToFile("Cannot open database", 4);
 }
 
 $programming_languages = [
@@ -50,6 +54,10 @@ $repos = [
 ];
 */
 $search_query = trim($_GET['q'] ?? '');
+if (strlen($search_query) > 100) {
+    header("Location: /Index.php?page=414");
+    exit;
+}
 if ($search_query !== '') {
     $repos = array_values(array_filter($repos, fn($r) => stripos($r['name'], $search_query) !== false || stripos($r['descr'] ?? '', $search_query) !== false));
 }

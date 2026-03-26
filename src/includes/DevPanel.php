@@ -70,6 +70,7 @@ class DevPanel
             400 => ['danger',  'Bad Request'],
             403 => ['danger',  'Forbidden'],
             404 => ['warning', 'Not Found'],
+            414 => ['warning', 'URI too long'],
             500 => ['danger',  'Internal Server Error'],
         ];
 

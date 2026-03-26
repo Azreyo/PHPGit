@@ -15,7 +15,8 @@ managing Git repositories, users, and access controls.
 
 ## Requirements
 
-- PHP 8.*
+- PHP ^8.4 (see `composer.json`)
+- PHP extensions: pdo (ext-pdo), http (ext-http)
 - Linux 6.17.*
 - Composer
 - Web server (Apache, Nginx, etc.)
@@ -60,7 +61,7 @@ managing Git repositories, users, and access controls.
    
 2. Install php8.*
    ```bash
-   sudo apt install php8.4-cli php8.4-fpm php8.4-mysql php8.4-xml php8.4-mbstring php8.4-curl php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath
+   sudo apt install php8.4-cli php8.4-fpm php8.4-mysql php8.4-xml php8.4-mbstring php8.4-curl php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath php8.4-opcache
    ```
 3. Install dependencies using Composer:
    ```bash

@@ -8,11 +8,11 @@ use App\includes\DevPanel;
 use App\includes\ErrorHandler;
 require __DIR__ . '/../vendor/autoload.php';
 
-(new ErrorHandler())->register();
+new ErrorHandler()->register();
 #[AllowDynamicProperties]
 class Index
 {
-    private const PAGE_TITLES = [
+    private const array PAGE_TITLES = [
             'home' => 'Home',
             'about' => 'About us',
             'contact' => 'Contact',
@@ -22,12 +22,13 @@ class Index
             'logout' => 'Logout',
             '404' => 'Page not found',
             '403' => 'Forbidden',
+            '414' => 'URI too long',
             'terms' => 'Terms of Service',
     ];
 
-    private const RESTRICTED_PAGES = ['env', 'htaccess', 'config'];
+    private const array RESTRICTED_PAGES = ['env', 'htaccess', 'config'];
 
-    private const AUTHENTICATED_USER_PAGES = [
+    private const array AUTHENTICATED_USER_PAGES = [
             'settings' => 'Settings',
     ];
 
@@ -45,6 +46,7 @@ class Index
     private string $charset;
     private ?string $pdo_error;
     private Config $config;
+    private string $role;
 
     public function __construct(?Config $config = null)
     {
@@ -64,13 +66,29 @@ class Index
         $this->pageTitles = $this->buildPageTitles();
         $this->page = $this->resolvePage();
         $this->username = $_SESSION['username'] ?? '';
+        $this->role = $_SESSION['role'] ?? '';
     }
 
 
-    private function startSession(): void
+    public function startSession(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
+            $cookieLifetime = 30 * 24 * 60 * 60; // 30 days
+            session_set_cookie_params([
+                    'lifetime' => $cookieLifetime,
+                    'path' => '/',
+                    'domain' => 'phpgit.local',
+                    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+            ]);
+
+            ini_set('session.gc_maxlifetime', $cookieLifetime);
             session_start();
+            if (!isset($_SESSION['initiated'])) {
+                session_regenerate_id(true);
+                $_SESSION['initiated'] = true;
+            }
         }
     }
 
@@ -132,6 +150,7 @@ class Index
         $pdo = $this->pdo;
         $config = $this->config;
         $username = $this->username;
+        $role = $this->role;
         $page_title = htmlspecialchars($pageTitles[$page] ?? 'PHPGit', ENT_QUOTES, 'UTF-8');
 
         ?>
@@ -172,7 +191,7 @@ class Index
         <script src="/scripts/theme.js"></script>
         <?php if ($is_dev): ?>
             <?php
-            (new DevPanel(
+            new DevPanel(
                     $this->pdo,
                     $this->db_current_state,
                     $this->host,
@@ -180,7 +199,7 @@ class Index
                     $this->db_user,
                     $this->charset,
                     $this->pdo_error
-            ))->render();
+            )->render();
             ?>
         <?php endif; ?>
 
@@ -190,4 +209,4 @@ class Index
     }
 }
 
-(new Index())->run();
+new Index()->run();

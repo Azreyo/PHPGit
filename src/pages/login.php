@@ -1,12 +1,14 @@
 <?php
 
 use App\includes\Security;
+use App\includes\Logging;
+use App\Config;
+use App\Index;
+use Random\RandomException;
 
+$config = new Config();
 $security = new Security();
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+new Index()->startSession();
 
 $errors  = [];
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';
@@ -18,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } elseif ($security->isRateLimited()) {
         $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
+        Logging::loggingToFile("Too many login attempts", 2, true);
     } else {
         $email    = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -58,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } else {
                 $errors[] = 'Database is currently unavailable. Please try again later.';
+                Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . " " . $config->getHost(), 4);
             }
         }
     }
@@ -70,7 +74,11 @@ if ( $is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$csrf_token = $security->generateCsrfToken();
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+}
 
 ?>
 

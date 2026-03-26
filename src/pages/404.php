@@ -1,6 +1,9 @@
 <?php
-
 declare(strict_types=1);
+
+use App\includes\Logging;
+
+Logging::loggingToFile("Page not found: " . $_SERVER['REQUEST_URI'], 2);
 
 http_response_code(404);
 ?>

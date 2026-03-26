@@ -6,6 +6,9 @@
 - App code lives in `src/`; Composer autoload maps `App\\` to `src/` (`composer.json`).
 - Runtime config is loaded from `src/.env` via `vlucas/phpdotenv` (`src/Config.php`).
 - Web server document root is expected to be `src` (README installation notes).
+- composer.json requires PHP ^8.4 and the extensions `ext-pdo` and `ext-http` (see `composer.json`).
+- Application writes runtime logs to `src/log/`; helper logging is implemented in `App\includes\Logging` (
+  `src/includes/Logging.php`).
 
 ## Architecture and Request Flow
 
