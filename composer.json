@@ -1,4 +1,8 @@
 {
+  "name": "azreyo/phpgit",
+  "description": "PHPGit is a web-based Git repository hosting platform built with clean PHP.",
+  "license": "MIT",
+  "type": "project",
     "require": {
         "php": "^8.4",
         "vlucas/phpdotenv": "^5.6",
