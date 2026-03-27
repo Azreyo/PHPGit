@@ -1,11 +1,49 @@
+<?php
+declare(strict_types=1);
+
+use App\includes\Logging;
+use App\includes\Security;
+use Random\RandomException;
+
+$security = new Security();
+$render_logout = false;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($is_logged_in) {
+        $is_logged_in = false;
+        $render_logout = true;
+        $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(
+                    session_name(),
+                    '',
+                    time() - 42000,
+                    $params["path"],
+                    $params["domain"],
+                    $params["secure"],
+                    $params["httponly"]
+            );
+        }
+        session_destroy();
+    } else {
+        Logging::loggingToFile("User is not logged in", 4, true);
+    }
+} else {
+    Logging::loggingToFile("Request method is not allowed: " . $_SERVER['REQUEST_METHOD'], 4, true);
+}
+
+
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+}
+?>
 <main>
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">
         <div class="text-center">
-            <?php if ($is_logged_in):
-                $is_logged_in = false;
-                    $_SESSION = [];
-                    session_destroy();
-                ?>
+            <?php if ($render_logout): ?>
             <div class="logout-icon mb-4">
                 <i class="bi bi-box-arrow-right"></i>
             </div>

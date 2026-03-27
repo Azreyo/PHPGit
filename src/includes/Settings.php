@@ -8,8 +8,8 @@ class Settings
     private string $username;
     private string $current_tab;
 
-    private const ALLOWED_TABS = ['profile', 'security'];
-    private const TAB_DIR = __DIR__ . '/../pages/tab/';
+    private const array ALLOWED_TABS = ['profile', 'security'];
+    private const  string TAB_DIR = __DIR__ . '/../pages/tab/';
 
     public function __construct(array $session, array $get)
     {

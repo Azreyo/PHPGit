@@ -17,9 +17,8 @@ class Logging
             $path = __DIR__ . '/../log/log-' . date('d-m-Y') . '.log';
             $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . "\n";
         } else {
-            $ip = $_SERVER['REMOTE_ADDR'] ?? "Cannot get IP";
             $path = __DIR__ . '/../log/security - ' . date('d-m-Y') . '.log';
-            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . ' [ ' . $ip . ' ]' . "\n";
+            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . ' [ ' . self::getClientIP() . ' ]' . "\n";
         }
 
         if (!is_dir(__DIR__ . '/../log/')) {
@@ -34,5 +33,15 @@ class Logging
         } else {
             error_log("Cannot open log file " . $path);
         }
+    }
+
+    public static function getClientIP(): string
+    {
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            return trim($ips[0]);
+        }
+
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 }
