@@ -4,7 +4,6 @@ declare(strict_types=1);
 use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
-
 $security = new Security();
 try {
     $csrf_token = $security->generateCsrfToken();

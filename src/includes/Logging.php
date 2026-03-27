@@ -11,6 +11,7 @@ class Logging
             2 => 'Info',
             3 => 'Warning',
             4 => 'Error',
+            5 => 'Critical',
             default => 'Unknown',
         };
         if (!$isSecurityAlert) {
