@@ -29,13 +29,11 @@ try {
             <?php else: ?>
                 <div class="d-flex gap-2">
                     <a class="btn btn-primary text-white" href="/Index.php?page=settings">Settings</a>
-                    <form>
-                        <label for="logout">Logout</label>
-                        <input type="button" name="logout" id="logout" placeholder="logout">
+                    <form method="POST" action="/Index.php?page=logout" class="d-flex">
                         <input type="hidden" name="csrf_token"
                                value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+                        <button type="submit" class="btn btn-primary text-white">Logout</button>
                     </form>
-                    <a class="btn btn-primary text-white" href="/Index.php?page=logout">Logout</a>
                 </div>
             <?php endif;?>
             <?php if ($role === "ADMIN"): ?>
