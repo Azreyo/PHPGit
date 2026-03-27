@@ -3,13 +3,14 @@ declare(strict_types=1);
 
 use App\includes\Logging;
 use App\includes\Security;
-use Random\RandomException;
 
 $security = new Security();
 $render_logout = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($is_logged_in) {
+    if (!$security->validateCsrfToken($csrfToken)) {
+        Logging::loggingToFile("Invalid or expired form submission", 4, true);
+    } elseif ($is_logged_in) {
         $is_logged_in = false;
         $render_logout = true;
         $_SESSION = [];
@@ -33,12 +34,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     Logging::loggingToFile("Request method is not allowed: " . $_SERVER['REQUEST_METHOD'], 4, true);
 }
 
-
-try {
-    $csrf_token = $security->generateCsrfToken();
-} catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
-}
 ?>
 <main>
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">
