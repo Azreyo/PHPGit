@@ -39,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">
         <div class="text-center">
             <?php if ($render_logout): ?>
-            <div class="logout-icon mb-4">
+                <div class="mb-4 d-flex align-items-center justify-content-center bg-primary-subtle border border-primary-subtle rounded-circle text-primary mx-auto"
+                     style="width: 80px; height: 80px; font-size: 2rem;">
                 <i class="bi bi-box-arrow-right"></i>
             </div>
             <h1 class="fw-bold mb-2">See you soon!</h1>
@@ -49,7 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a class="btn btn-outline-secondary" href="/Index.php?page=login">Login Again</a>
             </div>
             <?php else: ?>
-            <div class="logout-icon mb-4">
+                <div class="mb-4 d-flex align-items-center justify-content-center bg-primary-subtle border border-primary-subtle rounded-circle text-primary mx-auto"
+                     style="width: 80px; height: 80px; font-size: 2rem;">
                 <i class="bi bi-exclamation-triangle"></i>
             </div>
             <h1 class="fw-bold mb-2">Warning!</h1>

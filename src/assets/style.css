@@ -13,6 +13,7 @@
     --bs-border-color: #1c2133;
     --bs-secondary-bg: #111623;
     --bs-tertiary-bg:  #151a28;
+    --bs-secondary-color: #94a3b8;
 }
 
 body {
@@ -53,8 +54,9 @@ body, .navbar, .feature-card, .repo-card, .stats-section, footer {
     font-size: .78rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .1em;
+    letter-spacing: .12em;
     color: var(--brand);
+    display: inline-block;
 }
 .section-title {
     font-size: clamp(1.6rem, 3vw, 2.25rem);
@@ -173,24 +175,27 @@ body, .navbar, .feature-card, .repo-card, .stats-section, footer {
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: var(--brand-muted);
+    background-color: var(--brand-muted);
     border: 2px solid rgba(79, 142, 247, 0.25);
     color: var(--brand);
-    font-size: 1.1rem;
     font-weight: 700;
-    letter-spacing: .02em;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: border-color var(--ease), background-color var(--ease);
+    transition: border-color var(--ease), background-color var(--ease), transform var(--ease);
+}
+
+.avatar-circle:hover {
+    transform: scale(1.05);
+    border-color: var(--brand);
 }
 .avatar-green {
-    background: rgba(25, 135, 84, 0.1);
+    background-color: rgba(25, 135, 84, 0.1);
     border-color: rgba(25, 135, 84, 0.3);
     color: #198754;
 }
 .avatar-amber {
-    background: rgba(255, 193, 7, 0.1);
+    background-color: rgba(255, 193, 7, 0.1);
     border-color: rgba(255, 193, 7, 0.35);
     color: #cc9400;
 }
@@ -217,19 +222,6 @@ body, .navbar, .feature-card, .repo-card, .stats-section, footer {
     margin: 0 auto;
 }
 
-.logout-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: var(--brand-muted);
-    border: 2px solid rgba(79, 142, 247, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    color: var(--brand);
-    margin: 0 auto;
-}
 
 .error-code {
     font-size: clamp(5rem, 15vw, 9rem);
@@ -318,6 +310,7 @@ footer {
     display: inline-block;
     vertical-align: middle;
 }
+
 
 .stat-number {
     font-size: 2.5rem;

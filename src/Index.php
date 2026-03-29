@@ -32,6 +32,10 @@ class Index
             'settings' => 'Settings',
     ];
 
+    private const array ADMIN_PAGES = [
+            'dashboard' => 'Dashboard',
+    ];
+
     private string $page;
     private bool $is_logged_in;
     private bool $isDev;
@@ -63,10 +67,10 @@ class Index
 
         $this->startSession();
         $this->is_logged_in = $this->resolveSession();
-        $this->pageTitles = $this->buildPageTitles();
-        $this->page = $this->resolvePage();
         $this->username = $_SESSION['username'] ?? '';
         $this->role = $_SESSION['role'] ?? '';
+        $this->pageTitles = $this->buildPageTitles();
+        $this->page = $this->resolvePage();
     }
 
 
@@ -108,6 +112,9 @@ class Index
 
         if ($this->is_logged_in) {
             $titles = array_merge($titles, self::AUTHENTICATED_USER_PAGES);
+            if ($this->role === 'ADMIN') {
+                $titles = array_merge($titles, self::ADMIN_PAGES);
+            }
         }
 
         return $titles;
