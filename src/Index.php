@@ -183,6 +183,10 @@ class Index
             <?php if ($is_dev): ?>
                 <link rel="stylesheet" href="/assets/dev.css">
             <?php endif; ?>
+
+            <?php if ($role === 'ADMIN'): ?>
+                <link rel="stylesheet" href="/assets/admin.css">
+            <?php endif; ?>
         </head>
         <body>
 
