@@ -8,7 +8,8 @@ $security = new Security();
 $render_logout = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!$security->validateCsrfToken($csrfToken)) {
+    $csrf_token = $_POST['csrf_token'] ?? '';
+    if (!$security->validateCsrfToken($csrf_token)) {
         Logging::loggingToFile("Invalid or expired form submission", 4, true);
     } elseif ($is_logged_in) {
         $is_logged_in = false;
