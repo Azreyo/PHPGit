@@ -5,6 +5,7 @@ use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
 $security = new Security();
+$csrf_token = null;
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {

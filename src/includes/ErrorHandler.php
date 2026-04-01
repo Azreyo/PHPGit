@@ -222,11 +222,11 @@ class ErrorHandler
         $errCode  = $errno > 0 ? " · E{$errno}" : '';
         $error_level = match ($label) {
             "Fatal Error" => 5,
-            "Error" => 4,
-            "Warning" => 3,
-            "Notice" => 2,
-            "Debug" => 1,
-            default => 0,
+            "Error"       => 4,
+            "Warning"     => 3,
+            "Notice"      => 2,
+            "Debug"       => 1,
+            default       => 0,
         };
         Logging::loggingToFile($title . " " . $line . " " . $file, $error_level);
 
