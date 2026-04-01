@@ -48,6 +48,7 @@ class ErrorHandler
 
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool
     {
+
         if (!$this->isDev) {
             return true;
         }
@@ -219,6 +220,16 @@ class ErrorHandler
     ): void {
         $id       = 'eh_' . substr(md5(uniqid('', true)), 0, 8);
         $errCode  = $errno > 0 ? " · E{$errno}" : '';
+        $error_level = match ($label) {
+            "Fatal Error" => 5,
+            "Error" => 4,
+            "Warning" => 3,
+            "Notice" => 2,
+            "Debug" => 1,
+            default => 0,
+        };
+        Logging::loggingToFile($title . " " . $line . " " . $file, $error_level);
+
 
         echo <<<HTML
         <div class="alert alert-{$variant} alert-dismissible fade show font-monospace small my-2 mx-2 shadow" role="alert" style="border-radius:6px;">

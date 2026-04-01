@@ -11,15 +11,17 @@ class Logging
             2 => 'Info',
             3 => 'Warning',
             4 => 'Error',
+            5 => 'Critical',
             default => 'Unknown',
         };
+
+        $sanitized_message = preg_replace('/[\r\n\t\0]/', '', $message);
         if (!$isSecurityAlert) {
             $path = __DIR__ . '/../log/log-' . date('d-m-Y') . '.log';
-            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . "\n";
+            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . "\n";
         } else {
-            $ip = $_SERVER['REMOTE_ADDR'] ?? "Cannot get IP";
             $path = __DIR__ . '/../log/security - ' . date('d-m-Y') . '.log';
-            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $message . ' [ ' . $ip . ' ]' . "\n";
+            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . ' [ ' . self::getClientIP() . ' ]' . "\n";
         }
 
         if (!is_dir(__DIR__ . '/../log/')) {
@@ -34,5 +36,15 @@ class Logging
         } else {
             error_log("Cannot open log file " . $path);
         }
+    }
+
+    public static function getClientIP(): string
+    {
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            return trim($ips[0]);
+        }
+
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 }
