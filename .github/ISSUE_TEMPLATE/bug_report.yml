@@ -1,0 +1,91 @@
+name: Bug report
+description: Report a reproducible bug in PHPGit
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please provide enough detail so it can be reproduced quickly.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Short description of the bug.
+      placeholder: Login fails with valid credentials when session has expired.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Auth/Login
+        - Session/Cookies
+        - CSRF
+        - Routing/Page access
+        - Database/Queries
+        - Error handling/Logging
+        - Dashboard (dev)
+        - Settings (dev)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide exact steps.
+      placeholder: |
+        1. Go to /Index.php?page=login
+        2. Submit form with ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: route
+    attributes:
+      label: Affected route or URL
+      placeholder: /Index.php?page=login
+  - type: input
+    id: files
+    attributes:
+      label: Related files (optional)
+      placeholder: src/pages/login.php, src/includes/Security.php
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Include PHP version, OS, web server, APP_ENV, browser (if relevant).
+      placeholder: PHP 8.4, Linux, Apache, APP_ENV=prod, Firefox 135
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs/screenshots
+      description: Paste relevant logs or screenshots.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues before opening this report.
+          required: true
+        - label: I can still reproduce this issue on the latest code.
+          required: true
+
