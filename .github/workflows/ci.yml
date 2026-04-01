@@ -35,7 +35,7 @@ jobs:
         run: composer validate --strict
 
       - name: Install dependencies
-        run: composer install --no-interaction --no-progress --prefer-dist --ignore-platform-req=ext-http
+        run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Lint PHP sources
         run: |

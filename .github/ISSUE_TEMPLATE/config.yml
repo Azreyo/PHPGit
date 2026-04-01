@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Policy
+    url: https://github.com/Azreyo/phpgit/blob/main/SECURITY.md
+    about: Read the security reporting process before opening a vulnerability issue.
+  - name: Project Readme
+    url: https://github.com/Azreyo/phpgit/blob/main/README.md
+    about: Setup, requirements, and runtime notes.

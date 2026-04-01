@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ( $is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'reset_rate_limit') {
         session_destroy();
-        unset($_SESSION);
+        $_SESSION = [];
     }
 }
 

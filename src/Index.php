@@ -184,7 +184,7 @@ class Index
                 <link rel="stylesheet" href="/assets/dev.css">
             <?php endif; ?>
 
-            <?php if ($role === 'ADMIN'): ?>
+            <?php if ($is_logged_in && $role === 'ADMIN'): ?>
                 <link rel="stylesheet" href="/assets/admin.css">
             <?php endif; ?>
         </head>

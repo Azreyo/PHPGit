@@ -1,0 +1,65 @@
+name: Feature request
+description: Suggest an idea or enhancement for PHPGit
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. Please describe the user problem first, then the proposed solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve?
+      placeholder: As a user, I cannot ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe your idea in practical terms.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other options or workarounds?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - UI/Frontend
+        - Auth/Login
+        - Settings (dev)
+        - Dashboard (dev)
+        - Repositories/Explore
+        - Performance
+        - Developer tooling
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria (optional)
+      description: What should be true when this is done?
+      placeholder: |
+        - [ ] User can ...
+        - [ ] Validation handles ...
+        - [ ] Errors are logged when ...
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and discussions first.
+          required: true
+        - label: This request is specific enough to be implemented.
+          required: true
+

@@ -40,11 +40,26 @@ class Logging
 
     public static function getClientIP(): string
     {
+        $ip = null;
+
         if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-            return trim($ips[0]);
+            $forwardedIps = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR']);
+            foreach ($forwardedIps as $forwardedIp) {
+                $candidate = trim($forwardedIp);
+                if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6) !== false) {
+                    $ip = $candidate;
+                    break;
+                }
+            }
         }
 
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        if ($ip === null && !empty($_SERVER['REMOTE_ADDR'])) {
+            $remoteAddr = (string) $_SERVER['REMOTE_ADDR'];
+            if (filter_var($remoteAddr, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6) !== false) {
+                $ip = $remoteAddr;
+            }
+        }
+
+        return $ip ?? '0.0.0.0';
     }
 }
