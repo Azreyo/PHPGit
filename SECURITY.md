@@ -22,14 +22,13 @@ This policy covers security issues in application code under `src/`, including:
 
 ### Notes on Current Development Areas
 
-Pages with Static data or fake data on templates are activly under developement and may change in near future
+Pages with static data or fake data on templates are actively under development and may change in the near future.
 
 Please still report vulnerabilities affecting these areas.
 
 ## Reporting a Vulnerability
 
-For now early developement please **open public Github issues** for suspected security vulnerabilities.
-
+For now early development please **open public Github issues** for suspected security vulnerabilities.
 Include as much detail as possible:
 
 1. A clear title and short summary
