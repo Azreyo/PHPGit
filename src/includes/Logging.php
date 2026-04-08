@@ -2,9 +2,11 @@
 declare(strict_types=1);
 namespace App\includes;
 
+use PDO;
+
 class Logging
 {
-    public static function loggingToFile(string $message, int $level = 1, bool $isSecurityAlert = false): void
+    public static function loggingToFile(string $message, int $level = 1, bool $is_security_alert = false, bool $save_to_database = false): void
     {
         $level_message = match ($level) {
             1 => 'Debug',
@@ -16,25 +18,41 @@ class Logging
         };
 
         $sanitized_message = preg_replace('/[\r\n\t\0]/', '', $message);
-        if (!$isSecurityAlert) {
-            $path = __DIR__ . '/../log/log-' . date('d-m-Y') . '.log';
-            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . "\n";
-        } else {
-            $path = __DIR__ . '/../log/security - ' . date('d-m-Y') . '.log';
-            $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . ' [ ' . self::getClientIP() . ' ]' . "\n";
-        }
-
-        if (!is_dir(__DIR__ . '/../log/')) {
-            if (!mkdir(__DIR__ . '/../log/', 0775, true)) {
-                error_log("Cannot create directory log: invalid permissions");
+        if (!$save_to_database) {
+            if (!$is_security_alert) {
+                $path = __DIR__ . '/../log/log-' . date('d-m-Y') . '.log';
+                $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . "\n";
+            } else {
+                $path = __DIR__ . '/../log/security - ' . date('d-m-Y') . '.log';
+                $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . ' [ ' . self::getClientIP() . ' ]' . "\n";
             }
-        }
-        $file = fopen($path, 'a');
-        if ($file) {
-            fwrite($file, $pre_file);
-            fclose($file);
+
+            if (!is_dir(__DIR__ . '/../log/')) {
+                if (!mkdir(__DIR__ . '/../log/', 0775, true)) {
+                    error_log("Cannot create directory log: invalid permissions");
+                }
+            }
+            $file = fopen($path, 'a');
+            if ($file) {
+                fwrite($file, $pre_file);
+                fclose($file);
+            } else {
+                error_log("Cannot open log file " . $path);
+            }
         } else {
-            error_log("Cannot open log file " . $path);
+            $level_num = $level_message;
+            $stmt = $pdo->prepare("SELECT id FROM level WHERE level = ?");
+            $stmt->execute([$level_num]);
+            $level_row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$level_row) {
+                self::loggingToFile("Level not found: $level_num", 4);
+            }
+            $level_id = $level_row['id'];
+            $ip = $is_security_alert ? self::getClientIP() : null;
+
+            $stmt = $pdo->prepare('INSERT INTO log (level_id, message, security, ip) VALUES (?, ?, ?, ?)');
+            $stmt->execute([$level_id, $sanitized_message, (int)$is_security_alert, $ip]);
         }
     }
 

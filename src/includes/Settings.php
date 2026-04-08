@@ -2,6 +2,9 @@
 declare(strict_types=1);
 
 namespace App\includes;
+
+use App\includes\Security;
+
 class Settings
 {
     private bool $is_logged_in;
@@ -19,13 +22,10 @@ class Settings
         if (!is_string($tabParam)) {
             $tabParam = 'profile';
         }
-        $this->current_tab = $this->sanitizeTab($tabParam);
-    }
-
-    private function sanitizeTab(string $tab): string
-    {
-        $tab = strtolower(preg_replace('/[^a-z0-9_-]/', '', $tab));
-        return in_array($tab, self::ALLOWED_TABS, true) ? $tab : 'profile';
+        if (!in_array($tabParam, self::ALLOWED_TABS, true)) {
+            $tabParam = 'profile';
+        }
+        $this->current_tab = (new Security)->sanitizeTab($tabParam);
     }
 
     private function renderGuest(): void

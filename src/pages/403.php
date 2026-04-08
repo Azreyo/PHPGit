@@ -9,7 +9,6 @@ function easterEgg($percent): bool
 }
 
 Logging::loggingToFile("Unauthorized attempt: " . $_SERVER['REQUEST_URI'], 3, true);
-http_response_code(403);
 ?>
 <main>
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">
@@ -20,7 +19,7 @@ http_response_code(403);
             <a class="btn btn-primary" href="/Index.php?page=home">Back to Home</a>
         </div>
         <?php if (easterEgg(1)): ?>
-            <link rel="stylesheet" href="/assets/easter.css">
+            <link rel="stylesheet" href="/assets/css/easter.css">
             <div id="overlay">
                 <svg id="wheel" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="300" cy="300" r="170"
@@ -66,7 +65,7 @@ http_response_code(403);
 
                 </svg>
             </div>
-            <script src="/scripts/easter.js"></script>
+            <script src="/assets/js/easter.js"></script>
         <?php endif; ?>
     </div>
 </main>

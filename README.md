@@ -51,6 +51,18 @@ managing Git repositories, users, and access controls.
 
 ```
 
+3. Enable local SSL with the generated `phpgit.local` certificate files
+```bash
+   sudo a2enmod ssl
+   sudo cp apache/phpgit.local.conf /etc/apache2/sites-available/phpgit.local.conf
+   sudo a2ensite phpgit.local.conf
+   echo "127.0.0.1 phpgit.local" | sudo tee -a /etc/hosts
+   sudo systemctl reload apache2
+```
+
+If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertificateFile`, and
+`SSLCertificateKeyFile` inside `apache/phpgit.local.conf`.
+
 ## Installation
 
 1. Clone the repository:

@@ -200,6 +200,6 @@ class DevPanel
 
         echo '</ul>';
         echo '</div>';
-        echo '<script src="/scripts/dev.js"></script>';
+        echo '<script src="/assets/js/dev.js"></script>';
     }
 }

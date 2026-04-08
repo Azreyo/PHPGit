@@ -62,4 +62,14 @@ class Security
         $_SESSION['login_attempt_time'] = $this->login_attempt_time;
     }
 
+    public function sanitizeInput(string $input): string
+    {
+        $input = trim($input);
+        return escapeshellarg(preg_replace('/[^a-zA-Z0-9_\-\.\/]/', '', $input));
+    }
+
+    public function sanitizeTab(string $tab): string
+    {
+        return strtolower(preg_replace('/[^a-z0-9_-]/', '', $tab));
+    }
 }
