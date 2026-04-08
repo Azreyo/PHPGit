@@ -65,7 +65,7 @@ class Security
     public function sanitizeInput(string $input): string
     {
         $input = trim($input);
-        return escapeshellarg(preg_replace('/[^a-zA-Z0-9_\-\.\/]/', '', $input));
+        return htmlspecialchars(preg_replace('/[^a-zA-Z0-9_\-\.\/]/', '', $input));
     }
 
     public function sanitizeTab(string $tab): string

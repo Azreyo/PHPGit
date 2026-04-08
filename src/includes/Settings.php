@@ -18,14 +18,16 @@ class Settings
     {
         $this->is_logged_in = !empty($session['is_logged_in']);
         $this->username = $session['username'] ?? '';
+        $security = new Security();
         $tabParam = $get['tab'] ?? 'profile';
         if (!is_string($tabParam)) {
             $tabParam = 'profile';
         }
+        $tabParam = $security->sanitizeTab($tabParam);
         if (!in_array($tabParam, self::ALLOWED_TABS, true)) {
             $tabParam = 'profile';
         }
-        $this->current_tab = (new Security)->sanitizeTab($tabParam);
+        $this->current_tab = $tabParam;
     }
 
     private function renderGuest(): void
