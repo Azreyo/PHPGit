@@ -1,3 +1,4 @@
+let has_run = false;
 async function updateCPUUsage() {
     try {
         const response = await fetch("/api/v1/system/cpu");
@@ -45,5 +46,25 @@ async function Update() {
     updateDiskUsage();
 }
 
+async function getDashboardData() {
+    const response = await fetch("api/v1/getDashboardInfo");
+    if (!response.ok) throw new Error('Network response was not ok');
+    const data = await response.json();
+    const total_users = data.total_users;
+    const total_repositories = data.total_repos;
+    const total_services = data.total_security_logs;
+    document.getElementById('total-users').textContent = total_users;
+    document.getElementById('total-repositories').textContent = total_repositories;
+    document.getElementById('total-security-events').textContent = total_services;
+}
+
+function runOnce() {
+    if (!has_run) {
+        has_run = true;
+        getDashboardData();
+    }
+}
+
+runOnce();
 Update();
 setInterval(Update, 20000);
