@@ -32,6 +32,7 @@ class ApiController extends Controller {
         }
     }
 
+    #[NoReturn]
     public function getHealth(): void {
         $this->requireMethod('GET');
         $this->success(['status' => 'ok']);
@@ -43,6 +44,7 @@ class ApiController extends Controller {
         match ($cleanMetric) {
             'cpu' => $this->getCPU(),
             'memory' => $this->getMemory(),
+            'health' => $this->getHealth(),
             default => $this->notFound('Unknown system metric endpoint'),
         };
     }
