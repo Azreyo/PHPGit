@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 use App\Config;
 use App\includes\Logging;
+use App\includes\Security;
 
+$security = new Security();
 $logs = [];
 try {
     $config = new Config();
@@ -74,7 +76,7 @@ try {
                     <td>
                         <span class="admin-log-badge <?php echo $color; ?>"><?php echo $log['level']; ?></span>
                     </td>
-                    <td class="pe-4 text-light"><?php echo $log['msg']; ?></td>
+                    <td class="pe-4 text-light"><?php echo $security->sanitizeInput($log['msg']); ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

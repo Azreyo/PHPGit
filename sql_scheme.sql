@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS log
     message    TEXT             NOT NULL,
     security   TINYINT(1)       NOT NULL DEFAULT 0,
     ip         TEXT                      DEFAULT NULL,
-    created_at TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    log_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     INDEX ix_log_level_created (level_id, created_at),
     INDEX ix_log_security_created (security, created_at),
