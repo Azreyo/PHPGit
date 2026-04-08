@@ -100,30 +100,30 @@
             <div class="admin-health-block mb-4">
                 <div class="d-flex justify-content-between mb-2">
                     <span>CPU Usage</span>
-                    <strong id="cpu_usage"> %</strong>
+                    <strong id="cpu-usage"> 100%</strong>
                 </div>
                 <div class="progress">
-                    <div class="progress-bar bg-primary" style="width: 100%" role="progressbar"></div>
+                    <div class="progress-bar bg-primary" id="cpu-progress-bar" style="width: 100%" role="progressbar"></div>
                 </div>
             </div>
 
             <div class="admin-health-block mb-4">
                 <div class="d-flex justify-content-between mb-2">
                     <span>Memory Usage</span>
-                    <strong>30%</strong>
+                    <strong id="mem-usage">100%</strong>
                 </div>
                 <div class="progress">
-                    <div class="progress-bar bg-success" style="width: 30%" role="progressbar"></div>
+                    <div class="progress-bar bg-success" id="mem-progress-bar" style="width: 100%" role="progressbar"></div>
                 </div>
             </div>
 
             <div class="admin-health-block mb-4">
                 <div class="d-flex justify-content-between mb-2">
                     <span>Disk Space</span>
-                    <strong>78%</strong>
+                    <strong id="disk-space">100%</strong>
                 </div>
                 <div class="progress">
-                    <div class="progress-bar bg-warning" style="width: 78%" role="progressbar"></div>
+                    <div class="progress-bar bg-warning" id="disk-progress-bar" style="width: 100%" role="progressbar"></div>
                 </div>
             </div>
 
@@ -135,20 +135,4 @@
         </section>
     </div>
 </div>
-<script>
-    async function updateCPUUsage() {
-        fetch("/api/v1/system/cpu")
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                console.log('CPU Usage:', data.cpu_usage_percent, '%');
-                document.getElementById('cpu_usage').textContent = data.cpu_usage_percent + '%';
-            })
-            .catch(error => {
-                console.error('Fetch error:', error);
-            });
-    }
-    updateCPUUsage();
-</script>
+<script src="assets/js/overview.js"></script>
