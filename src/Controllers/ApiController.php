@@ -32,6 +32,18 @@ class ApiController extends Controller {
         }
     }
 
+    public function getDisk(): void
+    {
+        $this->requireMethod('GET');
+        $this->requireAdminSession();
+
+        try {
+            $disk = SystemService::getDiskSpace();
+            $this->success(['disk_space_percent' => $disk]);
+        } catch (Throwable $e) {
+            $this->error($e->getMessage());
+        }
+    }
     #[NoReturn]
     public function getHealth(): void {
         $this->requireMethod('GET');
@@ -44,6 +56,7 @@ class ApiController extends Controller {
         match ($cleanMetric) {
             'cpu' => $this->getCPU(),
             'memory' => $this->getMemory(),
+            'disk' => $this->getDisk(),
             'health' => $this->getHealth(),
             default => $this->notFound('Unknown system metric endpoint'),
         };

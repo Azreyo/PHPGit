@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use RuntimeException;
+
 final class SystemService {
 
     public static function getCPUUsage(): float {
@@ -53,7 +55,7 @@ final class SystemService {
             'total_mb' => round($totalKb / 1024, 2),
             'used_mb' => round($usedKb / 1024, 2),
             'free_mb' => round($availableKb / 1024, 2),
-            'usage_percent' => round(($usedKb / $totalKb) * 100, 2),
+            'memory_usage_percent' => round(($usedKb / $totalKb) * 100, 2),
         ];
     }
 
@@ -71,5 +73,17 @@ final class SystemService {
         }
 
         return max(1, $cores);
+    }
+
+    public static function getDiskSpace(): int
+    {
+        $total = disk_total_space('/');
+        $free = disk_free_space('/');
+        if ($total === false || $free === false || $total === 0) {
+            throw new RuntimeException('Unable to read disk space');
+        }
+        $used = $total - $free;
+
+        return ($used / $total) * 100;
     }
 }
