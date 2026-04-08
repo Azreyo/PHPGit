@@ -1,5 +1,6 @@
 <?php
-use App\includes\System;
+
+use App\app\Controllers\System;
 
 $cpu_usage = System::getCPUUsage();
 ?>

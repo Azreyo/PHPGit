@@ -24,5 +24,4 @@ class ApiController extends Controller {
         }
     }
 
-    // Add more system endpoints here, e.g., disk, network
 }
