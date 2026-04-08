@@ -1,3 +1,9 @@
+<?php
+use App\includes\System;
+
+$cpu_usage = System::getCPUUsage();
+?>
+
 <div class="row g-4 mb-4">
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
@@ -100,10 +106,10 @@
             <div class="admin-health-block mb-4">
                 <div class="d-flex justify-content-between mb-2">
                     <span>CPU Usage</span>
-                    <strong>24%</strong>
+                    <strong><?php echo $cpu_usage; ?>%</strong>
                 </div>
                 <div class="progress">
-                    <div class="progress-bar bg-primary" style="width: 24%" role="progressbar"></div>
+                    <div class="progress-bar bg-primary" style="width: <?php echo $cpu_usage; ?>%" role="progressbar"></div>
                 </div>
             </div>
 
