@@ -15,8 +15,6 @@ try {
     Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
 }
 
-print_r($users);
-
 ?>
 
 <section class="admin-panel p-4 mb-4">
