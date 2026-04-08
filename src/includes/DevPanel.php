@@ -146,16 +146,24 @@ class DevPanel
 
     private function renderPhpPopover(): string
     {
+        $ch = curl_init("phpgit.local/api/v1/health");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        $response = json_decode($response, true);
+        $apiStatus = ($response['status'] ?? 'unknown') === 'ok';
         $opcacheState     = function_exists('opcache_get_status') && opcache_get_status() !== false;
         $mailStatus       = function_exists('mail');
 
         $isDbRunning      = $this->serviceIndicator($this->db_current_state);
         $isOpcacheRunning = $this->serviceIndicator($opcacheState);
         $isMailRunning    = $this->serviceIndicator($mailStatus);
+        $isApiRunning = $this->serviceIndicator($apiStatus);
 
         $content = '<table class="table table-sm table-borderless mb-0">'
                  . '<tr><td><strong>PHP version:</strong></td><td>' . PHP_VERSION . '</td></tr>'
                  . '<tr><td><strong>PHP SAPI:</strong></td><td>' . php_sapi_name() . '</td></tr>'
+            . "<tr><td><strong>API:</strong></td><td>{$isApiRunning}</td></tr>"
                  . "<tr><td><strong>Database:</strong></td><td>{$isDbRunning}</td></tr>"
                  . "<tr><td><strong>Opcache:</strong></td><td>{$isOpcacheRunning}</td></tr>"
                  . "<tr><td><strong>Mail:</strong></td><td>{$isMailRunning}</td></tr>"
