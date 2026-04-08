@@ -130,7 +130,7 @@
             <div class="admin-status-card bg-success-subtle text-success-emphasis border border-success-subtle">
                 <small class="text-uppercase fw-bold">Database Cluster</small>
                 <h6 class="mb-1 mt-2 fw-bold">Operational</h6>
-                <p class="mb-0 small" id="database-uptime">Uptime: 14d 2h 15m</p>
+                <p class="mb-0 small" id="database-uptime">Uptime: 0d 0h 0m</p>
             </div>
         </section>
     </div>

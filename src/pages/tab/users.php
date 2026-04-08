@@ -1,3 +1,24 @@
+<?php
+declare(strict_types=1);
+
+use App\Config;
+use App\includes\Logging;
+
+$users = [];
+try {
+    $config = new Config();
+    $pdo = $config->getPDO();
+    $stmt = $pdo->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
+    $stmt->execute();
+    $users = $stmt->fetchAll();
+} catch (PDOException $e) {
+    Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+}
+
+print_r($users);
+
+?>
+
 <section class="admin-panel p-4 mb-4">
     <div class="row g-3 align-items-center">
         <div class="col-12 col-md-8">
@@ -37,25 +58,15 @@
             </thead>
             <tbody>
             <?php
-            $users = [
-                    ['name' => 'System Admin', 'handle' => 'admin', 'email' => 'admin@phpgit.dev', 'role' => 'ADMIN', 'status' => 'Active', 'joined' => 'Mar 12, 2024'],
-                    ['name' => 'John Doe', 'handle' => 'john_doe', 'email' => 'john@example.com', 'role' => 'USER', 'status' => 'Active', 'joined' => 'Mar 15, 2024'],
-                    ['name' => 'Jane Smith', 'handle' => 'jane_s', 'email' => 'jane.smith@work.com', 'role' => 'MAINTAINER', 'status' => 'Active', 'joined' => 'Mar 18, 2024'],
-                    ['name' => 'Dev Tester', 'handle' => 'dev_test', 'email' => 'dev@internal.local', 'role' => 'MODERATOR', 'status' => 'Inactive', 'joined' => 'Mar 20, 2024'],
-                    ['name' => 'Robert Fox', 'handle' => 'robert_f', 'email' => 'robert@fox.net', 'role' => 'USER', 'status' => 'Active', 'joined' => 'Mar 22, 2024'],
-                    ['name' => 'Sarah Connor', 'handle' => 'sarah_c', 'email' => 'sarah@skynet.org', 'role' => 'USER', 'status' => 'Suspended', 'joined' => 'Jan 05, 2024'],
-            ];
             foreach ($users as $u):
                 $roleClass = match ($u['role']) {
                     'ADMIN' => 'text-bg-danger',
-                    'MAINTAINER' => 'text-bg-primary',
-                    'MODERATOR' => 'text-bg-info',
                     default => 'text-bg-secondary'
                 };
                 $statusClass = match ($u['status']) {
-                    'Active' => 'success',
-                    'Inactive' => 'secondary',
-                    'Suspended' => 'danger',
+                    'ACTIVE' => 'success',
+                    'INACTIVE' => 'secondary',
+                    'SUSPENDED' => 'danger',
                     default => 'warning'
                 };
                 ?>
@@ -63,11 +74,11 @@
                     <td class="ps-4">
                         <div class="d-flex align-items-center gap-3">
                             <span class="avatar-circle" style="width: 42px; height: 42px; font-size: 0.85rem;">
-                                <?php echo strtoupper(substr($u['handle'], 0, 2)); ?>
+                                <?php echo strtoupper(substr($u['username'], 0, 2)); ?>
                             </span>
                             <div>
-                                <p class="mb-0 fw-semibold"><?php echo $u['name']; ?></p>
-                                <small class="text-secondary">@<?php echo $u['handle']; ?>
+                                <p class="mb-0 fw-semibold"><?php echo $u['username']; ?></p>
+                                <small class="text-secondary">@<?php echo $u['username']; ?>
                                     • <?php echo $u['email']; ?></small>
                             </div>
                         </div>
