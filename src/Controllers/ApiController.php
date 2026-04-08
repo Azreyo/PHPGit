@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Services\SystemService;
 use App\Config;
 use JetBrains\PhpStorm\NoReturn;
+use PDO;
 use Throwable;
 
 class ApiController extends Controller {
@@ -109,12 +110,42 @@ class ApiController extends Controller {
         $this->success($dashboardInfo);
     }
 
+    private function getDatabaseInfo(): void
+    {
+        $this->requireMethod('GET');
+        $this->requireAdminSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        try {
+            $stmt = $this->pdo->prepare("SHOW GLOBAL STATUS LIKE 'Uptime'");
+            $stmt->execute();
+            $databaseInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$databaseInfo) {
+                $this->error('Could not fetch database uptime');
+            }
+
+            $uptimeSeconds = (int)$databaseInfo['Value'];
+
+            $this->success([
+                'uptime' => $uptimeSeconds
+            ]);
+
+        } catch (Throwable $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
     public function api(string $endpoint): void
     {
         $cleanEndpoint = preg_replace('/[^a-z_]/', '', strtolower($endpoint)) ?: '';
 
         match ($cleanEndpoint) {
             'getdashboardinfo' => $this->getDashboardInfo(),
+            'getdatabaseuptime' => $this->getDatabaseInfo(),
             default => $this->notFound('Unknown API endpoint'),
         };
     }
