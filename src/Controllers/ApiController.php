@@ -1,12 +1,23 @@
 <?php
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Services\SystemService;
+use App\Config;
 use JetBrains\PhpStorm\NoReturn;
+use PDO;
 use Throwable;
 
 class ApiController extends Controller {
+
+    private ?\PDO $pdo = null;
+
+    public function __construct()
+    {
+        $this->pdo = Config::getInstance()->getPdo();
+    }
 
     public function getCPU(): void {
         $this->requireMethod('GET');
@@ -73,6 +84,70 @@ class ApiController extends Controller {
         if (!$isLoggedIn || $role !== 'ADMIN') {
             $this->error('Unauthorized', 401);
         }
+    }
+
+    private function getDashboardInfo(): void
+    {
+        $this->requireMethod('GET');
+        $this->requireAdminSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT 
+                    (SELECT COUNT(id) FROM users) AS total_users,
+                    (SELECT COUNT(id) FROM repositories) AS total_repos,
+                    (SELECT COUNT(id) FROM log WHERE security = 1) AS total_security_logs
+            ");
+            $stmt->execute();
+            $dashboardInfo = $stmt->fetch();
+        } catch (Throwable $e) {
+            $this->error($e->getMessage());
+        }
+        $this->success($dashboardInfo);
+    }
+
+    private function getDatabaseInfo(): void
+    {
+        $this->requireMethod('GET');
+        $this->requireAdminSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        try {
+            $stmt = $this->pdo->prepare("SHOW GLOBAL STATUS LIKE 'Uptime'");
+            $stmt->execute();
+            $databaseInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$databaseInfo) {
+                $this->error('Could not fetch database uptime');
+            }
+
+            $uptimeSeconds = (int)$databaseInfo['Value'];
+
+            $this->success([
+                'uptime' => $uptimeSeconds
+            ]);
+
+        } catch (Throwable $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function api(string $endpoint): void
+    {
+        $cleanEndpoint = preg_replace('/[^a-z_]/', '', strtolower($endpoint)) ?: '';
+
+        match ($cleanEndpoint) {
+            'getdashboardinfo' => $this->getDashboardInfo(),
+            'getdatabaseuptime' => $this->getDatabaseInfo(),
+            default => $this->notFound('Unknown API endpoint'),
+        };
     }
 
 }

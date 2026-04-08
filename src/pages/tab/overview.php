@@ -1,10 +1,10 @@
 <div class="row g-4 mb-4">
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
-            <p class="admin-metric-label">Total Users</p>
-            <h2 class="admin-metric-value">1,284</h2>
+            <p class="admin-metric-label bi bi-person">Total Users</p>
+            <h2 class="admin-metric-value" id="total-users">0</h2>
             <div class="admin-metric-meta text-success">
-                <i class="bi bi-arrow-up-right"></i>
+                <i class="bi bi-person"></i>
                 <span>+12.5% this month</span>
             </div>
         </article>
@@ -12,7 +12,7 @@
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
             <p class="admin-metric-label">Repositories</p>
-            <h2 class="admin-metric-value">452</h2>
+            <h2 class="admin-metric-value" id="total-repositories">0</h2>
             <div class="admin-metric-meta text-primary">
                 <i class="bi bi-folder2-open"></i>
                 <span>+5 created today</span>
@@ -22,7 +22,7 @@
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
             <p class="admin-metric-label">Security Events</p>
-            <h2 class="admin-metric-value">24</h2>
+            <h2 class="admin-metric-value" id="total-security-events">0</h2>
             <div class="admin-metric-meta text-warning-emphasis">
                 <i class="bi bi-shield-exclamation"></i>
                 <span>2 critical alerts</span>
@@ -130,7 +130,7 @@
             <div class="admin-status-card bg-success-subtle text-success-emphasis border border-success-subtle">
                 <small class="text-uppercase fw-bold">Database Cluster</small>
                 <h6 class="mb-1 mt-2 fw-bold">Operational</h6>
-                <p class="mb-0 small">Uptime: 14d 2h 15m</p>
+                <p class="mb-0 small" id="database-uptime">Uptime: 0d 0h 0m</p>
             </div>
         </section>
     </div>

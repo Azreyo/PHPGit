@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services;
 
@@ -24,9 +25,6 @@ final class SystemService {
         $memInfo = @file('/proc/meminfo', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($memInfo === false) {
             return [
-                'total_mb' => 0.0,
-                'used_mb' => 0.0,
-                'free_mb' => 0.0,
                 'usage_percent' => 0.0,
             ];
         }
@@ -44,17 +42,11 @@ final class SystemService {
 
         if ($totalKb <= 0) {
             return [
-                'total_mb' => 0.0,
-                'used_mb' => 0.0,
-                'free_mb' => 0.0,
                 'usage_percent' => 0.0,
             ];
         }
 
         return [
-            'total_mb' => round($totalKb / 1024, 2),
-            'used_mb' => round($usedKb / 1024, 2),
-            'free_mb' => round($availableKb / 1024, 2),
             'memory_usage_percent' => round(($usedKb / $totalKb) * 100, 2),
         ];
     }
@@ -75,7 +67,7 @@ final class SystemService {
         return max(1, $cores);
     }
 
-    public static function getDiskSpace(): int
+    public static function getDiskSpace(): float
     {
         $total = disk_total_space('/');
         $free = disk_free_space('/');
