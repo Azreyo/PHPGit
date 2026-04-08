@@ -46,4 +46,4 @@ async function Update() {
 }
 
 Update();
-setInterval(Update, 10000);
+setInterval(Update, 20000);
