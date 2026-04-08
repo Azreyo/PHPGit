@@ -4,6 +4,7 @@
 
 - PHPGit is a small, server-rendered PHP app (school project) with a single entry point: `src/Index.php`.
 - App code lives in `src/`; Composer autoload maps `App\\` to `src/` (`composer.json`).
+- API v1 system endpoints are file entry points under `src/api/v1/system/` that bootstrap Composer and dispatch to `App\\Controllers\\ApiController`.
 - Runtime config is loaded from `src/.env` via `vlucas/phpdotenv` (`src/Config.php`).
 - Web server document root is expected to be `src` (README installation notes).
 - composer.json requires PHP ^8.4 and the extensions `ext-pdo` and `ext-http` (see `composer.json`).
@@ -22,6 +23,8 @@
     - `settings` only when `$_SESSION['is_logged_in']` is true
 - `src/Config.php` is a singleton used at bootstrap; it opens PDO once and exposes DB/dev-state getters used by `Index`
   and `DevPanel`.
+- API responses are standardized through `App\Core\Controller` helpers (`json`, `success`, `error`, method guards), and
+  system metrics are provided by `App\Services\SystemService`.
 - Error behavior is environment-sensitive in `src/includes/ErrorHandler.php` (`App\includes\ErrorHandler`),
   registered at bootstrap in `src/Index.php`:
     - `dev`: verbose in-browser error/exception UI
@@ -62,4 +65,6 @@
   output).
 - Do not edit `vendor/`; use Composer-managed dependencies and update `composer.json` only when needed.
 - If touching auth or forms, preserve CSRF token checks and rate-limit behavior from `src/includes/Security.php`.
+- If adding API endpoints, keep file entry points thin and route logic through controllers/services rather than inline
+  script responses.
 

@@ -6,4 +6,4 @@ use App\Controllers\ApiController;
 
 require __DIR__ . '/../../../../vendor/autoload.php';
 
-(new ApiController())->system('cpu');
+(new ApiController())->system('memory');

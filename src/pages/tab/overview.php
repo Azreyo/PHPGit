@@ -1,8 +1,8 @@
 <?php
 
-use App\app\Controllers\System;
+use App\Services\SystemService;
 
-$cpu_usage = System::getCPUUsage();
+$cpu_usage = SystemService::getCPUUsage();
 ?>
 
 <div class="row g-4 mb-4">
