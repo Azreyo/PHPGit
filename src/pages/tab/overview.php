@@ -1,10 +1,3 @@
-<?php
-
-use App\Services\SystemService;
-
-$cpu_usage = SystemService::getCPUUsage();
-?>
-
 <div class="row g-4 mb-4">
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
@@ -107,10 +100,10 @@ $cpu_usage = SystemService::getCPUUsage();
             <div class="admin-health-block mb-4">
                 <div class="d-flex justify-content-between mb-2">
                     <span>CPU Usage</span>
-                    <strong><?php echo $cpu_usage; ?>%</strong>
+                    <strong id="cpu_usage"> %</strong>
                 </div>
                 <div class="progress">
-                    <div class="progress-bar bg-primary" style="width: <?php echo $cpu_usage; ?>%" role="progressbar"></div>
+                    <div class="progress-bar bg-primary" style="width: 100%" role="progressbar"></div>
                 </div>
             </div>
 
@@ -142,3 +135,20 @@ $cpu_usage = SystemService::getCPUUsage();
         </section>
     </div>
 </div>
+<script>
+    async function updateCPUUsage() {
+        fetch("/api/v1/system/cpu")
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                console.log('CPU Usage:', data.cpu_usage_percent, '%');
+                document.getElementById('cpu_usage').textContent = data.cpu_usage_percent + '%';
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+            });
+    }
+    updateCPUUsage();
+</script>
