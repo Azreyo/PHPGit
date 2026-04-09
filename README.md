@@ -85,6 +85,10 @@ If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertifica
    cp src/.env.example src/.env
    ```
 6. Set appropriate permissions for storage and cache directories if required.
+7. Run the installer script to set up the database and initial configuration:
+   ```bash
+   php installer.php
+   ```
 
 ## Usage
 
