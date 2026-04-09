@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     unset($_SESSION['csrf_token']);
 
-                    header('Location: Index.php?page=home');
+                    header('Location: index.php?page=home');
                     exit;
                 }
             } else {
@@ -139,7 +139,7 @@ try {
             </form>
 
             <p class="mt-3 text-center">
-                Don't have an account? <a href="Index.php?page=register">Register</a>
+                Don't have an account? <a href="index.php?page=register">Register</a>
             </p>
 
             <?php if ($is_dev): ?>

@@ -55,7 +55,7 @@ $repos = [
 */
 $search_query = trim($_GET['q'] ?? '');
 if (strlen($search_query) > 100) {
-    header("Location: /Index.php?page=414");
+    header("Location: /index.php?page=414");
     exit;
 }
 if ($search_query !== '') {
@@ -78,7 +78,7 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
         <!-- Search -->
         <div class="row justify-content-center mb-4">
             <div class="col-lg-8">
-                <form method="GET" action="Index.php" class="d-flex gap-2">
+                <form method="GET" action="index.php" class="d-flex gap-2">
                     <input type="hidden" name="page" value="explore">
                     <input type="search" name="q" class="form-control" placeholder="Search repositories..."
                            value="<?php echo htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8'); ?>">
@@ -89,10 +89,10 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
 
         <!-- Filter Tabs -->
         <ul class="nav nav-tabs mb-4">
-            <li class="nav-item"><a class="nav-link active" href="Index.php?page=explore">All</a></li>
-            <li class="nav-item"><a class="nav-link" href="Index.php?page=explore&lang=php">PHP</a></li>
-            <li class="nav-item"><a class="nav-link" href="Index.php?page=explore&lang=js">JavaScript</a></li>
-            <li class="nav-item"><a class="nav-link" href="Index.php?page=explore&lang=css">CSS</a></li>
+            <li class="nav-item"><a class="nav-link active" href="index.php?page=explore">All</a></li>
+            <li class="nav-item"><a class="nav-link" href="index.php?page=explore&lang=php">PHP</a></li>
+            <li class="nav-item"><a class="nav-link" href="index.php?page=explore&lang=js">JavaScript</a></li>
+            <li class="nav-item"><a class="nav-link" href="index.php?page=explore&lang=css">CSS</a></li>
         </ul>
 
         <!-- Repo Cards -->
@@ -101,7 +101,7 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
                 <div class="col-12 text-center py-5 text-secondary">
                     <p class="fs-5">No repositories found for
                         &ldquo;<?php echo htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8'); ?>&rdquo;.</p>
-                    <a href="Index.php?page=explore" class="btn btn-outline-secondary mt-2">Clear search</a>
+                    <a href="index.php?page=explore" class="btn btn-outline-secondary mt-2">Clear search</a>
                 </div>
             <?php else: ?>
                 <?php foreach ($repos as $repo):
