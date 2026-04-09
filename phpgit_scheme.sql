@@ -169,3 +169,34 @@ ON DUPLICATE KEY UPDATE repo_name        = VALUES(repo_name),
                         repo_description = VALUES(repo_description),
                         visibility       = VALUES(visibility),
                         default_branch   = VALUES(default_branch);
+
+INSERT INTO programming_languages (lang, view, color)
+VALUES ('php', 'PHP', '#4F5D95'),
+       ('html', 'HTML', '#E34C26'),
+       ('css', 'CSS', '#264DE4'),
+       ('js', 'JavaScript', '#F7DF1E'),
+       ('ts', 'TypeScript', '#3178C6'),
+       ('py', 'Python', '#3776AB'),
+       ('Java', '#B07219'),
+       ('C', '#555555'),
+       ('C++', '#F34B7D'),
+       ('C#', '#178600'),
+       ('Go', '#00ADD8'),
+       ('Ruby', '#CC342D'),
+       ('Swift', '#FA7343'),
+       ('Kotlin', '#A97BFF'),
+       ('Rust', '#DEA584'),
+       ('Dart', '#00B4AB'),
+       ('Scala', '#DC322F'),
+       ('Shell', '#89E051'),
+       ('PowerShell', '#012456'),
+       ('R', '#198CE7')
+ON DUPLICATE KEY UPDATE color = VALUES(color);
+
+INSERT INTO level (id, level, `desc`)
+VALUES (1, 1, 'Debug'),
+       (2, 2, 'Info'),
+       (3, 3, 'Warning'),
+       (4, 4, 'Error'),
+       (5, 5, 'Critical')
+ON DUPLICATE KEY UPDATE `desc` = VALUES(`desc`);

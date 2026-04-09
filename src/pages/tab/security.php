@@ -1,3 +1,10 @@
+<?php
+
+use App\includes\Security;
+use App\includes\Logging;
+use App\Config;
+
+?>
 <div class="mb-4">
     <p class="text-primary fw-bold text-uppercase mb-2" style="font-size: .78rem; letter-spacing: .12em;">Security</p>
     <h4 class="mb-1" style="letter-spacing: -0.01em;">Protect your account</h4>

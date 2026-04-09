@@ -26,11 +26,3 @@ VALUES (1, 1, 2, 'feature/auth-hardening', 'main',
         'Improve auth hardening', 'Adds stricter checks and cleaner redirects.', 'open')
 ON DUPLICATE KEY UPDATE status = VALUES(status),
                         title  = VALUES(title);
-
-INSERT INTO level (id, level, `desc`)
-VALUES (1, 1, 'Debug'),
-       (2, 2, 'Info'),
-       (3, 3, 'Warning'),
-       (4, 4, 'Error'),
-       (5, 5, 'Critical')
-ON DUPLICATE KEY UPDATE `desc` = VALUES(`desc`);

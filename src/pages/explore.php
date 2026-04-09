@@ -8,7 +8,7 @@ $repos = [];
 if ($pdo !== null) {
     try {
         $stmt = $pdo->prepare(
-                'SELECT concat(repo_name,\'/\',slug) as name, repo_description as descr, stars, forks, lang, updated_at as updated FROM repositories'
+                'SELECT CONCAT(COALESCE(repo_name, \'\'), \'/\', COALESCE(slug, \'\')) AS name, repo_description AS descr, stars, forks, lang, updated_at AS updated FROM repositories;'
         );
         $stmt->execute();
         $repos = $stmt->fetchAll();
@@ -42,17 +42,6 @@ $programming_languages = [
         "R" => "#198CE7",
 ];
 
-// Sample repository data — replace with DB query when ready
-/*
-$repos = [
-    ['name' => 'phpgit/core',              'desc' => 'The core engine powering PHPGit, including the Git object model and repository management layer.', 'lang' => 'PHP',   'lang_color' => '#4f5d95', 'stars' => 1240, 'forks' => 89,  'updated' => '2 hours ago'],
-    ['name' => 'phpgit/ui',                'desc' => 'Frontend interface for PHPGit built with Bootstrap 5. Contributions welcome!',                     'lang' => 'HTML',  'lang_color' => '#e34c26', 'stars' => 430,  'forks' => 51,  'updated' => '5 hours ago'],
-    ['name' => 'user/awesome-php',         'desc' => 'A curated list of amazingly awesome PHP libraries, resources and shiny things.',                    'lang' => 'PHP',   'lang_color' => '#4f5d95', 'stars' => 3800, 'forks' => 512, 'updated' => 'Yesterday'],
-    ['name' => 'user/rest-api-boilerplate','desc' => 'A clean, opinionated REST API boilerplate written in PHP with Slim and PDO.',                      'lang' => 'PHP',   'lang_color' => '#4f5d95', 'stars' => 820,  'forks' => 134, 'updated' => '3 days ago'],
-    ['name' => 'dev/darktheme-kit',        'desc' => 'A Bootstrap 5 dark theme starter kit with CSS variables and utility classes.',                     'lang' => 'CSS',   'lang_color' => '#563d7c', 'stars' => 670,  'forks' => 98,  'updated' => '1 week ago'],
-    ['name' => 'team/deploy-scripts',      'desc' => 'Shell and PHP automation scripts for zero-downtime deployments.',                                  'lang' => 'Shell', 'lang_color' => '#89e051', 'stars' => 310,  'forks' => 45,  'updated' => '2 weeks ago'],
-];
-*/
 $search_query = trim($_GET['q'] ?? '');
 if (strlen($search_query) > 100) {
     header("Location: /index.php?page=414");

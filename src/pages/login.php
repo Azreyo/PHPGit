@@ -3,12 +3,10 @@
 use App\includes\Security;
 use App\includes\Logging;
 use App\Config;
-use App\Index;
 use Random\RandomException;
 
 $config = new Config();
 $security = new Security();
-new Index()->startSession();
 
 $errors  = [];
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';

@@ -73,6 +73,17 @@ class ApiController extends Controller {
         };
     }
 
+    private function requireLoggedInSession(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        $isLoggedIn = (bool)($_SESSION['is_logged_in'] ?? false);
+        if (!$isLoggedIn) {
+            $this->error('Unauthorized', 401);
+        }
+    }
     private function requireAdminSession(): void {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();

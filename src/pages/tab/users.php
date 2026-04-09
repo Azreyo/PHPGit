@@ -3,16 +3,27 @@ declare(strict_types=1);
 
 use App\Config;
 use App\includes\Logging;
+use App\includes\Security;
+use Random\RandomException;
+
+$config = new Config();
+$security = new Security();
+$errors = [];
 
 $users = [];
 try {
-    $config = new Config();
     $pdo = $config->getPDO();
     $stmt = $pdo->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
     $stmt->execute();
     $users = $stmt->fetchAll();
 } catch (PDOException $e) {
     Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+}
+
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
 }
 
 ?>
@@ -25,12 +36,96 @@ try {
             <p class="text-secondary small mb-0">Manage accounts, roles, and moderation status from one table.</p>
         </div>
         <div class="col-12 col-md-4 text-md-end">
-            <button type="button" class="btn btn-primary rounded-3 px-4">
+            <button type="button"
+                    class="btn btn-primary rounded-3 px-4"
+                    data-bs-toggle="modal"
+                    data-bs-target="#createUserModal">
                 <i class="bi bi-person-plus me-2"></i>Create User
             </button>
         </div>
     </div>
 </section>
+<div class="create-user-dim-overlay" id="createUserDimOverlay" aria-hidden="true"></div>
+
+<div class="modal"
+     id="createUserModal"
+     tabindex="-1"
+     aria-labelledby="createUserModalLabel"
+     aria-hidden="true"
+     data-bs-backdrop="false"
+     style="z-index: 1;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="createUserModalLabel">
+                    <i class="bi bi-person-vcard me-2"></i>Create User
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form method="post">
+                <input type="hidden" name="csrf_token"
+                       value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+
+                <div class="modal-body pt-3">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label for="newUsername" class="form-label fw-semibold">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-at"></i></span>
+                                <input type="text" class="form-control" id="newUsername" placeholder="johndoe" required>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="newEmail" class="form-label fw-semibold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="newEmail" placeholder="name@example.com"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="newPassword" class="form-label fw-semibold">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input type="password" class="form-control" id="newPassword"
+                                       placeholder="Enter password" required>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <label for="newRole" class="form-label fw-semibold">Role</label>
+                            <select class="form-select" id="newRole">
+                                <option value="USER" selected>USER</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-3">
+                            <label for="newStatus" class="form-label fw-semibold">Status</label>
+                            <select class="form-select" id="newStatus">
+                                <option value="ACTIVE" selected>ACTIVE</option>
+                                <option value="INACTIVE">INACTIVE</option>
+                                <option value="SUSPENDED">SUSPENDED</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary rounded-3 px-4">
+                        <i class="bi bi-check2-circle me-1"></i>Create User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <div class="admin-panel overflow-hidden">
     <div class="admin-table-toolbar">
@@ -115,3 +210,20 @@ try {
         </div>
     </div>
 </div>
+
+<style>
+    .create-user-dim-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    body.create-user-modal-open .create-user-dim-overlay {
+        opacity: 1;
+    }
+</style>
+
+<script src="/assets/js/users.js"></script>
