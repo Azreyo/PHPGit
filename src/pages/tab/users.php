@@ -19,58 +19,6 @@ try {
     Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $role = $_POST['role'] ?? 'USER';
-    $status = $_POST['status'] ?? 'ACTIVE';
-    $csrf_token = $_POST['csrf_token'] ?? '';
-
-    if (!$security->validateCsrfToken($csrf_token)) {
-        $errors[] = 'Invalid request. Please refresh the page and try again.';
-    }
-    if (empty($username)) {
-        $errors[] = 'Username cannot be empty';
-    }
-
-    if (empty($email)) {
-        $errors[] = 'Email is required';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Invalid email format';
-    }
-
-    if (empty($password)) {
-        $errors[] = 'Password is required';
-    } elseif (strlen($password) < 8) {
-        $errors[] = 'Password must be at least 8 characters';
-    }
-
-    if (empty($errors)) {
-        if ($config->getPdo() === null) {
-            $errors[] = 'Database is currently unavailable. Please try again later.';
-            Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . $config->getHost(), 4);
-        } else {
-            $stmt = $config->getPdo()->prepare('SELECT id FROM users WHERE email = ?');
-            $stmt->execute([$email]);
-            $existingUserId = $stmt->fetchColumn();
-
-            if ($existingUserId !== false) {
-                $errors[] = 'Email already registered';
-            } else {
-                $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-                $stmt = $config->getPdo()->prepare('INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
-
-                if ($stmt->execute([$username, $email, $hashed_password, $role, $status])) {
-                    $success[] = "User created successfully!";
-                } else {
-                    $errors[] = 'Registration failed. Please try again.';
-                }
-            }
-        }
-    }
-}
-
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {

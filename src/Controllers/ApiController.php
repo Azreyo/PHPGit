@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\includes\Logging;
+use App\includes\Security;
 use App\Services\SystemService;
 use App\Config;
 use JetBrains\PhpStorm\NoReturn;
@@ -161,4 +163,145 @@ class ApiController extends Controller {
         };
     }
 
+
+    public function auth(string $endpoint): void
+    {
+        $cleanEndpoint = preg_replace('/[^a-z_]/', '', strtolower($endpoint)) ?: '';
+
+        match ($cleanEndpoint) {
+            'register' => $this->register(),
+            'login' => $this->login(),
+            default => $this->notFound('Unknown auth endpoint'),
+        };
+    }
+
+    private function register(): void
+    {
+        $this->requireMethod('POST');
+        $security = new Security();
+        $config = new Config();
+        $errors = [];
+        $username = trim($_POST['username'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $role = $_POST['role'] ?? 'USER';
+        $status = $_POST['status'] ?? 'ACTIVE';
+        $csrf_token = $_POST['csrf_token'] ?? '';
+
+        if (!$security->validateCsrfToken($csrf_token)) {
+            $errors[] = 'Invalid request. Please refresh the page and try again.';
+        }
+        if (empty($username)) {
+            $errors[] = 'Username cannot be empty';
+        }
+
+        if (empty($email)) {
+            $errors[] = 'Email is required';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Invalid email format';
+        }
+
+        if (empty($password)) {
+            $errors[] = 'Password is required';
+        } elseif (strlen($password) < 8) {
+            $errors[] = 'Password must be at least 8 characters';
+        }
+
+        if (empty($errors)) {
+            if ($config->getPdo() === null) {
+                $errors[] = 'Database is currently unavailable. Please try again later.';
+                Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . $config->getHost(), 4);
+            } else {
+                $stmt = $config->getPdo()->prepare('SELECT id FROM users WHERE email = ?');
+                $stmt->execute([$email]);
+                $existingUserId = $stmt->fetchColumn();
+
+                if ($existingUserId !== false) {
+                    $errors[] = 'Email already registered';
+                } else {
+                    $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+                    $stmt = $config->getPdo()->prepare('INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
+
+                    if ($stmt->execute([$username, $email, $hashed_password, $role, $status])) {
+                        $success[] = "User created successfully!";
+                    } else {
+                        $errors[] = 'Registration failed. Please try again.';
+                    }
+                }
+            }
+        }
+        if (empty($errors)) {
+            $this->success(['message' => $success[0] ?? 'ok']);
+        } else {
+            $this->badRequest(json_encode($errors));
+        }
+    }
+
+    private function login(): void
+    {
+        $this->requireMethod('POST');
+        $security = new Security();
+        $config = new Config();
+        $errors = [];
+        $success = isset($_GET['success']) && $_GET['success'] === 'registered';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $csrfToken = $_POST['csrf_token'] ?? '';
+
+            if (!$security->validateCsrfToken($csrfToken)) {
+                $errors[] = 'Invalid or expired form submission. Please try again.';
+            } elseif ($security->isRateLimited()) {
+                $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
+                Logging::loggingToFile("Too many login attempts", 2, true);
+            } else {
+                $email = trim($_POST['email'] ?? '');
+                $password = $_POST['password'] ?? '';
+
+                if (empty($email)) {
+                    $errors[] = 'Email is required.';
+                } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $errors[] = 'Invalid email format.';
+                }
+
+                if (empty($password)) {
+                    $errors[] = 'Password is required.';
+                }
+
+                if (empty($errors)) {
+                    if ($pdo !== null) {
+                        $stmt = $pdo->prepare(
+                            'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
+                        );
+                        $stmt->execute([$email]);
+                        $user = $stmt->fetch();
+
+                        if ($user === false || !password_verify($password, $user['password'])) {
+                            $security->recordFailedAttempt();
+                            $errors[] = 'Invalid email or password.';
+                        } else {
+                            session_regenerate_id(true);
+                            $_SESSION['login_attempts'] = 0;
+                            $_SESSION['is_logged_in'] = true;
+                            $_SESSION['user_id'] = $user['id'];
+                            $_SESSION['username'] = $user['username'];
+                            $_SESSION['role'] = $user['role'];
+
+                            unset($_SESSION['csrf_token']);
+
+                            header('Location: index.php?page=home');
+                            exit;
+                        }
+                    } else {
+                        $errors[] = 'Database is currently unavailable. Please try again later.';
+                        Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . " " . $config->getHost(), 4);
+                    }
+                }
+            }
+        }
+        if (empty($errors)) {
+            $this->success(['message' => $success ? 'Registration successful!' : 'ok']);
+        } else {
+            $this->badRequest(json_encode($errors));
+        }
+    }
 }
