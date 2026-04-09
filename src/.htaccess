@@ -1,5 +1,5 @@
 Options -Indexes
-DirectoryIndex Index.php
+DirectoryIndex index.php
 <FilesMatch "(^\.env(\..*)?$|config\.php|composer\.(json|lock)$)">
     Require all denied
 </FilesMatch>
@@ -25,6 +25,6 @@ DirectoryIndex Index.php
 
 php_value opcache.enable 1
 
-ErrorDocument 404 /Index.php?page=404
-ErrorDocument 403 /Index.php?page=403
-ErrorDocument 414 /Index.php?page=414
+ErrorDocument 404 /index.php?page=404
+ErrorDocument 403 /index.php?page=403
+ErrorDocument 414 /index.php?page=414
