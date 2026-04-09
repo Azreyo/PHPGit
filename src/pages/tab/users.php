@@ -9,11 +9,10 @@ use Random\RandomException;
 $config = new Config();
 $security = new Security();
 $errors = [];
-
+$success = [];
 $users = [];
 try {
-    $pdo = $config->getPDO();
-    $stmt = $pdo->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
+    $stmt = $config->getPdo()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
     $stmt->execute();
     $users = $stmt->fetchAll();
 } catch (PDOException $e) {
@@ -47,31 +46,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Password must be at least 8 characters';
     }
 
-
-    if (empty($errors) && $pdo !== null) {
-        $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
-        $stmt->execute([$email]);
-        $existingUserId = $stmt->fetchColumn();
-
-        if ($existingUserId !== false) {
-            $errors[] = 'Email already registered';
+    if (empty($errors)) {
+        if ($config->getPdo() === null) {
+            $errors[] = 'Database is currently unavailable. Please try again later.';
+            Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . $config->getHost(), 4);
         } else {
-            $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-            $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
+            $stmt = $config->getPdo()->prepare('SELECT id FROM users WHERE email = ?');
+            $stmt->execute([$email]);
+            $existingUserId = $stmt->fetchColumn();
 
-            if ($stmt->execute([$username, $email, $hashed_password, $role, $status])) {
-                header('Location: index.php?page=login&success=registered');
-                exit;
+            if ($existingUserId !== false) {
+                $errors[] = 'Email already registered';
             } else {
-                $errors[] = 'Registration failed. Please try again.';
+                $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+                $stmt = $config->getPdo()->prepare('INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
+
+                if ($stmt->execute([$username, $email, $hashed_password, $role, $status])) {
+                    $success[] = "User created successfully!";
+                } else {
+                    $errors[] = 'Registration failed. Please try again.';
+                }
             }
         }
-    } else if ($pdo === null) {
-        $errors[] = 'Database is currently unavailable. Please try again later.';
-        Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . $config->getHost(), 4);
-    } else {
-        $errors[] = 'Unknown error occurred.';
-        Logging::loggingToFile("Unknown error occurred", -1);
     }
 }
 
@@ -91,6 +87,24 @@ try {
             <p class="text-secondary small mb-0">Manage accounts, roles, and moderation status from one table.</p>
         </div>
         <div class="col-12 col-md-4 text-md-end">
+            <?php if (!empty($success)): ?>
+                <div class="alert alert-success" role="alert">
+                    <ul class="mb-0">
+                        <?php foreach ($success as $s): ?>
+                            <li><?php echo htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+            <?php if (!empty($errors)): ?>
+                <div class="alert alert-danger" role="alert">
+                    <ul class="mb-0">
+                        <?php foreach ($errors as $error): ?>
+                            <li><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
             <button type="button"
                     class="btn btn-primary rounded-3 px-4"
                     data-bs-toggle="modal"
@@ -118,16 +132,6 @@ try {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <?php if (!empty($errors)): ?>
-                <div class="alert alert-danger" role="alert">
-                    <ul class="mb-0">
-                        <?php foreach ($errors as $error): ?>
-                            <li><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
-
             <form method="post">
                 <input type="hidden" name="csrf_token"
                        value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
@@ -138,7 +142,8 @@ try {
                             <label for="username" class="form-label fw-semibold">Username</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-at"></i></span>
-                                <input type="text" class="form-control" id="username" placeholder="johndoe" required>
+                                <input type="text" class="form-control" id="username" name="username"
+                                       placeholder="johndoe" required>
                             </div>
                         </div>
 
@@ -146,7 +151,8 @@ try {
                             <label for="email" class="form-label fw-semibold">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input type="email" class="form-control" id="email" placeholder="name@example.com"
+                                <input type="email" class="form-control" id="email" name="email"
+                                       placeholder="name@example.com"
                                        required>
                             </div>
                         </div>
@@ -155,14 +161,15 @@ try {
                             <label for="password" class="form-label fw-semibold">Password</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input type="password" class="form-control" id="password" placeholder="Enter password"
+                                <input type="password" class="form-control" id="password" name="password"
+                                       placeholder="Enter password"
                                        required>
                             </div>
                         </div>
 
                         <div class="col-12 col-md-3">
                             <label for="role" class="form-label fw-semibold">Role</label>
-                            <select class="form-select" id="role">
+                            <select class="form-select" id="role" name="role">
                                 <option value="USER" selected>USER</option>
                                 <option value="ADMIN">ADMIN</option>
                             </select>
@@ -170,7 +177,7 @@ try {
 
                         <div class="col-12 col-md-3">
                             <label for="status" class="form-label fw-semibold">Status</label>
-                            <select class="form-select" id="status">
+                            <select class="form-select" id="status" name="status">
                                 <option value="ACTIVE" selected>ACTIVE</option>
                                 <option value="INACTIVE">INACTIVE</option>
                                 <option value="SUSPENDED">SUSPENDED</option>
@@ -255,8 +262,8 @@ try {
                         <div class="d-inline-flex gap-2">
                             <button type="button" class="btn btn-sm btn-outline-secondary rounded-3"><i
                                         class="bi bi-pencil"></i></button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-3"><i
-                                        class="bi bi-three-dots"></i></button>
+                            <button type="button" class="btn btn-sm btn-outline-danger rounded-3"><i
+                                        class="bi bi-trash"></i></button>
                         </div>
                     </td>
                 </tr>
