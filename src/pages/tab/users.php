@@ -20,6 +20,61 @@ try {
     Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $role = $_POST['role'] ?? 'USER';
+    $status = $_POST['status'] ?? 'ACTIVE';
+    $csrf_token = $_POST['csrf_token'] ?? '';
+
+    if (!$security->validateCsrfToken($csrf_token)) {
+        $errors[] = 'Invalid request. Please refresh the page and try again.';
+    }
+    if (empty($username)) {
+        $errors[] = 'Username cannot be empty';
+    }
+
+    if (empty($email)) {
+        $errors[] = 'Email is required';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Invalid email format';
+    }
+
+    if (empty($password)) {
+        $errors[] = 'Password is required';
+    } elseif (strlen($password) < 8) {
+        $errors[] = 'Password must be at least 8 characters';
+    }
+
+
+    if (empty($errors) && $pdo !== null) {
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $existingUserId = $stmt->fetchColumn();
+
+        if ($existingUserId !== false) {
+            $errors[] = 'Email already registered';
+        } else {
+            $hashed_password = password_hash($password, PASSWORD_BCRYPT);
+            $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
+
+            if ($stmt->execute([$username, $email, $hashed_password, $role, $status])) {
+                header('Location: index.php?page=login&success=registered');
+                exit;
+            } else {
+                $errors[] = 'Registration failed. Please try again.';
+            }
+        }
+    } else if ($pdo === null) {
+        $errors[] = 'Database is currently unavailable. Please try again later.';
+        Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . $config->getHost(), 4);
+    } else {
+        $errors[] = 'Unknown error occurred.';
+        Logging::loggingToFile("Unknown error occurred", -1);
+    }
+}
+
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
@@ -63,6 +118,16 @@ try {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
+            <?php if (!empty($errors)): ?>
+                <div class="alert alert-danger" role="alert">
+                    <ul class="mb-0">
+                        <?php foreach ($errors as $error): ?>
+                            <li><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
             <form method="post">
                 <input type="hidden" name="csrf_token"
                        value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
@@ -70,42 +135,42 @@ try {
                 <div class="modal-body pt-3">
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
-                            <label for="newUsername" class="form-label fw-semibold">Username</label>
+                            <label for="username" class="form-label fw-semibold">Username</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-at"></i></span>
-                                <input type="text" class="form-control" id="newUsername" placeholder="johndoe" required>
+                                <input type="text" class="form-control" id="username" placeholder="johndoe" required>
                             </div>
                         </div>
 
                         <div class="col-12 col-md-6">
-                            <label for="newEmail" class="form-label fw-semibold">Email</label>
+                            <label for="email" class="form-label fw-semibold">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input type="email" class="form-control" id="newEmail" placeholder="name@example.com"
+                                <input type="email" class="form-control" id="email" placeholder="name@example.com"
                                        required>
                             </div>
                         </div>
 
                         <div class="col-12 col-md-6">
-                            <label for="newPassword" class="form-label fw-semibold">Password</label>
+                            <label for="password" class="form-label fw-semibold">Password</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input type="password" class="form-control" id="newPassword"
-                                       placeholder="Enter password" required>
+                                <input type="password" class="form-control" id="password" placeholder="Enter password"
+                                       required>
                             </div>
                         </div>
 
                         <div class="col-12 col-md-3">
-                            <label for="newRole" class="form-label fw-semibold">Role</label>
-                            <select class="form-select" id="newRole">
+                            <label for="role" class="form-label fw-semibold">Role</label>
+                            <select class="form-select" id="role">
                                 <option value="USER" selected>USER</option>
                                 <option value="ADMIN">ADMIN</option>
                             </select>
                         </div>
 
                         <div class="col-12 col-md-3">
-                            <label for="newStatus" class="form-label fw-semibold">Status</label>
-                            <select class="form-select" id="newStatus">
+                            <label for="status" class="form-label fw-semibold">Status</label>
+                            <select class="form-select" id="status">
                                 <option value="ACTIVE" selected>ACTIVE</option>
                                 <option value="INACTIVE">INACTIVE</option>
                                 <option value="SUSPENDED">SUSPENDED</option>
