@@ -295,6 +295,35 @@ function writeApacheConfig(string $configPath, string $content): void
     }
 }
 
+function extractApacheModulesFromHtaccess(string $htaccessPath, bool $httpsEnabled): array
+{
+    if (!is_readable($htaccessPath)) {
+        throw new RuntimeException("Missing or unreadable .htaccess: {$htaccessPath}");
+    }
+
+    $content = file_get_contents($htaccessPath);
+    if ($content === false) {
+        throw new RuntimeException("Failed to read .htaccess: {$htaccessPath}");
+    }
+
+    $modules = [];
+    if (preg_match_all('/<IfModule\s+mod_([a-z0-9_]+)\.c>/i', $content, $matches) === 1 || !empty($matches[1])) {
+        foreach ($matches[1] as $module) {
+            $module = strtolower(trim($module));
+            if ($module !== '') {
+                $modules[$module] = true;
+            }
+        }
+    }
+
+    if ($httpsEnabled) {
+        $modules['ssl'] = true;
+    }
+
+    ksort($modules);
+    return array_keys($modules);
+}
+
 function runShellCommand(string $command): void
 {
     $exitCode = 1;
@@ -305,7 +334,19 @@ function runShellCommand(string $command): void
     }
 }
 
-function configureApacheSite(string $apacheConfigPath, string $serverName, bool $httpsEnabled): void
+function runShellCommandSafe(string $command): bool
+{
+    $exitCode = 1;
+    exec($command . ' 2>&1', $output, $exitCode);
+    if ($exitCode !== 0) {
+        echo "Warning: command failed: " . implode("\n", $output) . "\n";
+        return false;
+    }
+
+    return true;
+}
+
+function configureApacheSite(string $apacheConfigPath, string $serverName, bool $httpsEnabled, array $modules): void
 {
     if (!commandExists('sudo')) {
         throw new RuntimeException('sudo command not found. Install/configure sudo before running Apache setup.');
@@ -315,9 +356,9 @@ function configureApacheSite(string $apacheConfigPath, string $serverName, bool 
     $safeServerName = Security::sanitizeShellInput($serverName);
     $hostsEntry = "127.0.0.1 {$safeServerName}";
 
-    $enabledModules = $httpsEnabled ? 'rewrite headers ssl' : 'rewrite headers';
-
-    runShellCommand('sudo a2enmod ' . $enabledModules);
+    foreach ($modules as $module) {
+        runShellCommandSafe('sudo a2enmod ' . escapeshellarg($module));
+    }
     runShellCommand(
         'sudo cp ' . escapeshellarg($safeConfigPath) . ' /etc/apache2/sites-available/phpgit.local.conf'
     );
@@ -333,6 +374,7 @@ if (PHP_SAPI === 'cli' && PHP_OS_FAMILY === 'Linux') {
     $projectRoot = __DIR__;
     $documentRoot = $projectRoot . '/src';
     $apacheConfigPath = $projectRoot . '/apache/phpgit.local.conf';
+    $htaccessPath = $documentRoot . '/.htaccess';
     $certDirectory = $documentRoot . '/certs';
 
     $defaultHost = sanitizeHost(envValue('APP_HOST', 'phpgit.local') ?? 'phpgit.local');
@@ -371,6 +413,8 @@ if (PHP_SAPI === 'cli' && PHP_OS_FAMILY === 'Linux') {
     }
 
     try {
+        $apacheModules = extractApacheModulesFromHtaccess($htaccessPath, $httpsEnabled);
+
         ensureDirectory(dirname($apacheConfigPath));
 
         if ($httpsEnabled && $generateSelfSigned) {
@@ -383,7 +427,8 @@ if (PHP_SAPI === 'cli' && PHP_OS_FAMILY === 'Linux') {
 
         echo "Apache config generated at {$apacheConfigPath}\n";
         echo "HTTPS enabled: " . ($httpsEnabled ? 'true' : 'false') . "\n";
-        configureApacheSite($apacheConfigPath, $serverName, $httpsEnabled);
+        echo "Modules enabled from .htaccess: " . implode(', ', $apacheModules) . "\n";
+        configureApacheSite($apacheConfigPath, $serverName, $httpsEnabled, $apacheModules);
         echo "Apache site configured successfully.\n";
     } catch (RuntimeException $e) {
         echo "Configuration error: " . $e->getMessage() . "\n";
