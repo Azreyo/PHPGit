@@ -76,25 +76,29 @@ try {
     Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
 }
 ?>
-<main>
-<div class="container-fluid px-0" style="min-height: 80vh;">
-    <div class="row gx-0 align-items-stretch" style="min-height: 80vh;">
-        <div class="col-lg-7 d-none d-lg-flex align-items-center justify-content-center p-4 p-xl-5">
-            <div class="phpgit-terminal-wrap w-100" style="max-width: 600px;">
-                <div class="phpgit-terminal w-100">
-                    <div class="phpgit-terminal-bar">
-                        <span class="t-dot t-dot-r"></span>
-                        <span class="t-dot t-dot-y"></span>
-                        <span class="t-dot t-dot-g"></span>
-                        <span class="t-title">phpgit@unix: ~</span>
-                        <i class="bi bi-terminal t-icon"></i>
-                    </div>
-                    <div class="phpgit-terminal-body" id="term-install-output"></div>
+<main style="position: relative; min-height: 80vh;">
+
+    <!-- Terminal: absolutely positioned on the left, desktop only -->
+    <div class="d-none d-lg-flex align-items-center justify-content-center"
+         style="position: absolute; top: 0; left: 0; bottom: 0; width: 45%; padding: 2rem 1.5rem; z-index: 0;">
+        <div class="phpgit-terminal-wrap w-100" style="max-width: 600px;">
+            <div class="phpgit-terminal w-100">
+                <div class="phpgit-terminal-bar">
+                    <span class="t-dot t-dot-r"></span>
+                    <span class="t-dot t-dot-y"></span>
+                    <span class="t-dot t-dot-g"></span>
+                    <span class="t-title">phpgit@unix: ~</span>
+                    <i class="bi bi-terminal t-icon"></i>
                 </div>
+                <div class="phpgit-terminal-body" id="term-install-output"></div>
             </div>
         </div>
-        <div class="col-12 col-lg-5 d-flex flex-column align-items-end justify-content-center p-4">
-    <h1 class="mb-4 text-start">Register</h1>
+    </div>
+
+    <!-- Original form: unchanged -->
+    <div class="container d-flex flex-column align-items-end justify-content-center"
+         style="min-height: 80vh; position: relative; z-index: 1;">
+        <h1 class="mb-4 text-start">Register</h1>
         <div class="border border-secondary rounded p-4 w-100" style="max-width: 400px;">
 
             <?php if (!empty($errors)): ?>
@@ -162,9 +166,7 @@ try {
                 Already have an account? <a href="/index.php?page=login">Login</a>
             </p>
         </div>
-        </div>
     </div>
-</div>
 </main>
 
 <script>
