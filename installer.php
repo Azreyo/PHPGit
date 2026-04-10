@@ -370,69 +370,100 @@ function configureApacheSite(string $apacheConfigPath, string $serverName, bool 
     runShellCommand('sudo systemctl reload apache2');
 }
 
-if (PHP_SAPI === 'cli' && PHP_OS_FAMILY === 'Linux') {
-    $projectRoot = __DIR__;
-    $documentRoot = $projectRoot . '/src';
-    $apacheConfigPath = $projectRoot . '/apache/phpgit.local.conf';
-    $htaccessPath = $documentRoot . '/.htaccess';
-    $certDirectory = $documentRoot . '/certs';
 
-    $defaultHost = sanitizeHost(envValue('APP_HOST', 'phpgit.local') ?? 'phpgit.local');
-    $serverName = sanitizeHost(askInput('Apache ServerName', $defaultHost));
-    $httpsEnabled = askYesNo('Enable HTTPS', envBool('HTTPS'));
-    $generateSelfSigned = false;
-    $certFile = $certDirectory . '/' . $serverName . '.crt';
-    $keyFile = $certDirectory . '/' . $serverName . '.key';
+function installPhpGit(): void
+{
+    if (PHP_SAPI === 'cli' && PHP_OS_FAMILY === 'Linux') {
+        $config = new Config();
+        $projectRoot = __DIR__;
+        $documentRoot = $projectRoot . '/src';
+        $apacheConfigPath = $projectRoot . '/apache/phpgit.local.conf';
+        $htaccessPath = $documentRoot . '/.htaccess';
+        $certDirectory = $documentRoot . '/certs';
+        $assetsDirectory = $projectRoot . '/assets';
+        $manifestPath = $assetsDirectory . '/assets/manifest.json';
 
-    if ($httpsEnabled) {
-        $generateSelfSigned = askYesNo('Generate self-signed SSL certificate', true);
+        $defaultHost = sanitizeHost(envValue('APP_HOST', 'phpgit.local') ?? 'phpgit.local');
+        $serverName = sanitizeHost(askInput('Apache ServerName', $defaultHost));
+        $httpsEnabled = askYesNo('Enable HTTPS', envBool('HTTPS'));
+        $generateSelfSigned = false;
+        $certFile = $certDirectory . '/' . $serverName . '.crt';
+        $keyFile = $certDirectory . '/' . $serverName . '.key';
 
-        if (!$generateSelfSigned) {
-            $certFile = askInput('Path to existing SSL certificate (.crt)', $certFile);
-            $keyFile = askInput('Path to existing SSL private key (.key)', $keyFile);
-        }
-    }
+        if ($httpsEnabled) {
+            $generateSelfSigned = askYesNo('Generate self-signed SSL certificate', true);
 
-    $scheme = "phpgit_scheme.sql";
-
-    echo "Connecting to {$config->getDb()} as {$config->getDbUser()}@{$config->getHost()}\n";
-    echo "Creating table...\n";
-    if (file_exists($scheme)) {
-        $query_scheme = loadQuery($scheme);
-        queryRun($query_scheme);
-    }
-
-    echo "Do you want to load data to database? (y/n): ";
-    $input = trim(fgets(STDIN));
-    if ($input === 'y') {
-        $data = "phpgit_data.sql";
-        if (file_exists($data)) {
-            $query_data = loadQuery($data);
-            queryRun($query_data);
-        }
-    }
-
-    try {
-        $apacheModules = extractApacheModulesFromHtaccess($htaccessPath, $httpsEnabled);
-
-        ensureDirectory(dirname($apacheConfigPath));
-
-        if ($httpsEnabled && $generateSelfSigned) {
-            ensureDirectory($certDirectory);
-            generateSelfSignedCertificate($serverName, $certFile, $keyFile);
+            if (!$generateSelfSigned) {
+                $certFile = askInput('Path to existing SSL certificate (.crt)', $certFile);
+                $keyFile = askInput('Path to existing SSL private key (.key)', $keyFile);
+            }
         }
 
-        $apacheConfig = buildApacheConfig($serverName, $documentRoot, $httpsEnabled, $certFile, $keyFile);
-        writeApacheConfig($apacheConfigPath, $apacheConfig);
+        $scheme = "phpgit_scheme.sql";
 
-        echo "Apache config generated at {$apacheConfigPath}\n";
-        echo "HTTPS enabled: " . ($httpsEnabled ? 'true' : 'false') . "\n";
-        echo "Modules enabled from .htaccess: " . implode(', ', $apacheModules) . "\n";
-        configureApacheSite($apacheConfigPath, $serverName, $httpsEnabled, $apacheModules);
-        echo "Apache site configured successfully.\n";
-    } catch (RuntimeException $e) {
-        echo "Configuration error: " . $e->getMessage() . "\n";
+        echo "Connecting to {$config->getDb()} as {$config->getDbUser()}@{$config->getHost()}\n";
+        echo "Creating table...\n";
+        if (file_exists($scheme)) {
+            $query_scheme = loadQuery($scheme);
+            queryRun($query_scheme);
+        }
+
+        echo "Do you want to load data to database? (y/n): ";
+        $input = trim(fgets(STDIN));
+        if ($input === 'y') {
+            $data = "phpgit_data.sql";
+            if (file_exists($data)) {
+                $query_data = loadQuery($data);
+                queryRun($query_data);
+            }
+        }
+
+        try {
+            $apacheModules = extractApacheModulesFromHtaccess($htaccessPath, $httpsEnabled);
+
+            ensureDirectory(dirname($apacheConfigPath));
+
+            if ($httpsEnabled && $generateSelfSigned) {
+                ensureDirectory($certDirectory);
+                generateSelfSignedCertificate($serverName, $certFile, $keyFile);
+            }
+
+            $apacheConfig = buildApacheConfig($serverName, $documentRoot, $httpsEnabled, $certFile, $keyFile);
+            writeApacheConfig($apacheConfigPath, $apacheConfig);
+
+            echo "Apache config generated at {$apacheConfigPath}\n";
+            echo "HTTPS enabled: " . ($httpsEnabled ? 'true' : 'false') . "\n";
+            echo "Modules enabled from .htaccess: " . implode(', ', $apacheModules) . "\n";
+            configureApacheSite($apacheConfigPath, $serverName, $httpsEnabled, $apacheModules);
+            echo "Apache site configured successfully.\n";
+        } catch (RuntimeException $e) {
+            echo "Configuration error: " . $e->getMessage() . "\n";
+        }
+
+        try {
+            if (!file_exists($assetsDirectory)) {
+                if (mkdir($assetsDirectory, 0755, true)) {
+                    echo "Created assets directory at {$assetsDirectory}\n";
+                } else {
+                    echo "Failed to create assets directory at {$assetsDirectory}. Check permissions.\n";
+                }
+            } else {
+                echo "Failed to create assets directory at {$assetsDirectory}. Check permissions.\n";
+            }
+            if (!file_exists($manifestPath)) {
+                if (file_put_contents($manifestPath, '') !== false) {
+                    echo "Copied manifest.json to {$manifestPath}\n";
+                } else {
+                    echo "Failed to copy manifest.json to {$manifestPath}. Check permissions.\n";
+                }
+            }
+
+        } catch (RuntimeException $e) {
+            echo "Error creating assets directory: " . $e->getMessage() . "\n";
+        }
+
+        echo "Done!\n";
     }
-
-    echo "Done!\n";
 }
+
+installPhpGit();

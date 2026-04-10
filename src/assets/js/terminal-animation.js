@@ -111,7 +111,7 @@ class PHPGitTerminal {
 
 const PHPGIT_SERVE_SEQUENCE = [
     { t: 'pause',  ms: 900 },
-    {t: 'type', cmd: 'phpgit serve --env=production', speed: 300},
+    {t: 'type', cmd: 'phpgit serve --env=production', speed: 120},
     { t: 'blank' },
     { t: 'ascii',  delay: 200 },
     { t: 'out',    html: '<span class="term-dim">                           v1.0.0  •  MIT License</span>', delay: 120 },
