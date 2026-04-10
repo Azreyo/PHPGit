@@ -171,8 +171,8 @@ function queryRun(string $query): void
 {
     try {
         $config = new Config();
-        $pdo = $config->getPDO();
-        if (!$pdo instanceof PDO) {
+        $pdo = $config->getPdo();
+        if ($pdo === null || !$pdo instanceof PDO) {
             throw new RuntimeException('Database connection is not available. Check src/.env DB_* values.');
         }
 
