@@ -148,7 +148,7 @@ class DevPanel
     {
         $apiStatus = false;
 
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] === 443 ? 'https' : 'http';
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
         $url = "$scheme://phpgit.local/api/v1/health";
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -164,7 +164,6 @@ class DevPanel
             error_log("cURL error: $error");
         } else {
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
             $apiResponse = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 Logging::loggingToFile("Failed to decode API response: " . json_last_error_msg(), 4, true, true);
@@ -175,6 +174,7 @@ class DevPanel
                 $apiStatus = ($apiResponse['status'] ?? 'unknown') === 'ok';
             }
         }
+        curl_close($ch);
         $opcacheState     = function_exists('opcache_get_status') && opcache_get_status() !== false;
         $mailStatus       = function_exists('mail');
 
