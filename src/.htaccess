@@ -13,7 +13,7 @@ DirectoryIndex index.php
     RewriteBase /
 
 
-    RewriteRule ^(assets/(?:css|js)/[^/]+)\.[a-f0-9]{8}\.(css|js)$ /$1.$2 [L]
+    RewriteRule ^(assets/(?:(?:css|js)/[^/]+|img/[^/]+))\.[a-f0-9]{8}\.(css|js|png|jpg|jpeg|gif|svg|webp|ico)$ /$1.$2 [L]
 
     # Block rarely used HTTP methods to reduce attack surface.
     RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)$ [NC]
