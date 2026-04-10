@@ -140,8 +140,8 @@ CREATE TABLE IF NOT EXISTS log
     ip       TEXT                      DEFAULT NULL,
     log_time TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX ix_log_level_created (level_id, created_at),
-    INDEX ix_log_security_created (security, created_at),
+    INDEX ix_log_level_created (level_id, log_time),
+    INDEX ix_log_security_created (security, log_time),
     CONSTRAINT fk_log_level FOREIGN KEY (level_id) REFERENCES level (id) ON DELETE RESTRICT
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
