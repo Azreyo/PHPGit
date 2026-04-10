@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+
+use App\includes\Assets;
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
@@ -19,16 +21,16 @@ declare(strict_types=1);
           crossorigin="anonymous">
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?= Assets::url('assets/css/style.css') ?>">
     <?php if (in_array($page, ['login', 'register'], true)): ?>
-        <link rel="stylesheet" href="/assets/css/terminal.css">
+        <link rel="stylesheet" href="<?= Assets::url('assets/css/terminal.css') ?>">
     <?php endif; ?>
     <?php if ($is_dev): ?>
-        <link rel="stylesheet" href="/assets/css/dev.css">
+        <link rel="stylesheet" href="<?= Assets::url('assets/css/dev.css') ?>">
     <?php endif; ?>
 
     <?php if ($is_logged_in && $role === 'ADMIN'): ?>
-        <link rel="stylesheet" href="/assets/css/admin.css">
+        <link rel="stylesheet" href="<?= Assets::url('assets/css/admin.css') ?>">
     <?php endif; ?>
 </head>
 <body>
@@ -42,9 +44,9 @@ include __DIR__ . '/../includes/footer.php';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
         crossorigin="anonymous"></script>
-<script src="/assets/js/theme.js"></script>
+<script src="<?= Assets::url('assets/js/theme.js') ?>"></script>
 <?php if (in_array($page, ['login', 'register'], true)): ?>
-    <script src="/assets/js/terminal-animation.js"></script>
+    <script src="<?= Assets::url('assets/js/terminal-animation.js') ?>"></script>
 <?php endif; ?>
 <?php $this->renderDevPanel(); ?>
 
