@@ -146,12 +146,35 @@ class DevPanel
 
     private function renderPhpPopover(): string
     {
-        $ch = curl_init("phpgit.local/api/v1/health");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $apiStatus = false;
+
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
+        $url = "$scheme://phpgit.local/api/v1/health";
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 3,
+            CURLOPT_TIMEOUT => 5,
+            CURLOPT_FAILONERROR => false,
+        ]);
         $response = curl_exec($ch);
+        if ($response === false) {
+            $error = curl_error($ch);
+            Logging::loggingToFile("cURL error: $error", 4, true, true);
+            error_log("cURL error: $error");
+        } else {
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $apiResponse = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Logging::loggingToFile("Failed to decode API response: " . json_last_error_msg(), 4, true, true);
+                error_log("JSON error: " . json_last_error_msg());
+            } elseif ($httpCode >= 400) {
+                Logging::loggingToFile("API request failed with status code: $httpCode", 4, true, true);
+            } else {
+                $apiStatus = ($apiResponse['status'] ?? 'unknown') === 'ok';
+            }
+        }
         curl_close($ch);
-        $response = json_decode($response, true);
-        $apiStatus = ($response['status'] ?? 'unknown') === 'ok';
         $opcacheState     = function_exists('opcache_get_status') && opcache_get_status() !== false;
         $mailStatus       = function_exists('mail');
 
@@ -203,7 +226,7 @@ class DevPanel
         echo $this->renderSessionPopover();
         echo $this->renderDbPopover();
         echo $this->renderPhpPopover();
-        echo '<li><a class="btn btn-dev" href="/Index.php?page=phpinfo">phpinfo</a></li>';
+        echo '<li><a class="btn btn-dev" href="/index.php?page=phpinfo">phpinfo</a></li>';
         echo '</div>';
 
         echo '</ul>';

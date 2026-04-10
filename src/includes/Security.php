@@ -72,4 +72,10 @@ class Security
     {
         return strtolower(preg_replace('/[^a-z0-9_-]/', '', $tab));
     }
+
+    public static function sanitizeShellInput(string $input): string
+    {
+        $input = trim($input);
+        return preg_replace('/[^a-zA-Z0-9._:\/\- ]/', '', $input);
+    }
 }

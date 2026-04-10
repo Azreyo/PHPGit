@@ -43,8 +43,8 @@ class Settings
                 <h1 class="fw-bold mb-2">Warning!</h1>
                 <p class="text-secondary mb-4">You're not logged in.</p>
                 <div class="d-flex gap-3 justify-content-center">
-                    <a class="btn btn-primary" href="/Index.php?page=home">Go Home</a>
-                    <a class="btn btn-outline-secondary" href="/Index.php?page=login">Login</a>
+                    <a class="btn btn-primary" href="/index.php?page=home">Go Home</a>
+                    <a class="btn btn-outline-secondary" href="/index.php?page=login">Login</a>
                 </div>
             </div>
         </main>
@@ -85,7 +85,7 @@ class Settings
                 <nav class="nav flex-column p-2 gap-1">
             <?php foreach (self::ALLOWED_TABS as $tab): ?>
                 <a class="nav-link rounded-3 p-3 <?php echo $this->current_tab === $tab ? 'bg-primary-subtle text-primary border border-primary border-opacity-25' : 'text-body-emphasis hover-bg-light'; ?>"
-                   href="/Index.php?page=settings&tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
+                   href="/index.php?page=settings&tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
                         <span class="d-flex align-items-start gap-2">
                             <i class="bi <?php echo htmlspecialchars($tabMeta[$tab]['icon'], ENT_QUOTES, 'UTF-8'); ?> text-primary"></i>
                             <span>

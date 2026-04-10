@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Core\Controller;
+use App\includes\Logging;
+use App\includes\Security;
 use App\Services\SystemService;
 use App\Config;
 use JetBrains\PhpStorm\NoReturn;
@@ -73,6 +75,17 @@ class ApiController extends Controller {
         };
     }
 
+    private function requireLoggedInSession(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        $isLoggedIn = (bool)($_SESSION['is_logged_in'] ?? false);
+        if (!$isLoggedIn) {
+            $this->error('Unauthorized', 401);
+        }
+    }
     private function requireAdminSession(): void {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
@@ -104,8 +117,13 @@ class ApiController extends Controller {
             ");
             $stmt->execute();
             $dashboardInfo = $stmt->fetch();
+            if (!$dashboardInfo) {
+                Logging::loggingToFile("Dashboard info fetch error: No data returned", 4, true, true);
+                $this->success([]);
+            }
         } catch (Throwable $e) {
-            $this->error($e->getMessage());
+            Logging::loggingToFile("Dashboard info fetch error: " . $e->getMessage(), 4, true, true);
+            $this->error('Could not fetch dashboard info');
         }
         $this->success($dashboardInfo);
     }
@@ -135,7 +153,8 @@ class ApiController extends Controller {
             ]);
 
         } catch (Throwable $e) {
-            $this->error($e->getMessage());
+            Logging::loggingToFile("Database uptime fetch error: " . $e->getMessage(), 4, true, true);
+            $this->error('Could not fetch database uptime');
         }
     }
 
@@ -149,5 +168,4 @@ class ApiController extends Controller {
             default => $this->notFound('Unknown API endpoint'),
         };
     }
-
 }

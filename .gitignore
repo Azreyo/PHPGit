@@ -8,3 +8,4 @@ Thumbs.db
 composer.phar
 certs
 apache
+/src/assets/manifest.json

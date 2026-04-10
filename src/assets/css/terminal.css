@@ -1,0 +1,144 @@
+.phpgit-terminal {
+    background: #0d1117;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow:
+        0 30px 70px rgba(0,0,0,.55),
+        0 0 0 1px rgba(255,255,255,.06),
+        inset 0 1px 0 rgba(255,255,255,.04);
+    font-family: 'Fira Code','JetBrains Mono','Cascadia Code','Consolas','Courier New',monospace;
+    font-size: .82rem;
+    line-height: 1.65;
+    display: flex;
+    flex-direction: column;
+    height: 540px;
+    position: relative;
+}
+
+.phpgit-terminal-bar {
+    background: #161b22;
+    border-bottom: 1px solid #21262d;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.phpgit-terminal-bar .t-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.phpgit-terminal-bar .t-dot-r { background: #ff5f57; box-shadow: 0 0 0 .5px rgba(255,95,87,.4); }
+.phpgit-terminal-bar .t-dot-y { background: #febc2e; box-shadow: 0 0 0 .5px rgba(254,188,46,.4); }
+.phpgit-terminal-bar .t-dot-g { background: #28c840; box-shadow: 0 0 0 .5px rgba(40,200,64,.4); }
+
+.phpgit-terminal-bar .t-title {
+    flex: 1;
+    text-align: center;
+    font-size: .72rem;
+    color: #484f58;
+    letter-spacing: .03em;
+}
+
+.phpgit-terminal-bar .t-icon {
+    color: #3fb950;
+    font-size: .9rem;
+}
+
+.phpgit-terminal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 14px 16px 8px;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: #21262d #0d1117;
+}
+
+.phpgit-terminal-body::-webkit-scrollbar        { width: 4px; }
+.phpgit-terminal-body::-webkit-scrollbar-track  { background: #0d1117; }
+.phpgit-terminal-body::-webkit-scrollbar-thumb  { background: #30363d; border-radius: 4px; }
+
+.phpgit-terminal-body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        transparent 0,
+        transparent 3px,
+        rgba(0,0,0,.06) 3px,
+        rgba(0,0,0,.06) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+.term-line { position: relative; z-index: 2; white-space: pre-wrap; word-break: break-all; }
+
+.term-prompt  { color: #3fb950; }
+.term-host    { color: #58a6ff; }
+.term-tilde   { color: #e6edf3; }
+.term-cmd     { color: #e6edf3; }
+
+.term-ok      { color: #3fb950; }
+.term-db      { color: #d2a8ff; }
+.term-http    { color: #79c0ff; }
+.term-info    { color: #58a6ff; }
+.term-warn    { color: #d29922; }
+.term-err     { color: #f85149; }
+.term-muted   { color: #484f58; }
+.term-dim     { color: #7d8590; }
+.term-success { color: #3fb950; font-weight: 600; }
+.term-url     { color: #79c0ff; text-decoration: underline; }
+
+.term-ascii {
+    position: relative;
+    z-index: 2;
+    color: #58a6ff;
+    font-size: .52rem;
+    line-height: 1.15;
+    white-space: pre;
+    letter-spacing: 0;
+    margin-bottom: .25rem;
+    text-shadow: none;
+}
+
+.term-bar-track { color: #484f58; }
+.term-bar-fill  { color: #3fb950; }
+
+.term-cursor {
+    display: inline-block;
+    width: .52em;
+    height: 1em;
+    background: #3fb950;
+    vertical-align: text-bottom;
+    margin-left: 1px;
+    animation: term-blink 1.1s step-end infinite;
+    border-radius: 1px;
+}
+
+@keyframes term-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+.phpgit-terminal-wrap {
+    position: relative;
+}
+
+.term-section-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #3fb950;
+    margin-bottom: .75rem;
+    opacity: .8;
+}

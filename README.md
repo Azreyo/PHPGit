@@ -85,6 +85,12 @@ If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertifica
    cp src/.env.example src/.env
    ```
 6. Set appropriate permissions for storage and cache directories if required.
+7. Run the installer script to set up the database and initial configuration:
+   ```bash
+   php installer.php
+   ```
+   The installer also asks for Apache `ServerName` and whether HTTPS should be enabled, then updates
+   `apache/phpgit.local.conf` with your current project path and selected mode.
 
 ## Usage
 
