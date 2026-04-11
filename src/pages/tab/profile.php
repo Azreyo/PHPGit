@@ -1,45 +1,90 @@
-<div class="mb-4">
-    <p class="text-primary fw-bold text-uppercase mb-2" style="font-size: .78rem; letter-spacing: .12em;">Profile</p>
-    <h4 class="mb-1" style="letter-spacing: -0.01em;">Public account information</h4>
-    <p class="text-secondary mb-0">Update how your account appears across PHPGit.</p>
+<!-- Header -->
+<div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom border-secondary-subtle">
+    <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
+         style="width: 34px; height: 34px; font-size: .9rem;">
+        <i class="bi bi-person-circle"></i>
+    </div>
+    <div>
+        <p class="section-label mb-0">Profile</p>
+        <h6 class="fw-bold mb-0" style="letter-spacing: -0.01em;">Public account information</h6>
+    </div>
+</div>
+
+<!-- Avatar -->
+<div class="d-flex align-items-center gap-3 mb-4">
+    <div class="position-relative flex-shrink-0">
+        <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center"
+             style="width: 56px; height: 56px; font-size: 1.1rem; letter-spacing: -.02em;">
+            <?php echo htmlspecialchars(strtoupper(substr($username, 0, 2)), ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary position-absolute bottom-0 end-0 p-0 d-flex align-items-center justify-content-center rounded-circle bg-body border-2"
+                style="width: 24px; height: 24px; font-size: .65rem;" title="Change avatar">
+            <i class="bi bi-camera"></i>
+        </button>
+    </div>
+    <div>
+        <div class="fw-semibold fs-6"><?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?></div>
+        <small class="text-secondary">Profile photo &amp; identity</small>
+    </div>
 </div>
 
 <form action="#" method="post">
-    <div class="p-3 border border-secondary-subtle rounded-3 bg-body-tertiary bg-opacity-10 mb-4">
-        <label for="profile-username" class="form-label fw-semibold">Username</label>
-        <input
-                type="text"
-                id="profile-username"
-                class="form-control rounded-3"
-                style="min-height: 44px;"
-                value="<?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?>"
-        >
-        <small class="text-secondary d-block mt-2">Your unique account handle.</small>
+    <div class="row g-4">
+        <!-- Username -->
+        <div class="col-12">
+            <label for="profile-username" class="form-label fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-at text-primary"></i> Username
+            </label>
+            <input type="text" id="profile-username" class="form-control rounded-3"
+                   value="<?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?>">
+            <div class="form-text">Your unique handle across PHPGit.</div>
+        </div>
+
+        <!-- Display Name -->
+        <div class="col-12">
+            <label for="profile-display-name" class="form-label fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-person text-primary"></i> Display Name
+            </label>
+            <input type="text" id="profile-display-name" class="form-control rounded-3"
+                   placeholder="Your display name">
+            <div class="form-text">The name shown on your public profile page.</div>
+        </div>
+
+        <!-- Bio -->
+        <div class="col-12">
+            <label for="profile-bio" class="form-label fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-card-text text-primary"></i> Bio
+            </label>
+            <textarea id="profile-bio" class="form-control rounded-3"
+                      rows="4" placeholder="Tell us a bit about yourself"
+                      style="min-height: 110px; resize: vertical;"></textarea>
+            <div class="form-text">Short introduction visible on your public profile.</div>
+        </div>
+
+        <!-- Website -->
+        <div class="col-12">
+            <label for="profile-website" class="form-label fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-link-45deg text-primary"></i> Website
+            </label>
+            <div class="input-group">
+                <span class="input-group-text text-secondary rounded-start-3">
+                    <i class="bi bi-globe2"></i>
+                </span>
+                <input type="url" id="profile-website" class="form-control rounded-end-3"
+                       placeholder="https://yourwebsite.com">
+            </div>
+            <div class="form-text">Optional portfolio or personal website link.</div>
+        </div>
     </div>
 
-    <div class="p-3 border border-secondary-subtle rounded-3 bg-body-tertiary bg-opacity-10 mb-4">
-        <label for="profile-display-name" class="form-label fw-semibold">Display Name</label>
-        <input type="text" id="profile-display-name" class="form-control rounded-3" style="min-height: 44px;"
-               placeholder="Your display name">
-        <small class="text-secondary d-block mt-2">This is the name shown on your profile page.</small>
-    </div>
-
-    <div class="p-3 border border-secondary-subtle rounded-3 bg-body-tertiary bg-opacity-10 mb-4">
-        <label for="profile-bio" class="form-label fw-semibold">Bio</label>
-        <textarea id="profile-bio" class="form-control rounded-3" style="min-height: 130px;" rows="4"
-                  placeholder="Tell us a bit about yourself"></textarea>
-        <small class="text-secondary d-block mt-2">Short introduction for other users.</small>
-    </div>
-
-    <div class="p-3 border border-secondary-subtle rounded-3 bg-body-tertiary bg-opacity-10 mb-4">
-        <label for="profile-website" class="form-label fw-semibold">Website</label>
-        <input type="url" id="profile-website" class="form-control rounded-3" style="min-height: 44px;"
-               placeholder="https://example.com">
-        <small class="text-secondary d-block mt-2">Optional portfolio or personal website.</small>
-    </div>
-
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-2">
-        <small class="text-secondary">Changes are preview-only until backend save is connected.</small>
-        <button type="button" class="btn btn-primary px-4">Save Profile</button>
+    <!-- Actions -->
+    <div class="d-flex align-items-center justify-content-end gap-3 mt-4 pt-3 border-top border-secondary-subtle">
+        <button type="reset" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+        </button>
+        <button type="button" class="btn btn-primary px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-check2-circle"></i> Save Profile
+        </button>
     </div>
 </form>
