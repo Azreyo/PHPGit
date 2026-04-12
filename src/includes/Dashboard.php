@@ -10,7 +10,7 @@ class Dashboard
     private string $role;
     private string $current_tab;
 
-    private const array ALLOWED_TABS = ['overview', 'users', 'logs'];
+    private const array ALLOWED_TABS = ['overview', 'users', 'logs', 'inbox'];
     private const string TAB_DIR = __DIR__ . '/../pages/tab/';
 
     public function __construct(array $session, array $get)
@@ -74,6 +74,11 @@ class Dashboard
                         'description' => 'Security and audit trail',
                         'icon' => 'bi-journal-text'
                 ],
+                'inbox' => [
+                        'label' => 'Inbox',
+                        'description' => 'User messages and feedback',
+                        'icon' => 'bi-inbox'
+                ]
         ];
         ?>
         <aside class="admin-sidebar sticky-xl-top" style="top: 1.25rem;">
@@ -157,6 +162,7 @@ class Dashboard
                                     'overview' => 'Operations Overview',
                                     'users' => 'User Administration',
                                     'logs' => 'Security Event Stream',
+                                    'inbox' => 'Contact Messages',
                                     default => 'Dashboard'
                                 }; ?>
                             </h1>
