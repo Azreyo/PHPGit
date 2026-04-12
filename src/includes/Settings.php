@@ -11,7 +11,7 @@ class Settings
     private string $username;
     private string $current_tab;
 
-    private const array ALLOWED_TABS = ['profile', 'security'];
+    private const array ALLOWED_TABS = ['profile', 'security', 'appearance', 'notifications', 'privacy', 'ssh-keys'];
     private const  string TAB_DIR = __DIR__ . '/../pages/tab/';
 
     public function __construct(array $session, array $get)
@@ -66,18 +66,43 @@ class Settings
                 'label'       => 'Profile',
                 'description' => 'Display name, bio & website',
                 'icon'        => 'bi-person-circle',
+                    'group' => 'Account',
             ],
             'security' => [
                 'label'       => 'Security',
                 'description' => 'Password & 2FA protection',
                 'icon'        => 'bi-shield-lock-fill',
+                    'group' => 'Account',
+            ],
+                'appearance' => [
+                        'label' => 'Appearance',
+                        'description' => 'Theme & display options',
+                        'icon' => 'bi-palette',
+                        'group' => 'Preferences',
+                ],
+                'notifications' => [
+                        'label' => 'Notifications',
+                        'description' => 'Alerts & email digests',
+                        'icon' => 'bi-bell',
+                        'group' => 'Preferences',
+                ],
+                'privacy' => [
+                        'label' => 'Privacy',
+                        'description' => 'Visibility & data control',
+                        'icon' => 'bi-eye-slash',
+                        'group' => 'Preferences',
+                ],
+                'ssh-keys' => [
+                        'label' => 'SSH Keys',
+                        'description' => 'Manage authentication keys',
+                        'icon' => 'bi-key',
+                        'group' => 'Developer',
             ],
         ];
         $initials = htmlspecialchars(strtoupper(substr($this->username, 0, 2)), ENT_QUOTES, 'UTF-8');
         $username = htmlspecialchars($this->username, ENT_QUOTES, 'UTF-8');
         ?>
         <aside class="card border-0 shadow-sm rounded-4 overflow-hidden sticky-xl-top" style="top: 1.25rem;">
-            <!-- User header -->
             <div class="p-4 border-bottom border-secondary-subtle"
                  style="background: linear-gradient(135deg, var(--brand-muted) 0%, transparent 100%);">
                 <div class="d-flex align-items-center gap-3">
@@ -91,14 +116,20 @@ class Settings
                     </div>
                 </div>
             </div>
-            <!-- Navigation -->
-            <nav class="p-2">
-                <p class="text-secondary text-uppercase fw-bold px-2 pt-2 mb-1"
-                   style="font-size: .65rem; letter-spacing: .12em;">Preferences</p>
-                <?php foreach (self::ALLOWED_TABS as $tab):
+            <nav class="p-3">
+                <?php
+                $renderedGroups = [];
+                foreach (self::ALLOWED_TABS as $tab):
                     $isActive = $this->current_tab === $tab;
+                    $group = $tabMeta[$tab]['group'];
+                    if (!in_array($group, $renderedGroups, true)):
+                        $renderedGroups[] = $group;
+                        $extraTop = empty($renderedGroups) ? '' : 'mt-2';
                 ?>
-                <a class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none mb-1
+                        <p class="text-secondary text-uppercase fw-bold px-2 pt-3 mb-2 <?php echo $extraTop; ?>"
+                           style="font-size: .65rem; letter-spacing: .12em;"><?php echo htmlspecialchars($group, ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php endif; ?>
+                    <a class="d-flex align-items-center gap-3 px-3 py-3 rounded-3 text-decoration-none mb-2
                        <?php echo $isActive ? 'bg-primary text-white shadow-sm' : 'text-body-emphasis'; ?>"
                    href="/index.php?page=settings&tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
                     <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0
@@ -120,8 +151,7 @@ class Settings
                 </a>
                 <?php endforeach; ?>
             </nav>
-            <!-- Footer -->
-            <div class="p-3 pt-0">
+            <div class="p-3">
                 <div class="border-top border-secondary-subtle pt-3">
                     <a href="/index.php?page=home"
                        class="d-flex align-items-center gap-2 text-secondary text-decoration-none p-2 rounded-3"
@@ -141,7 +171,7 @@ class Settings
         $username = $this->username;
         ?>
         <section class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 p-lg-5">
+            <div class="card-body" style="padding: 2.5rem;">
             <?php
             if (file_exists($path)) {
                 include $path;

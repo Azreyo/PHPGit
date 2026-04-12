@@ -1,5 +1,4 @@
-<!-- Header -->
-<div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom border-secondary-subtle">
+<div class="d-flex align-items-center gap-3 mb-5 pb-4 border-bottom border-secondary-subtle">
     <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
          style="width: 34px; height: 34px; font-size: .9rem;">
         <i class="bi bi-person-circle"></i>
@@ -10,7 +9,6 @@
     </div>
 </div>
 
-<!-- Avatar -->
 <div class="d-flex align-items-center gap-3 mb-4">
     <div class="position-relative flex-shrink-0">
         <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center"
@@ -31,7 +29,6 @@
 
 <form action="#" method="post">
     <div class="row g-4">
-        <!-- Username -->
         <div class="col-12">
             <label for="profile-username" class="form-label fw-semibold d-flex align-items-center gap-2">
                 <i class="bi bi-at text-primary"></i> Username
@@ -41,7 +38,6 @@
             <div class="form-text">Your unique handle across PHPGit.</div>
         </div>
 
-        <!-- Display Name -->
         <div class="col-12">
             <label for="profile-display-name" class="form-label fw-semibold d-flex align-items-center gap-2">
                 <i class="bi bi-person text-primary"></i> Display Name
@@ -51,7 +47,6 @@
             <div class="form-text">The name shown on your public profile page.</div>
         </div>
 
-        <!-- Bio -->
         <div class="col-12">
             <label for="profile-bio" class="form-label fw-semibold d-flex align-items-center gap-2">
                 <i class="bi bi-card-text text-primary"></i> Bio
@@ -62,7 +57,6 @@
             <div class="form-text">Short introduction visible on your public profile.</div>
         </div>
 
-        <!-- Website -->
         <div class="col-12">
             <label for="profile-website" class="form-label fw-semibold d-flex align-items-center gap-2">
                 <i class="bi bi-link-45deg text-primary"></i> Website
@@ -78,8 +72,7 @@
         </div>
     </div>
 
-    <!-- Actions -->
-    <div class="d-flex align-items-center justify-content-end gap-3 mt-4 pt-3 border-top border-secondary-subtle">
+    <div class="d-flex align-items-center justify-content-end gap-3 mt-5 pt-4 border-top border-secondary-subtle">
         <button type="reset" class="btn btn-outline-secondary px-4">
             <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
         </button>

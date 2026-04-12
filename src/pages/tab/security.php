@@ -5,8 +5,7 @@ use App\includes\Logging;
 use App\Config;
 
 ?>
-<!-- Header -->
-<div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom border-secondary-subtle">
+<div class="d-flex align-items-center gap-3 mb-5 pb-4 border-bottom border-secondary-subtle">
     <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
          style="width: 34px; height: 34px; font-size: .9rem;">
         <i class="bi bi-shield-lock-fill"></i>
@@ -18,9 +17,8 @@ use App\Config;
 </div>
 
 <form action="#" method="post">
-    <!-- Change Password -->
-    <div class="mb-4">
-        <div class="d-flex align-items-center gap-3 mb-3">
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-3 mb-4">
             <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
                  style="width: 36px; height: 36px; font-size: 1rem;">
                 <i class="bi bi-key-fill"></i>
@@ -72,11 +70,10 @@ use App\Config;
         </div>
     </div>
 
-    <hr class="border-secondary-subtle my-4">
+    <hr class="border-secondary-subtle my-5">
 
-    <!-- Two-Factor Authentication -->
-    <div class="mb-4">
-        <div class="d-flex align-items-center gap-3 mb-3">
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-3 mb-4">
             <div class="d-flex align-items-center justify-content-center rounded-3 bg-success-subtle text-success flex-shrink-0"
                  style="width: 36px; height: 36px; font-size: 1rem;">
                 <i class="bi bi-shield-check"></i>
@@ -102,8 +99,7 @@ use App\Config;
         </div>
     </div>
 
-    <!-- Actions -->
-    <div class="d-flex align-items-center justify-content-end gap-3 mt-4 pt-3 border-top border-secondary-subtle">
+    <div class="d-flex align-items-center justify-content-end gap-3 mt-5 pt-4 border-top border-secondary-subtle">
         <button type="reset" class="btn btn-outline-secondary px-4">
             <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
         </button>
@@ -113,11 +109,10 @@ use App\Config;
     </div>
 </form>
 
-<hr class="border-secondary-subtle my-4">
+<hr class="border-secondary-subtle my-5">
 
-<!-- Danger Zone -->
 <div>
-    <div class="d-flex align-items-center gap-3 mb-3">
+    <div class="d-flex align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center justify-content-center rounded-3 bg-danger-subtle text-danger flex-shrink-0"
              style="width: 36px; height: 36px; font-size: 1rem;">
             <i class="bi bi-exclamation-triangle-fill"></i>

@@ -174,7 +174,7 @@ try {
             foreach ($users as $u):
                 $roleClass = match ($u['role']) {
                     'ADMIN' => 'text-bg-danger',
-                    default => 'text-bg-secondary'
+                    default => 'text-bg-body-secondary'
                 };
                 $statusClass = match ($u['status']) {
                     'ACTIVE' => 'success',

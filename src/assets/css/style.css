@@ -7,6 +7,15 @@
     --ease:        0.2s ease;
 }
 
+:root,
+[data-bs-theme="light"] {
+    --bs-secondary: #5c6f8a;
+    --bs-secondary-rgb: 92, 111, 138;
+    --bs-secondary-color: rgba(92, 111, 138, .75);
+    --bs-secondary-color-rgb: 92, 111, 138;
+}
+
+
 [data-bs-theme="dark"] {
     --bs-body-bg:      #0c0e14;
     --bs-body-color:   #cdd6e8;
