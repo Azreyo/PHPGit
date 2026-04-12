@@ -41,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Logging::loggingToFile("Account deletion requested", 3);
     }
     session_destroy();
-    header('Location: login.php');
 }
 try {
     $csrf_token = $security->generateCsrfToken();
