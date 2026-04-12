@@ -1,0 +1,12 @@
+.create-user-dim-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body.create-user-modal-open .create-user-dim-overlay {
+    opacity: 1;
+}
