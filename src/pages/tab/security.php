@@ -10,6 +10,7 @@ $csrf_token = null;
 $error = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf_token = $_POST['csrf-token'] ?? '';
+    $action = $_POST['action'] ?? '';
     if (!$security->validateCsrfToken($csrf_token)) {
         $error[] = 'Invalid or expired form submission. Please try again.';
         Logging::loggingToFile("Invalid or expired form submission", 4, true);
@@ -17,30 +18,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $config = new Config();
         $pdo = $config->getPdo();
         $userId = $_SESSION['user_id'];
+        switch ($action) {
+            case 'change_password':
+                try {
+                    $currentPassword = $_POST['current_password'] ?? '';
+                    $newPassword = $_POST['new_password'] ?? '';
+                    $confirmPassword = $_POST['confirm_password'] ?? '';
+                    if (!$currentPassword || !$newPassword || !$confirmPassword) {
+                        $error[] = 'All fields are required.';
+                    } elseif ($newPassword !== $confirmPassword) {
+                        $error[] = 'New passwords do not match.';
+                    } else {
+                        $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+                        $stmt->execute([$userId]);
+                        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                        if (!$user) {
+                            $error[] = 'User not found.';
+                        } elseif (!password_verify($currentPassword, $user['password'])) {
+                            $error[] = 'Current password is incorrect.';
+                        } else {
+                            if (strlen($newPassword) < 8) {
+                                $error[] = 'Password must be at least 8 characters.';
+                            } else {
+                                $pdo->beginTransaction();
 
-        try {
-            $pdo->beginTransaction();
+                                $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
 
-            $stmt = $pdo->prepare("DELETE FROM issues WHERE author_user_id = ?");
-            $stmt->execute([$userId]);
+                                $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                                $stmt->execute([$newPasswordHash, $userId]);
 
-            $stmt = $pdo->prepare("DELETE FROM repositories WHERE owner_user_id = ?");
-            $stmt->execute([$userId]);
+                                $pdo->commit();
+                            }
+                        }
+                    }
 
-            $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
-            $stmt->execute([$userId]);
+                } catch (Exception $e) {
+                    if ($pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
 
-            $pdo->commit();
+                    $error[] = 'Failed to change password. Please try again.';
+                    Logging::loggingToFile("Failed to change password: " . $e->getMessage(), 4, true);
+                }
+                break;
+            case 'change_email':
+                try {
+                    $pdo->beginTransaction();
+                    $currentEmail = $_POST['current_email'] ?? '';
+                    $newEmail = $_POST['new_email'] ?? '';
+                    $confirmEmail = $_POST['confirm_email'] ?? '';
+                    $stmt = $pdo->prepare("SELECT id, email FROM users WHERE id = ?");
+                    $stmt->execute([$userId]);
+                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if (!$user) {
+                        $error[] = 'User not found.';
+                    } elseif ($currentEmail !== $user['email']) {
+                        $error[] = 'Current email is incorrect.';
+                    } elseif ($newEmail !== $confirmEmail) {
+                        $error[] = 'New emails do not match.';
+                    } else {
+                        $stmt = $pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
+                        $stmt->execute([$newEmail, $userId]);
+                        $_SESSION['email'] = $newEmail;
+                        $pdo->commit();
+                    }
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    $error[] = 'Failed to change email. Please try again.';
+                    Logging::loggingToFile("Failed to change email: " . $e, 4, true);
+                }
+                Logging::loggingToFile("Email change requested", 3);
+                break;
+            case 'delete_account':
+                try {
+                    $pdo->beginTransaction();
 
-        } catch (PDOException $e) {
-            $pdo->rollBack();
-            $error[] = 'Failed to delete user. Please try again.';
-            Logging::loggingToFile("Failed to delete user: " . $e, 4, true);
+                    $stmt = $pdo->prepare("DELETE FROM issues WHERE author_user_id = ?");
+                    $stmt->execute([$userId]);
+
+                    $stmt = $pdo->prepare("DELETE FROM repositories WHERE owner_user_id = ?");
+                    $stmt->execute([$userId]);
+
+                    $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+                    $stmt->execute([$userId]);
+
+                    $pdo->commit();
+
+                } catch (PDOException $e) {
+                    $pdo->rollBack();
+                    $error[] = 'Failed to delete user. Please try again.';
+                    Logging::loggingToFile("Failed to delete user: " . $e, 4, true);
+                }
+                Logging::loggingToFile("Account deletion requested", 3);
+                session_destroy();
+                break;
         }
-
-        Logging::loggingToFile("Account deletion requested", 3);
     }
-    session_destroy();
 }
 try {
     $csrf_token = $security->generateCsrfToken();
@@ -58,8 +131,16 @@ try {
         <h6 class="fw-bold mb-0" style="letter-spacing: -0.01em;">Protect your account</h6>
     </div>
 </div>
+<?php if (!empty($error)) : ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?php foreach ($error as $err) : ?>
+            <p class="mb-0"><?= $err ?></p>
+        <?php endforeach; ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
 
-<form action="#" method="post">
+<form method="post">
     <div class="mb-5">
         <div class="d-flex align-items-center gap-3 mb-4">
             <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
@@ -112,12 +193,82 @@ try {
             </div>
         </div>
     </div>
+    <input type="hidden" name="csrf-token" value="<?= $csrf_token ?>">
+    <input type="hidden" name="action" value="change_password">
     <div class="d-flex align-items-center justify-content-end gap-3 mt-5 pt-4 border-top border-secondary-subtle">
         <button type="reset" class="btn btn-outline-secondary px-4">
             <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
         </button>
-        <button type="button" class="btn btn-primary px-4 d-flex align-items-center gap-2">
+        <button type="submit" class="btn btn-primary px-4 d-flex align-items-center gap-2">
             <i class="bi bi-shield-check"></i> Save Security
+        </button>
+    </div>
+</form>
+
+<hr class="border-secondary-subtle my-5">
+
+<form method="post">
+
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
+                 style="width: 36px; height: 36px; font-size: 1rem;">
+                <i class="bi bi-envelope-fill"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0">Change Email</h6>
+                <small class="text-secondary">Update the email address associated with your account.</small>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="security-current-email" class="form-label fw-semibold">Current Email</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-envelope"></i>
+                    </span>
+                    <input type="email" id="security-current-email" name="current_email"
+                           class="form-control rounded-end-3"
+                           placeholder="Your current email address">
+                </div>
+                <div class="form-text">Enter your current email to confirm your identity.</div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="security-new-email" class="form-label fw-semibold">New Email</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-envelope-at"></i>
+                    </span>
+                    <input type="email" id="security-new-email" name="new_email"
+                           class="form-control rounded-end-3"
+                           placeholder="New email address">
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="security-confirm-email" class="form-label fw-semibold">Confirm New Email</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-envelope-check"></i>
+                    </span>
+                    <input type="email" id="security-confirm-email" name="confirm_email"
+                           class="form-control rounded-end-3"
+                           placeholder="Confirm new email address">
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="csrf-token" value="<?= $csrf_token ?>">
+    <input type="hidden" name="action" value="change_email">
+    <div class="d-flex align-items-center justify-content-end gap-3 mt-5 pt-4 border-top border-secondary-subtle">
+        <button type="reset" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+        </button>
+        <button type="submit" name="action" value="change_email"
+                class="btn btn-primary px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-envelope-check"></i> Update Email
         </button>
     </div>
 </form>
@@ -143,6 +294,7 @@ try {
         </div>
 
         <form method="post">
+            <input type="hidden" name="action" value="delete_account">
             <input type="hidden" name="csrf-token" value="<?= $csrf_token ?>">
             <button type="submit" class="btn btn-outline-danger btn-sm px-3 flex-shrink-0"
                     onclick="return confirm('Are you sure? This action cannot be undone.')">
