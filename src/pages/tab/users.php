@@ -5,20 +5,23 @@ use App\Config;
 use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
+use App\includes\Assets;
 
-$config = new Config();
-$security = new Security();
-$errors = [];
-$success = [];
-$users = [];
-try {
-    $stmt = $config->getPdo()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
-    $stmt->execute();
-    $users = $stmt->fetchAll();
-} catch (PDOException $e) {
-    Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $config = new Config();
+    $security = new Security();
+    $errors = [];
+    $success = [];
+    $users = [];
+    try {
+        $stmt = $config->getPdo()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
+        $stmt->execute();
+        $users = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+    }
 }
-
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
@@ -231,19 +234,5 @@ try {
     </div>
 </div>
 
-<style>
-    .create-user-dim-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        opacity: 0;
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    body.create-user-modal-open .create-user-dim-overlay {
-        opacity: 1;
-    }
-</style>
-
-<script src="/assets/js/users.js"></script>
+<link rel="stylesheet" href="<?= Assets::url('/assets/css/users.css') ?>">
+<script src="<?= Assets::url('/assets/js/users.js') ?>"></script>

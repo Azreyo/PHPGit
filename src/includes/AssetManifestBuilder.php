@@ -88,14 +88,33 @@ final class AssetManifestBuilder
     private function writeManifest(array $manifest): void
     {
         $path = $this->manifestPath();
-        $content = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-        if (!file_exists($path)) {
-            Logging::loggingToFile("Asset manifest file not found at $path");
-            throw new \RuntimeException("Asset manifest file not found at $path");
+        $dir = dirname($path);
+
+        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+            $msg = "Failed to create manifest directory: $dir";
+            Logging::loggingToFile($msg);
+            throw new \RuntimeException($msg);
         }
-        if (file_put_contents($path, $content) === false) {
-            Logging::loggingToFile("Failed to write asset manifest to $path");
-            throw new \RuntimeException("Failed to write asset manifest to $path");
+
+        $content = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+        $tmp = tempnam($dir, '.manifest_tmp_');
+        if ($tmp === false) {
+            $msg = "Failed to create temporary file in $dir";
+            Logging::loggingToFile($msg);
+            throw new \RuntimeException($msg);
+        }
+
+        try {
+            if (file_put_contents($tmp, $content) === false) {
+                throw new \RuntimeException("Failed to write asset manifest to $path");
+            }
+            if (!rename($tmp, $path)) {
+                throw new \RuntimeException("Failed to move asset manifest into place at $path");
+            }
+        } catch (\RuntimeException $e) {
+            @unlink($tmp);
+            Logging::loggingToFile($e->getMessage());
+            throw $e;
         }
     }
 }
