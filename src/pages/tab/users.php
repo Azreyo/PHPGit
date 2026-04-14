@@ -2,10 +2,10 @@
 declare(strict_types=1);
 
 use App\Config;
+use App\includes\Assets;
 use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
-use App\includes\Assets;
 
 $config = new Config();
 $security = new Security();
@@ -30,12 +30,13 @@ try {
         $users = $stmt->fetchAll();
     }
 } catch (PDOException $e) {
-    Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
 }
+
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 
 ?>

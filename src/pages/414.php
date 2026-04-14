@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use App\includes\Logging;
 
-Logging::loggingToFile("URI request too long: " . $_SERVER['REQUEST_URI'], 3, true);
+Logging::loggingToFile('URI request too long: ' . $_SERVER['REQUEST_URI'], 3, true);
 ?>
 <main>
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">

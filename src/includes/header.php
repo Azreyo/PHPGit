@@ -4,12 +4,14 @@ declare(strict_types=1);
 use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
+
 $security = new Security();
 $csrf_token = null;
+
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 ?>
 <header>
@@ -28,7 +30,7 @@ try {
                         <a class="nav-link px-3 py-2 rounded-2 fw-medium" href="/index.php?page=explore">Explore</a>
                         <a class="nav-link px-3 py-2 rounded-2 fw-medium" href="/index.php?page=about">About</a>
                         <a class="nav-link px-3 py-2 rounded-2 fw-medium" href="/index.php?page=contact">Contact</a>
-                        <?php if ($is_logged_in && $role === "ADMIN"): ?>
+                        <?php if ($is_logged_in && $role === 'ADMIN'): ?>
                             <a class="nav-link px-3 py-2 rounded-2 fw-medium"
                                href="/index.php?page=dashboard">Dashboard</a>
                         <?php endif; ?>

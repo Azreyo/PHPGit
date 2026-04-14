@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
+
 namespace App\includes;
 
 use Random\RandomException;
 
 class Security
 {
-
     private string $csrf_token;
     private int $login_attempts;
     private int $login_attempt_time;
@@ -17,7 +18,6 @@ class Security
         $this->login_attempt_time = isset($_SESSION['login_attempt_time'])
             ? (int) $_SESSION['login_attempt_time']
             : time();
-
     }
 
     /**
@@ -29,12 +29,16 @@ class Security
             $this->csrf_token = bin2hex(random_bytes(32));
         }
         $_SESSION['csrf_token'] = $this->csrf_token;
+
         return $this->csrf_token;
     }
 
     public function validateCsrfToken(string $token): bool
     {
-        if ($this->csrf_token === 'n/a' || !hash_equals($this->csrf_token, $token)) return false;
+        if ($this->csrf_token === 'n/a' || !hash_equals($this->csrf_token, $token)) {
+            return false;
+        }
+
         return true;
     }
 
@@ -43,7 +47,6 @@ class Security
         $maxAttempts = 5;
         $windowSeconds = 900;
         $now = time();
-
 
         if (($now - $this->login_attempt_time) > $windowSeconds) {
             $this->login_attempts = 0;
@@ -65,6 +68,7 @@ class Security
     public function sanitizeInput(string $input): string
     {
         $input = trim($input);
+
         return htmlspecialchars(str_replace(['<', '>', '//', '\\\\'], '', $input));
     }
 
@@ -76,6 +80,7 @@ class Security
     public static function sanitizeShellInput(string $input): string
     {
         $input = trim($input);
+
         return preg_replace('/[^a-zA-Z0-9._:\/\- ]/', '', $input);
     }
 }

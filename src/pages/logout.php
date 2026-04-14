@@ -11,30 +11,30 @@ $csrf_error = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf_token = $_POST['csrf_token'] ?? '';
     if (!$security->validateCsrfToken($csrf_token)) {
-        Logging::loggingToFile("Invalid or expired form submission", 4, true);
+        Logging::loggingToFile('Invalid or expired form submission', 4, true);
         $csrf_error = true;
     } elseif ($is_logged_in) {
         $is_logged_in = false;
         $render_logout = true;
         $_SESSION = [];
-        if (ini_get("session.use_cookies")) {
+        if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();
             setcookie(
                     session_name(),
                     '',
                     time() - 42000,
-                    $params["path"],
-                    $params["domain"],
-                    $params["secure"],
-                    $params["httponly"]
+                    $params['path'],
+                    $params['domain'],
+                    $params['secure'],
+                    $params['httponly']
             );
         }
         session_destroy();
     } else {
-        Logging::loggingToFile("User is not logged in", 4, true);
+        Logging::loggingToFile('User is not logged in', 4, true);
     }
 } else {
-    Logging::loggingToFile("Request method is not allowed: " . $_SERVER['REQUEST_METHOD'], 4, true);
+    Logging::loggingToFile('Request method is not allowed: ' . $_SERVER['REQUEST_METHOD'], 4, true);
 }
 
 ?>

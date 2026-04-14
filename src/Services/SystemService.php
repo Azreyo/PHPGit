@@ -1,13 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services;
 
 use RuntimeException;
 
-final class SystemService {
-
-    public static function getCPUUsage(): float {
+final class SystemService
+{
+    public static function getCPUUsage(): float
+    {
         $cores = self::getCpuCoreCount();
         $loadAvg = sys_getloadavg();
 
@@ -21,7 +23,8 @@ final class SystemService {
         return round($usage, 2);
     }
 
-    public static function getMemoryUsage(): array {
+    public static function getMemoryUsage(): array
+    {
         $memInfo = @file('/proc/meminfo', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($memInfo === false) {
             return [
@@ -51,7 +54,8 @@ final class SystemService {
         ];
     }
 
-    private static function getCpuCoreCount(): int {
+    private static function getCpuCoreCount(): int
+    {
         $cpuInfo = @file('/proc/cpuinfo', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($cpuInfo === false) {
             return 1;

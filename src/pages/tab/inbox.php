@@ -58,7 +58,7 @@ $messages = [
         'name' => 'Anonymous',
         'email' => 'noreply@spam.invalid',
         'subject' => 'Test message',
-        'body' => "This is a test.",
+            'body' => 'This is a test.',
         'time' => '4 days ago',
         'unread' => false,
         'status' => 'archived',
@@ -83,7 +83,10 @@ function inboxInitials(string $name): string
 {
     $parts = preg_split('/\s+/', trim($name));
     $i = strtoupper(substr($parts[0] ?? '?', 0, 1));
-    if (isset($parts[1])) $i .= strtoupper(substr($parts[1], 0, 1));
+    if (isset($parts[1])) {
+        $i .= strtoupper(substr($parts[1], 0, 1));
+    }
+
     return $i;
 }
 

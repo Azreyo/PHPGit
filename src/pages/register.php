@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\includes\Security;
-use App\includes\Logging;
 use App\Config;
+use App\includes\Logging;
+use App\includes\Security;
 use Random\RandomException;
 
 $config = new Config();
@@ -13,12 +13,12 @@ $security = new Security();
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username    = trim($_POST['username'] ?? '');
-    $email       = trim($_POST['email'] ?? '');
-    $password    = $_POST['password'] ?? '';
+    $username = trim($_POST['username'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
     $agree_terms = isset($_POST['agree-terms']);
-    $role        = 'USER';
-    $csrf_token  = $_POST['csrf_token'] ?? '';
+    $role = 'USER';
+    $csrf_token = $_POST['csrf_token'] ?? '';
 
     if (!$security->validateCsrfToken($csrf_token)) {
         $errors[] = 'Invalid request. Please refresh the page and try again.';
@@ -57,23 +57,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute([$username, $email, $hashed_password, $role])) {
                 header('Location: index.php?page=login&success=registered');
                 exit;
-            } else {
-                $errors[] = 'Registration failed. Please try again.';
             }
+            $errors[] = 'Registration failed. Please try again.';
         }
-    } else if ($pdo === null) {
+    } elseif ($pdo === null) {
         $errors[] = 'Database is currently unavailable. Please try again later.';
-        Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . $config->getHost(), 4);
+        Logging::loggingToFile('Unable to connect to database: ' . $config->getDb() . $config->getHost(), 4);
     } else {
         $errors[] = 'Unknown error occurred.';
-        Logging::loggingToFile("Unknown error occurred", -1);
+        Logging::loggingToFile('Unknown error occurred', -1);
     }
 }
 
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 ?>
 <main style="position: relative; min-height: 80vh;">

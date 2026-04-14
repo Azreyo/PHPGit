@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\includes\Logging;
+
 $repos = [];
 
 if ($pdo !== null) {
@@ -13,38 +14,38 @@ if ($pdo !== null) {
         $stmt->execute();
         $repos = $stmt->fetchAll();
     } catch (PDOException $e) {
-        Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+        Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
     }
 } else {
-    Logging::loggingToFile("Cannot open database", 4);
+    Logging::loggingToFile('Cannot open database', 4);
 }
 
 $programming_languages = [
-        "PHP" => "#4F5D95",
-        "HTML" => "#E34C26",
-        "CSS" => "#264DE4",
-        "JavaScript" => "#F7DF1E",
-        "TypeScript" => "#3178C6",
-        "Python" => "#3776AB",
-        "Java" => "#B07219",
-        "C" => "#555555",
-        "C++" => "#F34B7D",
-        "C#" => "#178600",
-        "Go" => "#00ADD8",
-        "Ruby" => "#CC342D",
-        "Swift" => "#FA7343",
-        "Kotlin" => "#A97BFF",
-        "Rust" => "#DEA584",
-        "Dart" => "#00B4AB",
-        "Scala" => "#DC322F",
-        "Shell" => "#89E051",
-        "PowerShell" => "#012456",
-        "R" => "#198CE7",
+        'PHP' => '#4F5D95',
+        'HTML' => '#E34C26',
+        'CSS' => '#264DE4',
+        'JavaScript' => '#F7DF1E',
+        'TypeScript' => '#3178C6',
+        'Python' => '#3776AB',
+        'Java' => '#B07219',
+        'C' => '#555555',
+        'C++' => '#F34B7D',
+        'C#' => '#178600',
+        'Go' => '#00ADD8',
+        'Ruby' => '#CC342D',
+        'Swift' => '#FA7343',
+        'Kotlin' => '#A97BFF',
+        'Rust' => '#DEA584',
+        'Dart' => '#00B4AB',
+        'Scala' => '#DC322F',
+        'Shell' => '#89E051',
+        'PowerShell' => '#012456',
+        'R' => '#198CE7',
 ];
 
 $search_query = trim($_GET['q'] ?? '');
 if (strlen($search_query) > 100) {
-    header("Location: /index.php?page=414");
+    header('Location: /index.php?page=414');
     exit;
 }
 if ($search_query !== '') {

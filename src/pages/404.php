@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use App\includes\Logging;
 
-Logging::loggingToFile("Page not found: " . $_SERVER['REQUEST_URI'], 2);
+Logging::loggingToFile('Page not found: ' . $_SERVER['REQUEST_URI'], 2);
 ?>
 <main>
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">

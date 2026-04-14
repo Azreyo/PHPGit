@@ -6,7 +6,7 @@ use App\includes\Security;
 
 $security = new Security();
 $contact_success = false;
-$contact_errors  = [];
+$contact_errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -17,11 +17,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $contact_subject = trim($_POST['contact_subject'] ?? '');
         $contact_message = trim($_POST['contact_message'] ?? '');
 
-        if (empty($contact_name)) $contact_errors[] = 'Name is required.';
-        if (empty($contact_email)) $contact_errors[] = 'Email is required.';
-        elseif (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) $contact_errors[] = 'Invalid email format.';
-        if (empty($contact_subject)) $contact_errors[] = 'Subject is required.';
-        if (empty($contact_message)) $contact_errors[] = 'Message is required.';
+        if (empty($contact_name)) {
+            $contact_errors[] = 'Name is required.';
+        }
+        if (empty($contact_email)) {
+            $contact_errors[] = 'Email is required.';
+        } elseif (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
+            $contact_errors[] = 'Invalid email format.';
+        }
+        if (empty($contact_subject)) {
+            $contact_errors[] = 'Subject is required.';
+        }
+        if (empty($contact_message)) {
+            $contact_errors[] = 'Message is required.';
+        }
 
         if (empty($contact_errors)) {
             // TODO: implement mail sending

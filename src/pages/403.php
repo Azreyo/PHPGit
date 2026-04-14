@@ -8,7 +8,7 @@ function easterEgg($percent): bool
     return mt_rand(1, 100) <= $percent;
 }
 
-Logging::loggingToFile("Unauthorized attempt: " . $_SERVER['REQUEST_URI'], 3, true);
+Logging::loggingToFile('Unauthorized attempt: ' . $_SERVER['REQUEST_URI'], 3, true);
 ?>
 <main>
     <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh;">

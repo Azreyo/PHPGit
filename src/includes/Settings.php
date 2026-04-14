@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\includes;
 
-use App\includes\Security;
-
 class Settings
 {
     private bool $is_logged_in;
@@ -63,15 +61,15 @@ class Settings
     {
         $tabMeta = [
             'profile' => [
-                'label'       => 'Profile',
+                    'label' => 'Profile',
                 'description' => 'Display name, bio & website',
-                'icon'        => 'bi-person-circle',
+                    'icon' => 'bi-person-circle',
                     'group' => 'Account',
             ],
             'security' => [
-                'label'       => 'Security',
+                    'label' => 'Security',
                 'description' => 'Password & 2FA protection',
-                'icon'        => 'bi-shield-lock-fill',
+                    'icon' => 'bi-shield-lock-fill',
                     'group' => 'Account',
             ],
                 'appearance' => [
@@ -187,6 +185,7 @@ class Settings
     {
         if (!$this->is_logged_in) {
             $this->renderGuest();
+
             return;
         }
         ?>

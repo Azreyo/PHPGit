@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\includes;
@@ -19,6 +20,7 @@ final class Assets
 
         if (self::isStale()) {
             self::$manifest = (new AssetManifestBuilder(self::SRC_DIR))->build();
+
             return;
         }
 

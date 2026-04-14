@@ -1,14 +1,14 @@
 <?php
 
-use App\includes\Security;
-use App\includes\Logging;
 use App\Config;
+use App\includes\Logging;
+use App\includes\Security;
 use Random\RandomException;
 
 $config = new Config();
 $security = new Security();
 
-$errors  = [];
+$errors = [];
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,9 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } elseif ($security->isRateLimited()) {
         $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
-        Logging::loggingToFile("Too many login attempts", 2, true);
+        Logging::loggingToFile('Too many login attempts', 2, true);
     } else {
-        $email    = trim($_POST['email'] ?? '');
+        $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
         if (empty($email)) {
@@ -47,10 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     session_regenerate_id(true);
                     $_SESSION['login_attempts'] = 0;
-                    $_SESSION['is_logged_in']   = true;
-                    $_SESSION['user_id']        = $user['id'];
-                    $_SESSION['username']       = $user['username'];
-                    $_SESSION['role']           = $user['role'];
+                    $_SESSION['is_logged_in'] = true;
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['username'] = $user['username'];
+                    $_SESSION['role'] = $user['role'];
 
                     unset($_SESSION['csrf_token']);
 
@@ -59,14 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } else {
                 $errors[] = 'Database is currently unavailable. Please try again later.';
-                Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . " " . $config->getHost(), 4);
+                Logging::loggingToFile('Unable to connect to database: ' . $config->getDb() . ' ' . $config->getHost(), 4);
             }
         }
     }
 }
 
-
-if ( $is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'reset_rate_limit') {
         session_destroy();
         $_SESSION = [];
@@ -76,7 +75,7 @@ if ( $is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 
 ?>

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\includes\Assets;
+
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">

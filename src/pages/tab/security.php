@@ -1,8 +1,8 @@
 <?php
 
-use App\includes\Security;
-use App\includes\Logging;
 use App\Config;
+use App\includes\Logging;
+use App\includes\Security;
 use Random\RandomException;
 
 $security = new Security();
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if (!$security->validateCsrfToken($csrf_token)) {
         $error[] = 'Invalid or expired form submission. Please try again.';
-        Logging::loggingToFile("Invalid or expired form submission", 4, true);
+        Logging::loggingToFile('Invalid or expired form submission', 4, true);
     } else {
         $config = new Config();
         if ($pdo = $config->getPdo()) {
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         } elseif (!preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
                             $error[] = 'Password must contain at least one special character.';
                         } else {
-                            $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+                            $stmt = $pdo->prepare('SELECT password FROM users WHERE id = ?');
                             $stmt->execute([$userId]);
                             $user = $stmt->fetch(PDO::FETCH_ASSOC);
                             if (!$user) {
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             } else {
                                 $pdo->beginTransaction();
                                 $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
-                                $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                                $stmt = $pdo->prepare('UPDATE users SET password = ? WHERE id = ?');
                                 $stmt->execute([$newPasswordHash, $userId]);
                                 $pdo->commit();
                                 $success[] = 'Password changed successfully.';
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $pdo->rollBack();
                         }
                         $error[] = 'Failed to change password. Please try again.';
-                        Logging::loggingToFile("Failed to change password: " . $e->getMessage(), 4, true);
+                        Logging::loggingToFile('Failed to change password: ' . $e->getMessage(), 4, true);
                     }
                     break;
                 case 'change_email':
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $currentEmail = $_POST['current_email'] ?? '';
                         $newEmail = trim($_POST['new_email'] ?? '');
                         $confirmEmail = trim($_POST['confirm_email'] ?? '');
-                        $stmt = $pdo->prepare("SELECT id, email FROM users WHERE id = ?");
+                        $stmt = $pdo->prepare('SELECT id, email FROM users WHERE id = ?');
                         $stmt->execute([$userId]);
                         $user = $stmt->fetch(PDO::FETCH_ASSOC);
                         if (!$user) {
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $error[] = 'New email address is not valid.';
                         } else {
                             $pdo->beginTransaction();
-                            $stmt = $pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
+                            $stmt = $pdo->prepare('UPDATE users SET email = ? WHERE id = ?');
                             $stmt->execute([$newEmail, $userId]);
                             $_SESSION['email'] = $newEmail;
                             $pdo->commit();
@@ -89,21 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $pdo->rollBack();
                         }
                         $error[] = 'Failed to change email. Please try again.';
-                        Logging::loggingToFile("Failed to change email: " . $e->getMessage(), 4, true);
+                        Logging::loggingToFile('Failed to change email: ' . $e->getMessage(), 4, true);
                     }
-                    Logging::loggingToFile("Email change requested", 3);
+                    Logging::loggingToFile('Email change requested', 3);
                     break;
                 case 'delete_account':
                     try {
                         $pdo->beginTransaction();
 
-                        $stmt = $pdo->prepare("DELETE FROM issues WHERE author_user_id = ?");
+                        $stmt = $pdo->prepare('DELETE FROM issues WHERE author_user_id = ?');
                         $stmt->execute([$userId]);
 
-                        $stmt = $pdo->prepare("DELETE FROM repositories WHERE owner_user_id = ?");
+                        $stmt = $pdo->prepare('DELETE FROM repositories WHERE owner_user_id = ?');
                         $stmt->execute([$userId]);
 
-                        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+                        $stmt = $pdo->prepare('DELETE FROM users WHERE id = ?');
                         $stmt->execute([$userId]);
 
                         $pdo->commit();
@@ -115,17 +115,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $pdo->rollBack();
                         }
                         $error[] = 'Failed to delete account. Please try again.';
-                        Logging::loggingToFile("Failed to delete user: " . $e->getMessage(), 4, true);
+                        Logging::loggingToFile('Failed to delete user: ' . $e->getMessage(), 4, true);
                     }
                     break;
             }
         }
     }
 }
+
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 ?>
 <div class="d-flex align-items-center gap-3 mb-5 pb-4 border-bottom border-secondary-subtle">

@@ -7,6 +7,7 @@ use App\includes\Security;
 
 $security = new Security();
 $logs = [];
+
 try {
     $config = new Config();
     $pdo = $config->getPDO();
@@ -14,7 +15,7 @@ try {
     $stmt->execute();
     $logs = $stmt->fetchAll();
 } catch (PDOException $e) {
-    Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
 }
 
 ?>
