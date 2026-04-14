@@ -119,9 +119,10 @@ function inboxInitials(string $name): string
         <span class="input-group-text border-secondary-subtle text-secondary rounded-start-3 bg-body-secondary">
             <i class="bi bi-search"></i>
         </span>
-        <input type="search" id="inboxSearch"
-               class="form-control border-secondary-subtle bg-body-secondary rounded-end-3"
-               placeholder="Search messages…" oninput="inboxFilter()">
+        <label for="inboxSearch">
+        </label><input type="search" id="inboxSearch"
+                                                class="form-control border-secondary-subtle bg-body-secondary rounded-end-3"
+                                                placeholder="Search messages…" oninput="inboxFilter()">
     </div>
 </div>
 
@@ -294,4 +295,4 @@ function inboxInitials(string $name): string
     </nav>
 </div>
 
-<script src="<?= Assets::url('assets/js/inbox.js') ?>"></script>
+<script src="<?= Assets::url('assets/js/index.js') ?>"></script>
