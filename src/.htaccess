@@ -61,7 +61,20 @@ DirectoryIndex index.php
     AddOutputFilterByType DEFLATE text/plain text/html text/css text/javascript application/javascript application/json application/xml image/svg+xml
 </IfModule>
 
-php_value opcache.enable 1
+#php_value opcache.enable 1
+
+<IfModule mod_proxy.c>
+    <IfModule mod_proxy_fcgi.c>
+        <FilesMatch \.php$>
+            <If "%{ENV:PHP_FPM_SOCKET} != ''">
+                SetHandler "proxy:unix:%{ENV:PHP_FPM_SOCKET}|fcgi://localhost/"
+            </If>
+            <Else>
+                SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost/"
+            </Else>
+        </FilesMatch>
+    </IfModule>
+</IfModule>
 
 ErrorDocument 404 /index.php?page=404
 ErrorDocument 403 /index.php?page=403

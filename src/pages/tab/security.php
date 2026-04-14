@@ -3,47 +3,321 @@
 use App\includes\Security;
 use App\includes\Logging;
 use App\Config;
+use Random\RandomException;
 
+$security = new Security();
+$csrf_token = null;
+$error = [];
+$success = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrf_token = $_POST['csrf-token'] ?? '';
+    $action = $_POST['action'] ?? '';
+    if (!$security->validateCsrfToken($csrf_token)) {
+        $error[] = 'Invalid or expired form submission. Please try again.';
+        Logging::loggingToFile("Invalid or expired form submission", 4, true);
+    } else {
+        $config = new Config();
+        if ($pdo = $config->getPdo()) {
+            $userId = $_SESSION['user_id'];
+            switch ($action) {
+                case 'change_password':
+                    try {
+                        $currentPassword = $_POST['current_password'] ?? '';
+                        $newPassword = $_POST['new_password'] ?? '';
+                        $confirmPassword = $_POST['confirm_password'] ?? '';
+                        if (!$currentPassword || !$newPassword || !$confirmPassword) {
+                            $error[] = 'All fields are required.';
+                        } elseif ($newPassword !== $confirmPassword) {
+                            $error[] = 'New passwords do not match.';
+                        } elseif (strlen($newPassword) < 12) {
+                            $error[] = 'Password must be at least 12 characters.';
+                        } elseif (!preg_match('/\d/', $newPassword)) {
+                            $error[] = 'Password must contain at least one number.';
+                        } elseif (!preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
+                            $error[] = 'Password must contain at least one special character.';
+                        } else {
+                            $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+                            $stmt->execute([$userId]);
+                            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                            if (!$user) {
+                                $error[] = 'User not found.';
+                            } elseif (!password_verify($currentPassword, $user['password'])) {
+                                $error[] = 'Current password is incorrect.';
+                            } else {
+                                $pdo->beginTransaction();
+                                $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+                                $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                                $stmt->execute([$newPasswordHash, $userId]);
+                                $pdo->commit();
+                                $success[] = 'Password changed successfully.';
+                            }
+                        }
+                    } catch (Exception $e) {
+                        if ($pdo->inTransaction()) {
+                            $pdo->rollBack();
+                        }
+                        $error[] = 'Failed to change password. Please try again.';
+                        Logging::loggingToFile("Failed to change password: " . $e->getMessage(), 4, true);
+                    }
+                    break;
+                case 'change_email':
+                    try {
+                        $currentEmail = $_POST['current_email'] ?? '';
+                        $newEmail = trim($_POST['new_email'] ?? '');
+                        $confirmEmail = trim($_POST['confirm_email'] ?? '');
+                        $stmt = $pdo->prepare("SELECT id, email FROM users WHERE id = ?");
+                        $stmt->execute([$userId]);
+                        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                        if (!$user) {
+                            $error[] = 'User not found.';
+                        } elseif ($currentEmail !== $user['email']) {
+                            $error[] = 'Current email is incorrect.';
+                        } elseif ($newEmail !== $confirmEmail) {
+                            $error[] = 'New emails do not match.';
+                        } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                            $error[] = 'New email address is not valid.';
+                        } else {
+                            $pdo->beginTransaction();
+                            $stmt = $pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
+                            $stmt->execute([$newEmail, $userId]);
+                            $_SESSION['email'] = $newEmail;
+                            $pdo->commit();
+                            $success[] = 'Email address updated successfully.';
+                        }
+                    } catch (Exception $e) {
+                        if ($pdo->inTransaction()) {
+                            $pdo->rollBack();
+                        }
+                        $error[] = 'Failed to change email. Please try again.';
+                        Logging::loggingToFile("Failed to change email: " . $e->getMessage(), 4, true);
+                    }
+                    Logging::loggingToFile("Email change requested", 3);
+                    break;
+                case 'delete_account':
+                    try {
+                        $pdo->beginTransaction();
+
+                        $stmt = $pdo->prepare("DELETE FROM issues WHERE author_user_id = ?");
+                        $stmt->execute([$userId]);
+
+                        $stmt = $pdo->prepare("DELETE FROM repositories WHERE owner_user_id = ?");
+                        $stmt->execute([$userId]);
+
+                        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+                        $stmt->execute([$userId]);
+
+                        $pdo->commit();
+                        Logging::loggingToFile("Account deleted for user ID: {$userId}", 3);
+                        session_destroy();
+                        exit;
+                    } catch (PDOException $e) {
+                        if ($pdo->inTransaction()) {
+                            $pdo->rollBack();
+                        }
+                        $error[] = 'Failed to delete account. Please try again.';
+                        Logging::loggingToFile("Failed to delete user: " . $e->getMessage(), 4, true);
+                    }
+                    break;
+            }
+        }
+    }
+}
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+}
 ?>
-<div class="mb-4">
-    <p class="text-primary fw-bold text-uppercase mb-2" style="font-size: .78rem; letter-spacing: .12em;">Security</p>
-    <h4 class="mb-1" style="letter-spacing: -0.01em;">Protect your account</h4>
-    <p class="text-secondary mb-0">Change your credentials and account protection settings.</p>
+<div class="d-flex align-items-center gap-3 mb-5 pb-4 border-bottom border-secondary-subtle">
+    <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
+         style="width: 34px; height: 34px; font-size: .9rem;">
+        <i class="bi bi-shield-lock-fill"></i>
+    </div>
+    <div>
+        <p class="section-label mb-0">Security</p>
+        <h6 class="fw-bold mb-0" style="letter-spacing: -0.01em;">Protect your account</h6>
+    </div>
 </div>
-
-<form action="#" method="post">
-    <div class="p-3 border border-secondary-subtle rounded-3 bg-body-tertiary bg-opacity-10 mb-4">
-        <label for="security-current-password" class="form-label fw-semibold">Current Password</label>
-        <input type="password" id="security-current-password" class="form-control rounded-3" style="min-height: 44px;"
-               placeholder="Current password">
-        <small class="text-secondary d-block mt-2">Required before changing your password.</small>
+<?php if (!empty($success)) : ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <?php foreach ($success as $msg) : ?>
+            <p class="mb-0"><?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endforeach; ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-
-    <div class="p-3 border border-secondary-subtle rounded-3 bg-body-tertiary bg-opacity-10 mb-4">
-        <label for="security-new-password" class="form-label fw-semibold">New Password</label>
-        <input type="password" id="security-new-password" class="form-control rounded-3" style="min-height: 44px;"
-               placeholder="New password">
-        <small class="text-secondary d-block mt-2">Use at least 12 characters with symbols and numbers.</small>
+<?php endif; ?>
+<?php if (!empty($error)) : ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <?php foreach ($error as $err) : ?>
+            <p class="mb-0"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endforeach; ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+<?php endif; ?>
 
-    <div class="p-3 border border-secondary-subtle rounded-3 bg-body-tertiary bg-opacity-10 mb-4">
-        <label for="security-confirm-password" class="form-label fw-semibold">Confirm New Password</label>
-        <input type="password" id="security-confirm-password" class="form-control rounded-3" style="min-height: 44px;"
-               placeholder="Confirm new password">
-    </div>
-
-    <div class="p-3 border border-secondary-subtle rounded-3 bg-body-tertiary bg-opacity-10 mb-4">
-        <div class="form-check form-switch m-0">
-            <input class="form-check-input" type="checkbox" role="switch" id="security-2fa">
-            <label class="form-check-label fw-semibold" for="security-2fa">
-                Enable two-factor authentication
-            </label>
+<form method="post">
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
+                 style="width: 36px; height: 36px; font-size: 1rem;">
+                <i class="bi bi-key-fill"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0">Change Password</h6>
+                <small class="text-secondary">Use a strong password with symbols and numbers.</small>
+            </div>
         </div>
-        <small class="text-secondary d-block mt-2">Adds an extra layer of login verification.</small>
-    </div>
 
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-2">
-        <small class="text-secondary">Changes are preview-only until backend save is connected.</small>
-        <button type="button" class="btn btn-primary px-4">Save Security</button>
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="security-current-password" class="form-label fw-semibold">Current Password</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-lock"></i>
+                    </span>
+                    <input type="password" id="security-current-password"
+                           name="current_password"
+                           class="form-control rounded-end-3"
+                           placeholder="Enter current password">
+                </div>
+                <div class="form-text">Required to authorize any password change.</div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="security-new-password" class="form-label fw-semibold">New Password</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-lock-fill"></i>
+                    </span>
+                    <input type="password" id="security-new-password"
+                           name="new_password"
+                           class="form-control rounded-end-3"
+                           placeholder="New password">
+                </div>
+                <div class="form-text">Minimum 12 characters with symbols &amp; numbers.</div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="security-confirm-password" class="form-label fw-semibold">Confirm Password</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-lock-fill"></i>
+                    </span>
+                    <input type="password" id="security-confirm-password"
+                           name="confirm_password"
+                           class="form-control rounded-end-3"
+                           placeholder="Confirm new password">
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="csrf-token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+    <input type="hidden" name="action" value="change_password">
+    <div class="d-flex align-items-center justify-content-end gap-3 mt-5 pt-4 border-top border-secondary-subtle">
+        <button type="reset" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+        </button>
+        <button type="submit" class="btn btn-primary px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check"></i> Save Security
+        </button>
     </div>
 </form>
+
+<hr class="border-secondary-subtle my-5">
+
+<form method="post">
+
+    <div class="mb-5">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
+                 style="width: 36px; height: 36px; font-size: 1rem;">
+                <i class="bi bi-envelope-fill"></i>
+            </div>
+            <div>
+                <h6 class="fw-bold mb-0">Change Email</h6>
+                <small class="text-secondary">Update the email address associated with your account.</small>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label for="security-current-email" class="form-label fw-semibold">Current Email</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-envelope"></i>
+                    </span>
+                    <input type="email" id="security-current-email" name="current_email"
+                           class="form-control rounded-end-3"
+                           placeholder="Your current email address">
+                </div>
+                <div class="form-text">Enter your current email to confirm your identity.</div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="security-new-email" class="form-label fw-semibold">New Email</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-envelope-at"></i>
+                    </span>
+                    <input type="email" id="security-new-email" name="new_email"
+                           class="form-control rounded-end-3"
+                           placeholder="New email address">
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label for="security-confirm-email" class="form-label fw-semibold">Confirm New Email</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary rounded-start-3">
+                        <i class="bi bi-envelope-check"></i>
+                    </span>
+                    <input type="email" id="security-confirm-email" name="confirm_email"
+                           class="form-control rounded-end-3"
+                           placeholder="Confirm new email address">
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" name="csrf-token" value="<?= $csrf_token ?>">
+    <input type="hidden" name="action" value="change_email">
+    <div class="d-flex align-items-center justify-content-end gap-3 mt-5 pt-4 border-top border-secondary-subtle">
+        <button type="reset" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+        </button>
+        <button type="submit" name="action" value="change_email"
+                class="btn btn-primary px-4 d-flex align-items-center gap-2">
+            <i class="bi bi-envelope-check"></i> Update Email
+        </button>
+    </div>
+</form>
+
+<hr class="border-secondary-subtle my-5">
+
+<div>
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="d-flex align-items-center justify-content-center rounded-3 bg-danger-subtle text-danger flex-shrink-0"
+             style="width: 36px; height: 36px; font-size: 1rem;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <div>
+            <h6 class="fw-bold mb-0 text-danger">Danger Zone</h6>
+            <small class="text-secondary">Irreversible actions — proceed with caution.</small>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center justify-content-between gap-3 p-3 rounded-3 border border-danger-subtle">
+        <div>
+            <div class="fw-semibold">Delete Account</div>
+            <small class="text-secondary">Permanently remove your account and all associated data.</small>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="action" value="delete_account">
+            <input type="hidden" name="csrf-token" value="<?= $csrf_token ?>">
+            <button type="submit" class="btn btn-outline-danger btn-sm px-3 flex-shrink-0"
+                    onclick="return confirm('Are you sure? This action cannot be undone.')">
+                <i class="bi bi-trash3 me-1"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>

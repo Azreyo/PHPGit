@@ -380,8 +380,8 @@ function installPhpGit(): void
         $apacheConfigPath = $projectRoot . '/apache/phpgit.local.conf';
         $htaccessPath = $documentRoot . '/.htaccess';
         $certDirectory = $documentRoot . '/certs';
-        $assetsDirectory = $projectRoot . '/assets';
-        $manifestPath = $assetsDirectory . '/assets/manifest.json';
+        $assetsDirectory = $documentRoot . '/assets';
+        $manifestPath = $assetsDirectory . '/manifest.json';
 
         $defaultHost = sanitizeHost(envValue('APP_HOST', 'phpgit.local') ?? 'phpgit.local');
         $serverName = sanitizeHost(askInput('Apache ServerName', $defaultHost));
@@ -441,14 +441,12 @@ function installPhpGit(): void
         }
 
         try {
-            if (!file_exists($assetsDirectory)) {
+            if (!is_dir($assetsDirectory)) {
                 if (mkdir($assetsDirectory, 0755, true)) {
                     echo "Created assets directory at {$assetsDirectory}\n";
                 } else {
                     echo "Failed to create assets directory at {$assetsDirectory}. Check permissions.\n";
                 }
-            } else {
-                echo "Failed to create assets directory at {$assetsDirectory}. Check permissions.\n";
             }
             if (!file_exists($manifestPath)) {
                 if (file_put_contents($manifestPath, '') !== false) {
