@@ -83,8 +83,8 @@ declare(strict_types=1);
                         <div class="fw-semibold">Azreyo</div>
                         <small class="text-secondary d-block mb-3">Founder &amp; Lead Developer</small>
                         <div class="d-flex gap-1 justify-content-center flex-wrap">
-                            <span class="badge rounded-pill bg-body-secondary-subtle text-secondary-emphasis">PHP</span>
-                            <span class="badge rounded-pill bg-body-secondary-subtle text-secondary-emphasis">MySQL</span>
+                            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">PHP</span>
+                            <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">MySQL</span>
                         </div>
                     </div>
                 </div>

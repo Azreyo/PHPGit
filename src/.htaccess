@@ -62,9 +62,19 @@ DirectoryIndex index.php
 </IfModule>
 
 #php_value opcache.enable 1
-<FilesMatch \.php$>
-    SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost/"
-</FilesMatch>
+
+<IfModule mod_proxy.c>
+    <IfModule mod_proxy_fcgi.c>
+        <FilesMatch \.php$>
+            <If "%{ENV:PHP_FPM_SOCKET} != ''">
+                SetHandler "proxy:unix:%{ENV:PHP_FPM_SOCKET}|fcgi://localhost/"
+            </If>
+            <Else>
+                SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost/"
+            </Else>
+        </FilesMatch>
+    </IfModule>
+</IfModule>
 
 ErrorDocument 404 /index.php?page=404
 ErrorDocument 403 /index.php?page=403

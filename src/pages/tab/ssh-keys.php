@@ -76,7 +76,7 @@
         </div>
     </div>
 
-    <div class="text-center py-5 px-3 rounded-3 border border-secondary-subtle border-dashed bg-body-secondary">
+    <div class="text-center py-5 px-3 rounded-3 border border-secondary-subtle bg-body-secondary">
         <div class="d-flex align-items-center justify-content-center rounded-circle bg-body border border-secondary-subtle mx-auto mb-3"
              style="width: 52px; height: 52px; font-size: 1.3rem;">
             <i class="bi bi-key text-secondary"></i>

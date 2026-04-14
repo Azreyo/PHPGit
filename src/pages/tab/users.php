@@ -24,9 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 try {
-    $stmt = $config->getPdo()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
-    $stmt->execute();
-    $users = $stmt->fetchAll();
+    if ($config->getPdo() !== null) {
+        $stmt = $config->getPdo()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
+        $stmt->execute();
+        $users = $stmt->fetchAll();
+    }
 } catch (PDOException $e) {
     Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
 }
@@ -186,7 +188,7 @@ try {
             foreach ($users as $u):
                 $roleClass = match ($u['role']) {
                     'ADMIN' => 'text-bg-danger',
-                    default => 'text-bg-body-secondary'
+                    default => 'text-bg-secondary'
                 };
                 $statusClass = match ($u['status']) {
                     'ACTIVE' => 'success',
