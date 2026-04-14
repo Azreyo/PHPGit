@@ -125,6 +125,7 @@ class Settings
                     if (!in_array($group, $renderedGroups, true)):
                         $renderedGroups[] = $group;
                         $extraTop = empty($renderedGroups) ? '' : 'mt-2';
+                        $renderedGroups[] = $group;
                 ?>
                         <p class="text-secondary text-uppercase fw-bold px-2 pt-3 mb-2 <?php echo $extraTop; ?>"
                            style="font-size: .65rem; letter-spacing: .12em;"><?php echo htmlspecialchars($group, ENT_QUOTES, 'UTF-8'); ?></p>
