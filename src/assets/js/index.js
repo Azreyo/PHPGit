@@ -68,7 +68,7 @@
             b.classList.remove('btn-primary', 'active-tab');
             b.classList.add('text-secondary');
         });
-        btn.classList.add('btn-primary');
+        btn.classList.add('btn-primary', 'active-tab');
         btn.classList.remove('text-secondary');
         inboxFilter();
     };
