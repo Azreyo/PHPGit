@@ -112,8 +112,8 @@
             const show = matchStatus && matchSearch;
             row.style.display = (
                 show
-                    ? ""
-                    : "none"
+                ? ""
+                : "none"
             );
             if (show) {
                 visible += 1;
@@ -126,8 +126,8 @@
         );
         const plural = (
             visible !== 1
-                ? "s"
-                : ""
+            ? "s"
+            : ""
         );
         const countMsg = "Showing " + visible + " message" + plural;
         document.getElementById("inboxCount").textContent = countMsg;

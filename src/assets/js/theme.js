@@ -12,14 +12,14 @@
         if (icon) {
             icon.className = (
                 theme === "dark"
-                    ? "bi bi-sun"
-                    : "bi bi-moon-stars"
+                ? "bi bi-sun"
+                : "bi bi-moon-stars"
             );
         }
         btn.title = (
             theme === "dark"
-                ? "Switch to light mode"
-                : "Switch to dark mode"
+            ? "Switch to light mode"
+            : "Switch to dark mode"
         );
     }
 
@@ -30,8 +30,8 @@
     btn.addEventListener("click", function () {
         var next = (
             document.documentElement.getAttribute("data-bs-theme") === "dark"
-                ? "light"
-                : "dark"
+            ? "light"
+            : "dark"
         );
         applyTheme(next);
     });
