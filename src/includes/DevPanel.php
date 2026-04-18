@@ -35,7 +35,7 @@ class DevPanel
     private function convertBytes(int $size): string
     {
         $units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
-        $i = $size > 0 ? (int)floor(log($size, 1024)) : 0;
+        $i = $size > 0 ? (int) floor(log($size, 1024)) : 0;
 
         return round($size / pow(1024, $i), 2) . ' ' . $units[$i];
     }
@@ -111,9 +111,9 @@ class DevPanel
 
     private function renderSessionPopover(): string
     {
-        $isLoggedIn = $this->checkStatus((bool)($_SESSION['is_logged_in'] ?? false));
-        $sessionUser = $this->h((string)($_SESSION['username'] ?? 'n/a'));
-        $sessionRole = $this->h((string)($_SESSION['role'] ?? 'n/a'));
+        $isLoggedIn = $this->checkStatus((bool) ($_SESSION['is_logged_in'] ?? false));
+        $sessionUser = $this->h((string) ($_SESSION['username'] ?? 'n/a'));
+        $sessionRole = $this->h((string) ($_SESSION['role'] ?? 'n/a'));
         $sessionLabel = session_status() === PHP_SESSION_ACTIVE ? session_id() : 'no session';
 
         $content = '<table class="table table-sm table-borderless mb-0">'
@@ -148,7 +148,7 @@ class DevPanel
     {
         $apiStatus = false;
 
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int)($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
+        $scheme = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
         $url = "{$scheme}://phpgit.local/api/v1/health";
         $ch = curl_init($url);
         curl_setopt_array($ch, [

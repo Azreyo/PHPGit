@@ -85,8 +85,8 @@ class ApiController extends Controller
             session_start();
         }
 
-        $isLoggedIn = (bool)($_SESSION['is_logged_in'] ?? false);
-        if (!$isLoggedIn) {
+        $isLoggedIn = (bool) ($_SESSION['is_logged_in'] ?? false);
+        if (! $isLoggedIn) {
             $this->error('Unauthorized', 401);
         }
     }
@@ -97,10 +97,10 @@ class ApiController extends Controller
             session_start();
         }
 
-        $isLoggedIn = (bool)($_SESSION['is_logged_in'] ?? false);
-        $role = (string)($_SESSION['role'] ?? '');
+        $isLoggedIn = (bool) ($_SESSION['is_logged_in'] ?? false);
+        $role = (string) ($_SESSION['role'] ?? '');
 
-        if (!$isLoggedIn || $role !== 'ADMIN') {
+        if (! $isLoggedIn || $role !== 'ADMIN') {
             $this->error('Unauthorized', 401);
         }
     }
@@ -123,7 +123,7 @@ class ApiController extends Controller
             ');
             $stmt->execute();
             $dashboardInfo = $stmt->fetch();
-            if (!$dashboardInfo) {
+            if (! $dashboardInfo) {
                 Logging::loggingToFile('Dashboard info fetch error: No data returned', 4, true, true);
                 $this->success([]);
             }
@@ -148,11 +148,11 @@ class ApiController extends Controller
             $stmt->execute();
             $databaseInfo = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$databaseInfo) {
+            if (! $databaseInfo) {
                 $this->error('Could not fetch database uptime');
             }
 
-            $uptimeSeconds = (int)$databaseInfo['Value'];
+            $uptimeSeconds = (int) $databaseInfo['Value'];
 
             $this->success([
                 'uptime' => $uptimeSeconds,

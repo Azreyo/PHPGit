@@ -35,7 +35,7 @@ class Security
 
     public function validateCsrfToken(string $token): bool
     {
-        if ($this->csrf_token === 'n/a' || !hash_equals($this->csrf_token, $token)) {
+        if ($this->csrf_token === 'n/a' || ! hash_equals($this->csrf_token, $token)) {
             return false;
         }
 

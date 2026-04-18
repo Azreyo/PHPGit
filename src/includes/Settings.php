@@ -14,15 +14,15 @@ class Settings
 
     public function __construct(array $session, array $get)
     {
-        $this->is_logged_in = !empty($session['is_logged_in']);
+        $this->is_logged_in = ! empty($session['is_logged_in']);
         $this->username = $session['username'] ?? '';
         $security = new Security();
         $tabParam = $get['tab'] ?? 'profile';
-        if (!is_string($tabParam)) {
+        if (! is_string($tabParam)) {
             $tabParam = 'profile';
         }
         $tabParam = $security->sanitizeTab($tabParam);
-        if (!in_array($tabParam, self::ALLOWED_TABS, true)) {
+        if (! in_array($tabParam, self::ALLOWED_TABS, true)) {
             $tabParam = 'profile';
         }
         $this->current_tab = $tabParam;
@@ -117,13 +117,13 @@ class Settings
             <nav class="p-3">
                 <?php
                 $renderedGroups = [];
-                foreach (self::ALLOWED_TABS as $tab):
-                    $isActive = $this->current_tab === $tab;
-                    $group = $tabMeta[$tab]['group'];
-                    if (!in_array($group, $renderedGroups, true)):
-                        $renderedGroups[] = $group;
-                        $extraTop = empty($renderedGroups) ? '' : 'mt-2';
-                        $renderedGroups[] = $group;
+        foreach (self::ALLOWED_TABS as $tab):
+            $isActive = $this->current_tab === $tab;
+            $group = $tabMeta[$tab]['group'];
+            if (! in_array($group, $renderedGroups, true)):
+                $renderedGroups[] = $group;
+                $extraTop = empty($renderedGroups) ? '' : 'mt-2';
+                $renderedGroups[] = $group;
                 ?>
                         <p class="text-secondary text-uppercase fw-bold px-2 pt-3 mb-2 <?php echo $extraTop; ?>"
                            style="font-size: .65rem; letter-spacing: .12em;"><?php echo htmlspecialchars($group, ENT_QUOTES, 'UTF-8'); ?></p>
@@ -175,7 +175,7 @@ class Settings
             if (file_exists($path)) {
                 include $path;
             }
-            ?>
+        ?>
             </div>
         </section>
         <?php
@@ -183,7 +183,7 @@ class Settings
 
     public function render(): void
     {
-        if (!$this->is_logged_in) {
+        if (! $this->is_logged_in) {
             $this->renderGuest();
 
             return;

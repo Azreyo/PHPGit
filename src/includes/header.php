@@ -37,7 +37,7 @@ try {
                     </div>
 
                     <div class="d-flex align-items-center gap-2">
-                        <?php if (!$is_logged_in): ?>
+                        <?php if (! $is_logged_in): ?>
                             <a class="btn btn-outline-secondary btn-sm px-3" href="/index.php?page=login">Sign in</a>
                             <a class="btn btn-primary btn-sm px-3" href="/index.php?page=register">Sign up</a>
                         <?php else: ?>

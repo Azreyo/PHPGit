@@ -26,7 +26,7 @@ class ErrorHandler
 
     private function bootstrapEnv(?string $appEnv): void
     {
-        if (!isset($_ENV['APP_ENV']) && class_exists(Dotenv::class)) {
+        if (! isset($_ENV['APP_ENV']) && class_exists(Dotenv::class)) {
             $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
             $dotenv->safeLoad();
         }
@@ -49,7 +49,7 @@ class ErrorHandler
 
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool
     {
-        if (!$this->isDev) {
+        if (! $this->isDev) {
             return true;
         }
 
@@ -90,7 +90,7 @@ class ErrorHandler
 
     public function handleException(Throwable $e): void
     {
-        if (!$this->isDev) {
+        if (! $this->isDev) {
             http_response_code(500);
             error_log(sprintf(
                 'Unhandled %s: %s in %s:%d',
@@ -137,7 +137,7 @@ class ErrorHandler
 
     private function sourceSnippet(string $file, int $errorLine, int $context = 5): string
     {
-        if (!is_readable($file)) {
+        if (! is_readable($file)) {
             return '<p class="text-muted small mb-0">Source not readable.</p>';
         }
 

@@ -1,19 +1,19 @@
 <?php
 declare(strict_types=1);
 
-use App\Config;
-use App\includes\Security;
 use App\includes\Logging;
+use App\includes\Security;
 use Random\RandomException;
 
 $security = new Security();
 $csrf_token = null;
 $errors = [];
+
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $csrfToken = $_POST['csrf_token'] ?? '';
 
-        if (!$security->validateCsrfToken($csrfToken)) {
+        if (! $security->validateCsrfToken($csrfToken)) {
             $errors[] = 'Invalid or expired form submission. Please try again.';
         } elseif ($security->isRateLimited()) {
             $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
@@ -24,7 +24,7 @@ try {
 
             if (empty($email)) {
                 $errors[] = 'Email is required.';
-            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $errors[] = 'Invalid email format.';
             }
 
@@ -35,12 +35,12 @@ try {
             if (empty($errors)) {
                 if ($pdo !== null) {
                     $stmt = $pdo->prepare(
-                            'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
+                        'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
                     );
                     $stmt->execute([$email]);
                     $user = $stmt->fetch();
 
-                    if ($user === false || !password_verify($password, $user['password'])) {
+                    if ($user === false || ! password_verify($password, $user['password'])) {
                         $security->recordFailedAttempt();
                         $errors[] = 'Invalid email or password.';
                     } else {

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\includes;
 
 use App\Config;
-use PDO;
 
 class Logging
 {
@@ -21,8 +20,8 @@ class Logging
         };
 
         $sanitized_message = preg_replace('/[\r\n\t\0]/', '', $message);
-        if (!$save_to_database) {
-            if (!$is_security_alert) {
+        if (! $save_to_database) {
+            if (! $is_security_alert) {
                 $path = __DIR__ . '/../log/log-' . date('d-m-Y') . '.log';
                 $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . "\n";
             } else {
@@ -30,8 +29,8 @@ class Logging
                 $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . ' [ ' . self::getClientIP() . ' ]' . "\n";
             }
 
-            if (!is_dir(__DIR__ . '/../log/')) {
-                if (!mkdir(__DIR__ . '/../log/', 0775, true)) {
+            if (! is_dir(__DIR__ . '/../log/')) {
+                if (! mkdir(__DIR__ . '/../log/', 0775, true)) {
                     error_log('Cannot create directory log: invalid permissions');
                 }
             }
@@ -46,7 +45,7 @@ class Logging
             $ip = $is_security_alert ? self::getClientIP() : null;
 
             $stmt = new Config()->getPdo()->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
-            $stmt->execute([$level_message, $sanitized_message, (int)$is_security_alert, $ip]);
+            $stmt->execute([$level_message, $sanitized_message, (int) $is_security_alert, $ip]);
         }
     }
 
@@ -54,7 +53,7 @@ class Logging
     {
         $ip = null;
 
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        if (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             $forwardedIps = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR']);
             foreach ($forwardedIps as $forwardedIp) {
                 $candidate = trim($forwardedIp);
@@ -65,7 +64,7 @@ class Logging
             }
         }
 
-        if ($ip === null && !empty($_SERVER['REMOTE_ADDR'])) {
+        if ($ip === null && ! empty($_SERVER['REMOTE_ADDR'])) {
             $remoteAddr = (string) $_SERVER['REMOTE_ADDR'];
             if (filter_var($remoteAddr, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6) !== false) {
                 $ip = $remoteAddr;

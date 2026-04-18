@@ -15,12 +15,12 @@ class Dashboard
 
     public function __construct(array $session, array $get)
     {
-        $this->is_logged_in = !empty($session['is_logged_in']);
+        $this->is_logged_in = ! empty($session['is_logged_in']);
         $this->username = $session['username'] ?? '';
         $this->role = $session['role'] ?? '';
 
         $tabParam = $get['tab'] ?? 'overview';
-        if (!is_string($tabParam)) {
+        if (! is_string($tabParam)) {
             $tabParam = 'overview';
         }
         $this->current_tab = $this->sanitizeTab($tabParam);
@@ -140,14 +140,14 @@ class Dashboard
             } else {
                 echo '<div class="admin-panel p-4 text-center"><p class="text-secondary mb-0">Tab content not found.</p></div>';
             }
-            ?>
+        ?>
         </section>
         <?php
     }
 
     public function render(): void
     {
-        if (!$this->is_logged_in || $this->role !== 'ADMIN') {
+        if (! $this->is_logged_in || $this->role !== 'ADMIN') {
             $this->renderForbidden();
 
             return;

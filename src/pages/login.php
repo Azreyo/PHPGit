@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post_errors = [];
     $csrfToken = $_POST['csrf_token'] ?? '';
 
-    if (!$security->validateCsrfToken($csrfToken)) {
+    if (! $security->validateCsrfToken($csrfToken)) {
         $post_errors[] = 'Invalid or expired form submission. Please try again.';
     } elseif ($security->isRateLimited()) {
         $post_errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($email)) {
             $post_errors[] = 'Email is required.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $post_errors[] = 'Invalid email format.';
         }
 
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
 
-                if ($user === false || !password_verify($password, $user['password'])) {
+                if ($user === false || ! password_verify($password, $user['password'])) {
                     $security->recordFailedAttempt();
                     $post_errors[] = 'Invalid email or password.';
                 } else {
@@ -119,7 +119,7 @@ try {
                 </div>
             <?php endif; ?>
 
-            <?php if (!empty($errors)): ?>
+            <?php if (! empty($errors)): ?>
                 <div class="alert alert-danger" role="alert">
                     <ul class="mb-0">
                         <?php foreach ($errors as $error): ?>

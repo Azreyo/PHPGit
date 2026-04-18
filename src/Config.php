@@ -56,7 +56,7 @@ class Config
                 $this->pdoError = $e->getMessage();
                 $this->dbOnline = false;
             } else {
-                throw new \PDOException($e->getMessage(), (int)$e->getCode());
+                throw new \PDOException($e->getMessage(), (int) $e->getCode());
             }
         }
     }

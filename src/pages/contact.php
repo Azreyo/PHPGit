@@ -14,7 +14,7 @@ unset($_SESSION['contact_errors'], $_SESSION['contact_prefill']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post_errors = [];
-    if (!$security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+    if (! $security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $post_errors[] = 'Session expired, please refresh the page and try again.';
     } else {
         $contact_name = trim($_POST['contact_name'] ?? '');
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (empty($contact_email)) {
             $post_errors[] = 'Email is required.';
-        } elseif (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
+        } elseif (! filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
             $post_errors[] = 'Invalid email format.';
         }
         if (empty($contact_subject)) {
@@ -82,7 +82,7 @@ try {
                         <p class="mb-0">Thanks for reaching out. We'll get back to you within 24 hours.</p>
                     </div>
                 <?php else: ?>
-                    <?php if (!empty($contact_errors)): ?>
+                    <?php if (! empty($contact_errors)): ?>
                         <div class="alert alert-danger" role="alert">
                             <ul class="mb-0">
                                 <?php foreach ($contact_errors as $e): ?>

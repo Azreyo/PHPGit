@@ -25,7 +25,7 @@ final class Assets
         }
 
         $decoded = json_decode(
-            (string)file_get_contents(self::MANIFEST_PATH),
+            (string) file_get_contents(self::MANIFEST_PATH),
             true
         );
         self::$manifest = is_array($decoded) ? $decoded : [];
@@ -33,7 +33,7 @@ final class Assets
 
     private static function isStale(): bool
     {
-        if (!file_exists(self::MANIFEST_PATH)) {
+        if (! file_exists(self::MANIFEST_PATH)) {
             return true;
         }
 

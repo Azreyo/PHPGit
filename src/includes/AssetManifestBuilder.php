@@ -27,7 +27,7 @@ final class AssetManifestBuilder
         foreach ($this->discoverAssets() as $asset) {
             $fullPath = $this->srcDir . $asset;
 
-            if (!file_exists($fullPath)) {
+            if (! file_exists($fullPath)) {
                 if ($verbose) {
                     fwrite(STDERR, "  [SKIP] {$asset} — file not found\n");
                 }
@@ -89,7 +89,7 @@ final class AssetManifestBuilder
         $path = $this->manifestPath();
         $dir = dirname($path);
 
-        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+        if (! is_dir($dir) && ! mkdir($dir, 0775, true) && ! is_dir($dir)) {
             $msg = "Failed to create manifest directory: {$dir}";
             Logging::loggingToFile($msg);
 
@@ -109,7 +109,7 @@ final class AssetManifestBuilder
             if (file_put_contents($tmp, $content) === false) {
                 throw new \RuntimeException("Failed to write asset manifest to {$path}");
             }
-            if (!rename($tmp, $path)) {
+            if (! rename($tmp, $path)) {
                 throw new \RuntimeException("Failed to move asset manifest into place at {$path}");
             }
         } catch (\RuntimeException $e) {

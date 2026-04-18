@@ -13,7 +13,7 @@ final class SystemService
         $cores = self::getCpuCoreCount();
         $loadAvg = sys_getloadavg();
 
-        if ($cores <= 0 || $loadAvg === false || !isset($loadAvg[0])) {
+        if ($cores <= 0 || $loadAvg === false || ! isset($loadAvg[0])) {
             return 0.0;
         }
 
@@ -35,7 +35,7 @@ final class SystemService
         $values = [];
         foreach ($memInfo as $line) {
             if (preg_match('/^(\w+):\s+(\d+)/', $line, $matches) === 1) {
-                $values[$matches[1]] = (int)$matches[2];
+                $values[$matches[1]] = (int) $matches[2];
             }
         }
 

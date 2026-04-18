@@ -9,7 +9,7 @@ $repos = [];
 if ($pdo !== null) {
     try {
         $stmt = $pdo->prepare(
-                'SELECT CONCAT(COALESCE(repo_name, \'\'), \'/\', COALESCE(slug, \'\')) AS name, repo_description AS descr, stars, forks, lang, updated_at AS updated FROM repositories;'
+            'SELECT CONCAT(COALESCE(repo_name, \'\'), \'/\', COALESCE(slug, \'\')) AS name, repo_description AS descr, stars, forks, lang, updated_at AS updated FROM repositories;'
         );
         $stmt->execute();
         $repos = $stmt->fetchAll();
@@ -49,7 +49,7 @@ if (strlen($search_query) > 100) {
     exit;
 }
 if ($search_query !== '') {
-    $repos = array_values(array_filter($repos, fn($r) => stripos($r['name'], $search_query) !== false || stripos($r['descr'] ?? '', $search_query) !== false));
+    $repos = array_values(array_filter($repos, fn ($r) => stripos($r['name'], $search_query) !== false || stripos($r['descr'] ?? '', $search_query) !== false));
 }
 $programming_languages = array_change_key_case($programming_languages, CASE_UPPER);
 ?>
@@ -96,7 +96,7 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
             <?php else: ?>
                 <?php foreach ($repos as $repo):
                     $rawLang = $repo['lang'] ?? '';
-                    $repo_lang = (string)$rawLang;
+                    $repo_lang = (string) $rawLang;
                     $langKey = strtoupper(trim($repo_lang));
                     $color = $programming_languages[$langKey] ?? '[#000000](#000000)';
                     ?>

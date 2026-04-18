@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $post_errors = [];
     $post_success = [];
 
-    if (!$security->validateCsrfToken($csrf_token_post)) {
+    if (! $security->validateCsrfToken($csrf_token_post)) {
         $post_errors[] = 'Invalid or expired form submission. Please try again.';
         Logging::loggingToFile('Invalid or expired form submission', 4, true);
     } else {
@@ -31,23 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $currentPassword = $_POST['current_password'] ?? '';
                         $newPassword = $_POST['new_password'] ?? '';
                         $confirmPassword = $_POST['confirm_password'] ?? '';
-                        if (!$currentPassword || !$newPassword || !$confirmPassword) {
+                        if (! $currentPassword || ! $newPassword || ! $confirmPassword) {
                             $post_errors[] = 'All fields are required.';
                         } elseif ($newPassword !== $confirmPassword) {
                             $post_errors[] = 'New passwords do not match.';
                         } elseif (strlen($newPassword) < 12) {
                             $post_errors[] = 'Password must be at least 12 characters.';
-                        } elseif (!preg_match('/\d/', $newPassword)) {
+                        } elseif (! preg_match('/\d/', $newPassword)) {
                             $post_errors[] = 'Password must contain at least one number.';
-                        } elseif (!preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
+                        } elseif (! preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
                             $post_errors[] = 'Password must contain at least one special character.';
                         } else {
                             $stmt = $pdo->prepare('SELECT password FROM users WHERE id = ?');
                             $stmt->execute([$userId]);
                             $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                            if (!$user) {
+                            if (! $user) {
                                 $post_errors[] = 'User not found.';
-                            } elseif (!password_verify($currentPassword, $user['password'])) {
+                            } elseif (! password_verify($currentPassword, $user['password'])) {
                                 $post_errors[] = 'Current password is incorrect.';
                             } else {
                                 $pdo->beginTransaction();
@@ -74,13 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt = $pdo->prepare('SELECT id, email FROM users WHERE id = ?');
                         $stmt->execute([$userId]);
                         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if (!$user) {
+                        if (! $user) {
                             $post_errors[] = 'User not found.';
                         } elseif ($currentEmail !== $user['email']) {
                             $post_errors[] = 'Current email is incorrect.';
                         } elseif ($newEmail !== $confirmEmail) {
                             $post_errors[] = 'New emails do not match.';
-                        } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                        } elseif (! filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
                             $post_errors[] = 'New email address is not valid.';
                         } else {
                             $pdo->beginTransaction();
@@ -150,7 +150,7 @@ try {
         <h6 class="fw-bold mb-0" style="letter-spacing: -0.01em;">Protect your account</h6>
     </div>
 </div>
-<?php if (!empty($success)) : ?>
+<?php if (! empty($success)) : ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <?php foreach ($success as $msg) : ?>
             <p class="mb-0"><?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?></p>
@@ -158,7 +158,7 @@ try {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
-<?php if (!empty($error)) : ?>
+<?php if (! empty($error)) : ?>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <?php foreach ($error as $err) : ?>
             <p class="mb-0"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></p>

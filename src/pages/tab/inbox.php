@@ -65,7 +65,7 @@ $messages = [
     ],
 ];
 
-$unreadCount = count(array_filter($messages, fn($m) => $m['unread']));
+$unreadCount = count(array_filter($messages, fn ($m) => $m['unread']));
 
 $statusMeta = [
     'new' => ['label' => 'New', 'class' => 'text-bg-primary'],
@@ -160,7 +160,7 @@ function inboxInitials(string $name): string
                  onclick="inboxOpen(this)"
                  data-status="<?php echo htmlspecialchars($msg['status'], ENT_QUOTES, 'UTF-8'); ?>"
                  data-unread="<?php echo $msg['unread'] ? '1' : '0'; ?>"
-                 data-id="<?php echo (int)$msg['id']; ?>"
+                 data-id="<?php echo (int) $msg['id']; ?>"
                  data-name="<?php echo htmlspecialchars($msg['name'], ENT_QUOTES, 'UTF-8'); ?>"
                  data-email="<?php echo htmlspecialchars($msg['email'], ENT_QUOTES, 'UTF-8'); ?>"
                  data-subject="<?php echo htmlspecialchars($msg['subject'], ENT_QUOTES, 'UTF-8'); ?>"

@@ -3,7 +3,7 @@
         <div class="container">
             <div class="row justify-content-center text-center">
                 <div class="col-lg-8 m-5">
-                    <?php if (!empty($username)): ?>
+                    <?php if (! empty($username)): ?>
                         <p class="welcome-back mb-2">Welcome back, <?php echo htmlspecialchars($username, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></p>
                     <?php endif; ?>
                     <h1 class="hero-title mb-3">

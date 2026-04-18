@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $post_errors = [];
 
-    if (!$security->validateCsrfToken($csrf_token)) {
+    if (! $security->validateCsrfToken($csrf_token)) {
         $post_errors[] = 'Invalid request. Please refresh the page and try again.';
     }
     if (empty($username)) {
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($email)) {
         $post_errors[] = 'Email is required';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $post_errors[] = 'Invalid email format';
     }
 
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $post_errors[] = 'Password must be at least 8 characters';
     }
 
-    if (!$agree_terms) {
+    if (! $agree_terms) {
         $post_errors[] = 'You must agree to the Terms of Service';
     }
 
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($pdo === null) {
         $post_errors[] = 'Database is currently unavailable. Please try again later.';
         Logging::loggingToFile('Unable to connect to database: ' . $config->getDb() . $config->getHost(), 4);
-    } elseif (!empty($post_errors)) {
+    } elseif (! empty($post_errors)) {
     } else {
         $post_errors[] = 'Unknown error occurred.';
         Logging::loggingToFile('Unknown error occurred', -1);
@@ -113,7 +113,7 @@ try {
         <h1 class="mb-4 text-start">Register</h1>
         <div class="border border-secondary rounded p-4 w-100" style="max-width: 400px;">
 
-            <?php if (!empty($errors)): ?>
+            <?php if (! empty($errors)): ?>
                 <div class="alert alert-danger" role="alert">
                     <ul class="mb-0">
                         <?php foreach ($errors as $error): ?>
