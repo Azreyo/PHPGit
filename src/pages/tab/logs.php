@@ -17,7 +17,28 @@ try {
 } catch (PDOException $e) {
     Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
 }
-
+$critical_count = 0;
+$error_count = 0;
+$warning_count = 0;
+$info_count = 0;
+foreach ($logs as $l) {
+    switch ($l['level']) {
+        case 'Critical':
+            $critical_count++;
+            break;
+        case 'Error':
+            $error_count++;
+            break;
+        case 'Warning':
+            $warning_count++;
+            break;
+        case 'Info':
+            $info_count++;
+            break;
+        default:
+            break;
+    }
+}
 ?>
 
 <section class="admin-panel p-4 mb-4">
@@ -38,9 +59,13 @@ try {
 <section class="admin-log-shell">
     <header class="admin-log-toolbar">
         <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Critical (2)</button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Warning (5)</button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Info (128)</button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Critical (<?= $critical_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Error (<?= $error_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Warning (<?= $warning_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Info (<?= $info_count ?>)</button>
             <button type="button" class="btn btn-sm btn-secondary rounded-pill">Clear Filters</button>
         </div>
         <div class="input-group input-group-sm" style="max-width: 340px;">
