@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($post_errors)) {
             // TODO: implement mail sending
-            header('Location: index.php?page=contact&success=sent');
+            echo '<script>window.location.href="index.php?page=contact&success=sent";</script>';
             exit;
         }
     }
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'contact_subject' => htmlspecialchars(trim($_POST['contact_subject'] ?? ''), ENT_QUOTES, 'UTF-8'),
             'contact_message' => htmlspecialchars(trim($_POST['contact_message'] ?? ''), ENT_QUOTES, 'UTF-8'),
     ];
-    header('Location: index.php?page=contact');
+    echo '<script>window.location.href="index.php?page=contact";</script>';
     exit;
 }
 

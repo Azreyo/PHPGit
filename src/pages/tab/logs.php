@@ -4,13 +4,15 @@ declare(strict_types=1);
 use App\Config;
 use App\includes\Logging;
 use App\includes\Security;
+use Random\RandomException;
 
 $security = new Security();
+$config = new Config();
+$pdo = $config->getPDO();
 $logs = [];
+$csrf_token = null;
 
 try {
-    $config = new Config();
-    $pdo = $config->getPDO();
     $stmt = $pdo->prepare('SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT 100');
     $stmt->execute();
     $logs = $stmt->fetchAll();
@@ -39,6 +41,33 @@ foreach ($logs as $l) {
             break;
     }
 }
+$errors = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'wipe_logs') {
+    if (!$security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $errors[] = 'Invalid or expired form submission. Please try again.';
+    } else {
+        try {
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare('DELETE FROM log');
+            $stmt->execute();
+            $pdo->commit();
+            echo '<script>window.location.href="index.php?page=dashboard&tab=logs";</script>';
+            exit;
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
+            $errors[] = 'An error occurred while wiping logs. Please try again later.';
+        }
+    }
+}
+
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
+}
 ?>
 
 <section class="admin-panel p-4 mb-4">
@@ -49,9 +78,22 @@ foreach ($logs as $l) {
             <p class="text-secondary small mb-0">Track security events, diagnostics, and operator actions in real
                 time.</p>
         </div>
+        <?php if (!empty($errors)): ?>
+            <div class="alert alert-danger" role="alert">
+                <ul class="mb-0">
+                    <?php foreach ($errors as $error): ?>
+                        <li><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
         <form method="post">
+            <input type="hidden" name="action" value="wipe_logs">
+            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
             <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-outline-danger rounded-3">Wipe Logs</button>
+                <button type="submit" class="btn btn-outline-danger rounded-3"
+                        onclick="return confirm('Are you sure? This action cannot be undone.')">Wipe Logs
+                </button>
             </div>
         </form>
     </div>

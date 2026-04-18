@@ -45,7 +45,7 @@ $programming_languages = [
 
 $search_query = trim($_GET['q'] ?? '');
 if (strlen($search_query) > 100) {
-    header('Location: /index.php?page=414');
+    echo '<script>window.location.href="index.php?page=414";</script>';
     exit;
 }
 if ($search_query !== '') {

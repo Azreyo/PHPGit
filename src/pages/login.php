@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($is_dev && isset($_POST['action']) && $_POST['action'] === 'reset_rate_limit') {
         session_destroy();
         $_SESSION = [];
-        header('Location: index.php?page=login');
+        echo '<script>window.location.href="index.php?page=login";</script>';
         exit;
     }
 
@@ -45,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($post_errors)) {
+            $pdo = $config->getPdo();
             if ($pdo !== null) {
                 $stmt = $pdo->prepare(
                     'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
@@ -64,8 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['role'] = $user['role'];
 
                     unset($_SESSION['csrf_token']);
-
-                    header('Location: index.php?page=home');
+                    echo '<script>window.location.href="index.php?page=home";</script>';
                     exit;
                 }
             } else {
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['login_errors'] = $post_errors;
     $_SESSION['login_prefill_email'] = htmlspecialchars(trim($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8');
     $qs = isset($_GET['success']) ? '?page=login&success=registered' : '?page=login';
-    header('Location: index.php' . $qs);
+    echo '<script>window.location.href="index.php' . $qs . '";</script>';
     exit;
 }
 

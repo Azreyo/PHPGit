@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)');
 
             if ($stmt->execute([$username, $email, $hashed_password, $role])) {
-                header('Location: index.php?page=login&success=registered');
+                echo '<script>window.location.href="index.php?page=login&success=registered";</script>';
                 exit;
             }
             $post_errors[] = 'Registration failed. Please try again.';
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'username' => htmlspecialchars($username, ENT_QUOTES, 'UTF-8'),
             'email' => htmlspecialchars($email, ENT_QUOTES, 'UTF-8'),
     ];
-    header('Location: index.php?page=register');
+    echo '<script>window.location.href="index.php?page=register";</script>';
     exit;
 }
 
