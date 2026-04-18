@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `inbox`
     `subject`  varchar(50)                     NOT NULL,
     `body`     varchar(500)                    NOT NULL,
     `time`     timestamp                       NOT NULL DEFAULT current_timestamp(),
-    `unread`   tinyint(1)                      NOT NULL DEFAULT 0,
+    `unread` tinyint(1) NOT NULL DEFAULT 1,
     `status`   enum ('new','replied','closed') NOT NULL DEFAULT 'new',
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB

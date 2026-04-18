@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Config;
 use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
@@ -38,9 +39,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($post_errors)) {
-            // TODO: implement mail sending
-            echo '<script>window.location.href="index.php?page=contact&success=sent";</script>';
-            exit;
+            $config = new Config();
+            $pdo = $config->getPdo();
+            try {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare('INSERT INTO inbox (username, email, subject, body) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$contact_name, $contact_email, $contact_subject, $contact_message]);
+                $pdo->commit();
+                Logging::loggingToFile('Contact message sent from: ' . $contact_email); // default info level
+                echo '<script>window.location.href="index.php?page=contact&success=sent";</script>';
+                exit;
+            } catch (PDOException $e) {
+                $pdo->rollBack();
+                Logging::loggingToFile('Database error while saving contact message: ' . $e->getMessage(), 4);
+                $post_errors[] = 'An error occurred while sending your message. Please try again later.';
+            }
         }
     }
 
