@@ -8,32 +8,43 @@ use Random\RandomException;
 $config = new Config();
 $security = new Security();
 
-$errors = [];
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';
 
+$errors = $_SESSION['login_errors'] ?? [];
+$prefill_email = $_SESSION['login_prefill_email'] ?? '';
+unset($_SESSION['login_errors'], $_SESSION['login_prefill_email']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($is_dev && isset($_POST['action']) && $_POST['action'] === 'reset_rate_limit') {
+        session_destroy();
+        $_SESSION = [];
+        header('Location: index.php?page=login');
+        exit;
+    }
+
+    $post_errors = [];
     $csrfToken = $_POST['csrf_token'] ?? '';
 
     if (!$security->validateCsrfToken($csrfToken)) {
-        $errors[] = 'Invalid or expired form submission. Please try again.';
+        $post_errors[] = 'Invalid or expired form submission. Please try again.';
     } elseif ($security->isRateLimited()) {
-        $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
+        $post_errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
         Logging::loggingToFile('Too many login attempts', 2, true);
     } else {
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
 
         if (empty($email)) {
-            $errors[] = 'Email is required.';
+            $post_errors[] = 'Email is required.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Invalid email format.';
+            $post_errors[] = 'Invalid email format.';
         }
 
         if (empty($password)) {
-            $errors[] = 'Password is required.';
+            $post_errors[] = 'Password is required.';
         }
 
-        if (empty($errors)) {
+        if (empty($post_errors)) {
             if ($pdo !== null) {
                 $stmt = $pdo->prepare(
                     'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
@@ -43,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($user === false || !password_verify($password, $user['password'])) {
                     $security->recordFailedAttempt();
-                    $errors[] = 'Invalid email or password.';
+                    $post_errors[] = 'Invalid email or password.';
                 } else {
                     session_regenerate_id(true);
                     $_SESSION['login_attempts'] = 0;
@@ -58,18 +69,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
             } else {
-                $errors[] = 'Database is currently unavailable. Please try again later.';
+                $post_errors[] = 'Database is currently unavailable. Please try again later.';
                 Logging::loggingToFile('Unable to connect to database: ' . $config->getDb() . ' ' . $config->getHost(), 4);
             }
         }
     }
-}
 
-if ($is_dev && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action']) && $_POST['action'] === 'reset_rate_limit') {
-        session_destroy();
-        $_SESSION = [];
-    }
+    $_SESSION['login_errors'] = $post_errors;
+    $_SESSION['login_prefill_email'] = htmlspecialchars(trim($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $qs = isset($_GET['success']) ? '?page=login&success=registered' : '?page=login';
+    header('Location: index.php' . $qs);
+    exit;
 }
 
 try {
@@ -131,7 +141,7 @@ try {
                         id="email"
                         name="email"
                         aria-describedby="emailHelp"
-                        value="<?php echo htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                        value="<?php echo htmlspecialchars($prefill_email, ENT_QUOTES, 'UTF-8'); ?>"
                         required
                         autocomplete="email"
                     >

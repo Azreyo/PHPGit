@@ -119,30 +119,15 @@ CREATE TABLE IF NOT EXISTS pull_requests
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS level
-(
-    id         TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    level      TINYINT UNSIGNED NOT NULL,
-    `desc`     VARCHAR(50)               DEFAULT NULL,
-    created_at TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY ux_level_level (level)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
 CREATE TABLE IF NOT EXISTS log
 (
     id         BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
-    level_id   TINYINT UNSIGNED NOT NULL,
+    level ENUM ('Debug','Info','Warning','Error','Critical','Unknown') NOT NULL DEFAULT 'Unknown',
     message    TEXT             NOT NULL,
     security   TINYINT(1)       NOT NULL DEFAULT 0,
     ip         TEXT                      DEFAULT NULL,
     log_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    INDEX ix_log_level_created (level_id, created_at),
-    INDEX ix_log_security_created (security, created_at),
-    CONSTRAINT fk_log_level FOREIGN KEY (level_id) REFERENCES level (id) ON DELETE RESTRICT
+    PRIMARY KEY (id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
@@ -194,13 +179,6 @@ VALUES (1, 1, 2, 'feature/auth-hardening', 'main',
 ON DUPLICATE KEY UPDATE status = VALUES(status),
                         title  = VALUES(title);
 
-INSERT INTO level (id, level, `desc`)
-VALUES (1, 1, 'Debug'),
-       (2, 2, 'Info'),
-       (3, 3, 'Warning'),
-       (4, 4, 'Error'),
-       (5, 5, 'Critical')
-ON DUPLICATE KEY UPDATE `desc` = VALUES(`desc`);
 
 -- Login credentials for local testing:
 -- admin@phpgit.dev / Admin1234!

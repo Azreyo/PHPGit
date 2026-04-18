@@ -2,15 +2,20 @@
 
 declare(strict_types=1);
 
+use App\includes\Logging;
 use App\includes\Security;
+use Random\RandomException;
 
 $security = new Security();
-$contact_success = false;
-$contact_errors = [];
+$contact_success = isset($_GET['success']) && $_GET['success'] === 'sent';
+$contact_errors = $_SESSION['contact_errors'] ?? [];
+$prefill = $_SESSION['contact_prefill'] ?? [];
+unset($_SESSION['contact_errors'], $_SESSION['contact_prefill']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $post_errors = [];
     if (!$security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
-        $contact_errors[] = 'Session expired, please refresh the page and try again.';
+        $post_errors[] = 'Session expired, please refresh the page and try again.';
     } else {
         $contact_name = trim($_POST['contact_name'] ?? '');
         $contact_email = trim($_POST['contact_email'] ?? '');
@@ -18,25 +23,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $contact_message = trim($_POST['contact_message'] ?? '');
 
         if (empty($contact_name)) {
-            $contact_errors[] = 'Name is required.';
+            $post_errors[] = 'Name is required.';
         }
         if (empty($contact_email)) {
-            $contact_errors[] = 'Email is required.';
+            $post_errors[] = 'Email is required.';
         } elseif (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
-            $contact_errors[] = 'Invalid email format.';
+            $post_errors[] = 'Invalid email format.';
         }
         if (empty($contact_subject)) {
-            $contact_errors[] = 'Subject is required.';
+            $post_errors[] = 'Subject is required.';
         }
         if (empty($contact_message)) {
-            $contact_errors[] = 'Message is required.';
+            $post_errors[] = 'Message is required.';
         }
 
-        if (empty($contact_errors)) {
+        if (empty($post_errors)) {
             // TODO: implement mail sending
-            $contact_success = true;
+            header('Location: index.php?page=contact&success=sent');
+            exit;
         }
     }
+
+    $_SESSION['contact_errors'] = $post_errors;
+    $_SESSION['contact_prefill'] = [
+            'contact_name' => htmlspecialchars(trim($_POST['contact_name'] ?? ''), ENT_QUOTES, 'UTF-8'),
+            'contact_email' => htmlspecialchars(trim($_POST['contact_email'] ?? ''), ENT_QUOTES, 'UTF-8'),
+            'contact_subject' => htmlspecialchars(trim($_POST['contact_subject'] ?? ''), ENT_QUOTES, 'UTF-8'),
+            'contact_message' => htmlspecialchars(trim($_POST['contact_message'] ?? ''), ENT_QUOTES, 'UTF-8'),
+    ];
+    header('Location: index.php?page=contact');
+    exit;
+}
+
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
+    $csrf_token = '';
 }
 ?>
 <main>
@@ -69,29 +92,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     <?php endif; ?>
                     <form method="POST" novalidate>
+                        <input type="hidden" name="csrf_token"
+                               value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="row g-3">
                             <div class="col-sm-6">
                                 <label for="contact_name" class="form-label">Name</label>
                                 <input type="text" class="form-control" id="contact_name" name="contact_name"
-                                    value="<?php echo htmlspecialchars($_POST['contact_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                       value="<?php echo $prefill['contact_name'] ?? ''; ?>"
                                     placeholder="Jane Doe" required autocomplete="name">
                             </div>
                             <div class="col-sm-6">
                                 <label for="contact_email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="contact_email" name="contact_email"
-                                    value="<?php echo htmlspecialchars($_POST['contact_email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                       value="<?php echo $prefill['contact_email'] ?? ''; ?>"
                                     placeholder="jane@example.com" required autocomplete="email">
                             </div>
                             <div class="col-12">
                                 <label for="contact_subject" class="form-label">Subject</label>
                                 <input type="text" class="form-control" id="contact_subject" name="contact_subject"
-                                    value="<?php echo htmlspecialchars($_POST['contact_subject'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                                       value="<?php echo $prefill['contact_subject'] ?? ''; ?>"
                                     placeholder="How can we help?" required>
                             </div>
                             <div class="col-12">
                                 <label for="contact_message" class="form-label">Message</label>
                                 <textarea class="form-control" id="contact_message" name="contact_message"
-                                    rows="6" placeholder="Write your message here..." required><?php echo htmlspecialchars($_POST['contact_message'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                                          rows="6" placeholder="Write your message here..."
+                                          required><?php echo $prefill['contact_message'] ?? ''; ?></textarea>
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary w-100">Send Message</button>

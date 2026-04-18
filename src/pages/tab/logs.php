@@ -11,7 +11,7 @@ $logs = [];
 try {
     $config = new Config();
     $pdo = $config->getPDO();
-    $stmt = $pdo->prepare('SELECT l.log_time AS time,lv.level, l.message AS msg FROM log AS l INNER JOIN level AS lv ON l.level_id = lv.id ORDER BY l.log_time DESC LIMIT 100');
+    $stmt = $pdo->prepare('SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT 100');
     $stmt->execute();
     $logs = $stmt->fetchAll();
 } catch (PDOException $e) {
@@ -65,10 +65,10 @@ try {
             foreach ($logs as $log):
 
                 $color = match ($log['level']) {
-                    'CRITICAL', 'ERROR' => 'text-danger',
-                    'WARNING' => 'text-warning',
-                    'SUCCESS' => 'text-success',
-                    'DEBUG' => 'text-secondary',
+                    'Critical', 'Error' => 'text-danger',
+                    'Warning' => 'text-warning',
+                    'Success' => 'text-success',
+                    'Debug' => 'text-secondary',
                     default => 'text-info',
                 }
                 ?>

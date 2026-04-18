@@ -43,21 +43,10 @@ class Logging
                 error_log('Cannot open log file ' . $path);
             }
         } else {
-            $level_num = $level;
-            $stmt = new Config()->getPdo()->prepare('SELECT id FROM level WHERE level = ?');
-            $stmt->execute([$level_num]);
-            $level_row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$level_row) {
-                self::loggingToFile("Level not found: {$level_num}", 4);
-
-                return;
-            }
-            $level_id = $level_row['id'];
             $ip = $is_security_alert ? self::getClientIP() : null;
 
-            $stmt = new Config()->getPdo()->prepare('INSERT INTO log (level_id, message, security, ip) VALUES (?, ?, ?, ?)');
-            $stmt->execute([$level_id, $sanitized_message, (int)$is_security_alert, $ip]);
+            $stmt = new Config()->getPdo()->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
+            $stmt->execute([$level_message, $sanitized_message, (int)$is_security_alert, $ip]);
         }
     }
 

@@ -10,7 +10,9 @@ use Random\RandomException;
 $config = new Config();
 $security = new Security();
 
-$errors = [];
+$errors = $_SESSION['register_errors'] ?? [];
+$prefill = $_SESSION['register_prefill'] ?? [];
+unset($_SESSION['register_errors'], $_SESSION['register_prefill']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
@@ -20,36 +22,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role = 'USER';
     $csrf_token = $_POST['csrf_token'] ?? '';
 
+    $post_errors = [];
+
     if (!$security->validateCsrfToken($csrf_token)) {
-        $errors[] = 'Invalid request. Please refresh the page and try again.';
+        $post_errors[] = 'Invalid request. Please refresh the page and try again.';
     }
     if (empty($username)) {
-        $errors[] = 'Username cannot be empty';
+        $post_errors[] = 'Username cannot be empty';
     }
 
     if (empty($email)) {
-        $errors[] = 'Email is required';
+        $post_errors[] = 'Email is required';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Invalid email format';
+        $post_errors[] = 'Invalid email format';
     }
 
     if (empty($password)) {
-        $errors[] = 'Password is required';
+        $post_errors[] = 'Password is required';
     } elseif (strlen($password) < 8) {
-        $errors[] = 'Password must be at least 8 characters';
+        $post_errors[] = 'Password must be at least 8 characters';
     }
 
     if (!$agree_terms) {
-        $errors[] = 'You must agree to the Terms of Service';
+        $post_errors[] = 'You must agree to the Terms of Service';
     }
 
-    if (empty($errors) && $pdo !== null) {
+    if (empty($post_errors) && $pdo !== null) {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $existingUserId = $stmt->fetchColumn();
 
         if ($existingUserId !== false) {
-            $errors[] = 'Email already registered';
+            $post_errors[] = 'Email already registered';
         } else {
             $hashed_password = password_hash($password, PASSWORD_BCRYPT);
             $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)');
@@ -58,15 +62,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: index.php?page=login&success=registered');
                 exit;
             }
-            $errors[] = 'Registration failed. Please try again.';
+            $post_errors[] = 'Registration failed. Please try again.';
         }
     } elseif ($pdo === null) {
-        $errors[] = 'Database is currently unavailable. Please try again later.';
+        $post_errors[] = 'Database is currently unavailable. Please try again later.';
         Logging::loggingToFile('Unable to connect to database: ' . $config->getDb() . $config->getHost(), 4);
+    } elseif (!empty($post_errors)) {
     } else {
-        $errors[] = 'Unknown error occurred.';
+        $post_errors[] = 'Unknown error occurred.';
         Logging::loggingToFile('Unknown error occurred', -1);
     }
+
+    $_SESSION['register_errors'] = $post_errors;
+    $_SESSION['register_prefill'] = [
+            'username' => htmlspecialchars($username, ENT_QUOTES, 'UTF-8'),
+            'email' => htmlspecialchars($email, ENT_QUOTES, 'UTF-8'),
+    ];
+    header('Location: index.php?page=register');
+    exit;
 }
 
 try {
@@ -122,7 +135,7 @@ try {
                         id="user"
                         name="username"
                         aria-describedby="user"
-                        value="<?php echo htmlspecialchars($_POST['username'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                        value="<?php echo $prefill['username'] ?? ''; ?>"
                         required
                         autocomplete="username"
                     >
@@ -135,7 +148,7 @@ try {
                         id="email"
                         name="email"
                         aria-describedby="emailHelp"
-                        value="<?php echo htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                        value="<?php echo $prefill['email'] ?? ''; ?>"
                         required
                         autocomplete="email"
                     >
