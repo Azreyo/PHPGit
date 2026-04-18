@@ -119,30 +119,35 @@ CREATE TABLE IF NOT EXISTS pull_requests
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS level
+CREATE TABLE IF NOT EXISTS inbox
 (
-    id         TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    level      TINYINT UNSIGNED NOT NULL,
-    `desc`     VARCHAR(50)               DEFAULT NULL,
-    created_at TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id         INT UNSIGNED                        NOT NULL AUTO_INCREMENT,
+    username   VARCHAR(50)                         NOT NULL,
+    email      VARCHAR(191)                        NOT NULL,
+    subject    VARCHAR(255)                        NOT NULL,
+    body       TEXT                                NOT NULL,
+    status     ENUM ('new', 'replied', 'archived') NOT NULL DEFAULT 'new',
+    unread     TINYINT(1)                          NOT NULL DEFAULT 1,
+    created_at TIMESTAMP                           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY ux_level_level (level)
+    INDEX ix_inbox_status (status),
+    INDEX ix_inbox_unread (unread),
+    INDEX ix_inbox_created (created_at)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS log
 (
-    id       BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
-    level_id TINYINT UNSIGNED NOT NULL,
-    message  TEXT             NOT NULL,
-    security TINYINT(1)       NOT NULL DEFAULT 0,
-    ip       TEXT                      DEFAULT NULL,
-    log_time TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id       INT UNSIGNED                                                      NOT NULL AUTO_INCREMENT,
+    level    ENUM ('Debug', 'Info', 'Warning', 'Error', 'Critical', 'Unknown') NOT NULL DEFAULT 'Unknown',
+    message  TEXT                                                              NOT NULL,
+    security TINYINT(1)                                                        NOT NULL DEFAULT 0,
+    ip       TEXT                                                                       DEFAULT NULL,
+    log_time TIMESTAMP                                                         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX ix_log_level_created (level_id, log_time),
-    INDEX ix_log_security_created (security, log_time),
-    CONSTRAINT fk_log_level FOREIGN KEY (level_id) REFERENCES level (id) ON DELETE RESTRICT
+    INDEX ix_log_level_created (level, log_time),
+    INDEX ix_log_security_created (security, log_time)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;

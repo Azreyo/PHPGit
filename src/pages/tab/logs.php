@@ -13,6 +13,9 @@ $logs = [];
 $csrf_token = null;
 
 try {
+    if ($pdo === null) {
+        throw new PDOException('Database connection is not available. Please try again later.');
+    }
     $stmt = $pdo->prepare('SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT 100');
     $stmt->execute();
     $logs = $stmt->fetchAll();

@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `inbox`
     `body`     varchar(500)                    NOT NULL,
     `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
     `unread` tinyint(1) NOT NULL DEFAULT 1,
-    `status`   enum ('new','replied','closed') NOT NULL DEFAULT 'new',
+    `status` enum ('new','replied','archived') NOT NULL DEFAULT 'new',
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
