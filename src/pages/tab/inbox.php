@@ -266,4 +266,4 @@ function inboxInitials(string $name): string
     </nav>
 </div>
 
-<script src="<?= Assets::url('assets/js/index.js') ?>"></script>
+<script src="<?= Assets::url('assets/js/inbox.js') ?>"></script>

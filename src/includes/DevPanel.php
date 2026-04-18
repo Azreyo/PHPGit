@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\includes;
 
+use App\includes\Assets;
+
 class DevPanel
 {
     private ?\PDO $pdo;
@@ -233,6 +235,6 @@ class DevPanel
 
         echo '</ul>';
         echo '</div>';
-        echo '<script src="/assets/js/dev.js"></script>';
+        echo '<script src="' . Assets::url('assets/js/dev.js') . '"></script>';
     }
 }
