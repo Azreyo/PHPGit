@@ -12,3 +12,4 @@ apache
 
 .php-cs-fixer.cache
 /bin/.jslint.mjs
+data/*

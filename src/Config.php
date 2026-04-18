@@ -18,6 +18,7 @@ class Config
     private string $dbPass;
     private string $charset;
     private bool $isDev;
+    private string $dataRoot;
     private ?\PDO $pdo = null;
     private ?string $pdoError = null;
     private bool $dbOnline = false;
@@ -33,6 +34,7 @@ class Config
         $this->dbUser = $_ENV['DB_USER'] ?? 'n/a';
         $this->dbPass = $_ENV['DB_PASS'] ?? '';
         $this->charset = 'utf8mb4';
+        $this->dataRoot = rtrim($_ENV['DATA_ROOT'] ?? dirname(__DIR__) . '/data', '/');
 
         $this->connect();
     }
@@ -108,5 +110,10 @@ class Config
     public function isDbOnline(): bool
     {
         return $this->dbOnline;
+    }
+
+    public function getDataRoot(): string
+    {
+        return $this->dataRoot;
     }
 }

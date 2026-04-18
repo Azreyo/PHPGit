@@ -48,6 +48,19 @@ try {
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                     <li>
+                                        <a class="dropdown-item" href="/index.php?page=repos">
+                                            <i class="bi bi-collection me-2"></i>Your repositories
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/index.php?page=new_repo">
+                                            <i class="bi bi-folder-plus me-2"></i>New repository
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" href="/index.php?page=settings">Settings</a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>

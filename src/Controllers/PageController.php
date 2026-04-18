@@ -27,6 +27,8 @@ final class PageController
 
     private const AUTHENTICATED_USER_PAGES = [
         'settings' => 'Settings',
+        'repos' => 'Your Repositories',
+        'new_repo' => 'New Repository',
     ];
 
     private const ADMIN_PAGES = [
