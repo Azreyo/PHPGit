@@ -10,14 +10,19 @@ $config = new Config();
 $pdo = $config->getPDO();
 
 try {
-    $stmt = $pdo->prepare('SELECT id, username as name, email, subject, body, status, created_at AS time, unread FROM inbox ORDER BY created_at DESC;');
-    $stmt->execute();
-    $messages = $stmt->fetchAll();
+    if ($pdo !== null) {
+        $stmt = $pdo->prepare('SELECT id, username as name, email, subject, body, status, created_at AS time, unread FROM inbox ORDER BY created_at DESC;');
+        $stmt->execute();
+        $messages = $stmt->fetchAll();
+    } else {
+        throw new Exception('Database connection not established.');
+    }
 } catch (Exception $e) {
     Logging::loggingToFile('Error loading inbox: ' . $e->getMessage(), 4);
     echo '<div class="alert alert-danger">An error occurred while loading the inbox. Please try again later.</div>';
     return;
 }
+
 
 $unreadCount = count(array_filter($messages, fn ($m) => $m['unread']));
 
