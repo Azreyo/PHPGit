@@ -4,19 +4,73 @@ declare(strict_types=1);
 use App\Config;
 use App\includes\Logging;
 use App\includes\Security;
+use Random\RandomException;
 
 $security = new Security();
+$config = new Config();
+$pdo = $config->getPDO();
 $logs = [];
+$csrf_token = null;
+
 try {
-    $config = new Config();
-    $pdo = $config->getPDO();
-    $stmt = $pdo->prepare('SELECT l.log_time AS time,lv.level, l.message AS msg FROM log AS l INNER JOIN level AS lv ON l.level_id = lv.id ORDER BY l.log_time DESC LIMIT 100');
+    if ($pdo === null) {
+        throw new PDOException('Database connection is not available. Please try again later.');
+    }
+    $stmt = $pdo->prepare('SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT 100');
     $stmt->execute();
     $logs = $stmt->fetchAll();
 } catch (PDOException $e) {
-    Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
+}
+$critical_count = 0;
+$error_count = 0;
+$warning_count = 0;
+$info_count = 0;
+foreach ($logs as $l) {
+    switch ($l['level']) {
+        case 'Critical':
+            $critical_count++;
+            break;
+        case 'Error':
+            $error_count++;
+            break;
+        case 'Warning':
+            $warning_count++;
+            break;
+        case 'Info':
+            $info_count++;
+            break;
+        default:
+            break;
+    }
+}
+$errors = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'wipe_logs') {
+    if (!$security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $errors[] = 'Invalid or expired form submission. Please try again.';
+    } else {
+        try {
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare('DELETE FROM log');
+            $stmt->execute();
+            $pdo->commit();
+            echo '<script>window.location.href="index.php?page=dashboard&tab=logs";</script>';
+            exit;
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
+            $errors[] = 'An error occurred while wiping logs. Please try again later.';
+        }
+    }
 }
 
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
+}
 ?>
 
 <section class="admin-panel p-4 mb-4">
@@ -27,19 +81,38 @@ try {
             <p class="text-secondary small mb-0">Track security events, diagnostics, and operator actions in real
                 time.</p>
         </div>
-        <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-outline-secondary rounded-3">Export</button>
-            <button type="button" class="btn btn-outline-danger rounded-3">Wipe Logs</button>
-        </div>
+        <?php if (!empty($errors)): ?>
+            <div class="alert alert-danger" role="alert">
+                <ul class="mb-0">
+                    <?php foreach ($errors as $error): ?>
+                        <li><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+        <form method="post">
+            <input type="hidden" name="action" value="wipe_logs">
+            <input type="hidden" name="csrf_token"
+                   value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+            <div class="d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-outline-danger rounded-3"
+                        onclick="return confirm('Are you sure? This action cannot be undone.')">Wipe Logs
+                </button>
+            </div>
+        </form>
     </div>
 </section>
 
 <section class="admin-log-shell">
     <header class="admin-log-toolbar">
         <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Critical (2)</button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Warning (5)</button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Info (128)</button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Critical (<?= $critical_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Error (<?= $error_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Warning (<?= $warning_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Info (<?= $info_count ?>)</button>
             <button type="button" class="btn btn-sm btn-secondary rounded-pill">Clear Filters</button>
         </div>
         <div class="input-group input-group-sm" style="max-width: 340px;">
@@ -64,10 +137,10 @@ try {
             foreach ($logs as $log):
 
                 $color = match ($log['level']) {
-                    'CRITICAL', 'ERROR' => 'text-danger',
-                    'WARNING' => 'text-warning',
-                    'SUCCESS' => 'text-success',
-                    'DEBUG' => 'text-secondary',
+                    'Critical', 'Error' => 'text-danger',
+                    'Warning' => 'text-warning',
+                    'Success' => 'text-success',
+                    'Debug' => 'text-secondary',
                     default => 'text-info',
                 }
                 ?>

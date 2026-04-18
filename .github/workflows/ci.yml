@@ -40,3 +40,46 @@ jobs:
       - name: Lint PHP sources
         run: |
           find src -type f -name '*.php' -print0 | xargs -0 -n 1 php -l
+
+  #php-cs-fixer:
+  #  name: PHP CS Fixer (style check)
+  #  runs-on: ubuntu-latest
+  #  needs: php-checks
+  #
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v4
+  #
+  #    - name: Setup PHP
+  #      uses: shivammathur/setup-php@v2
+  #      with:
+  #        php-version: '8.4'
+  #        coverage: none
+  #        tools: composer:v2
+  #        extensions: pdo
+  #
+  #    - name: Install dependencies (including dev)
+  #      run: composer install --no-interaction --no-progress --prefer-dist
+  #
+  #    - name: Run PHP CS Fixer (dry-run)
+  #      run: |
+  #        vendor/bin/php-cs-fixer fix \
+  #          --config=.php-cs-fixer.php \
+  #          --dry-run \
+  #          --diff \
+  #          --ansi \
+  #          --verbose
+
+  js-lint:
+    name: JSLint (no npm)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Node.js version
+        run: node --version
+
+      - name: Run JSLint via bin/jslint.php
+        run: php bin/jslint.php src/assets/js
+

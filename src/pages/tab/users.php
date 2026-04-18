@@ -2,10 +2,10 @@
 declare(strict_types=1);
 
 use App\Config;
+use App\includes\Assets;
 use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
-use App\includes\Assets;
 
 $config = new Config();
 $security = new Security();
@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($config->getPdo() === null) {
         $errors[] = 'Database connection is not available. Please try again later.';
     }
-    if (!$security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+    if (! $security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     }
     // TODO : sprav to
@@ -30,12 +30,13 @@ try {
         $users = $stmt->fetchAll();
     }
 } catch (PDOException $e) {
-    Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
 }
+
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 
 ?>
@@ -48,7 +49,7 @@ try {
             <p class="text-secondary small mb-0">Manage accounts, roles, and moderation status from one table.</p>
         </div>
         <div class="col-12 col-md-4 text-md-end">
-            <?php if (!empty($success)): ?>
+            <?php if (! empty($success)): ?>
                 <div class="alert alert-success" role="alert">
                     <ul class="mb-0">
                         <?php foreach ($success as $s): ?>
@@ -57,7 +58,7 @@ try {
                     </ul>
                 </div>
             <?php endif; ?>
-            <?php if (!empty($errors)): ?>
+            <?php if (! empty($errors)): ?>
                 <div class="alert alert-danger" role="alert">
                     <ul class="mb-0">
                         <?php foreach ($errors as $error): ?>

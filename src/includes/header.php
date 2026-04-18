@@ -4,12 +4,14 @@ declare(strict_types=1);
 use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
+
 $security = new Security();
 $csrf_token = null;
+
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 ?>
 <header>
@@ -28,14 +30,14 @@ try {
                         <a class="nav-link px-3 py-2 rounded-2 fw-medium" href="/index.php?page=explore">Explore</a>
                         <a class="nav-link px-3 py-2 rounded-2 fw-medium" href="/index.php?page=about">About</a>
                         <a class="nav-link px-3 py-2 rounded-2 fw-medium" href="/index.php?page=contact">Contact</a>
-                        <?php if ($is_logged_in && $role === "ADMIN"): ?>
+                        <?php if ($is_logged_in && $role === 'ADMIN'): ?>
                             <a class="nav-link px-3 py-2 rounded-2 fw-medium"
                                href="/index.php?page=dashboard">Dashboard</a>
                         <?php endif; ?>
                     </div>
 
                     <div class="d-flex align-items-center gap-2">
-                        <?php if (!$is_logged_in): ?>
+                        <?php if (! $is_logged_in): ?>
                             <a class="btn btn-outline-secondary btn-sm px-3" href="/index.php?page=login">Sign in</a>
                             <a class="btn btn-primary btn-sm px-3" href="/index.php?page=register">Sign up</a>
                         <?php else: ?>
@@ -45,6 +47,19 @@ try {
                                     <i class="bi bi-list"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                    <li>
+                                        <a class="dropdown-item" href="/index.php?page=repos">
+                                            <i class="bi bi-collection me-2"></i>Your repositories
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/index.php?page=new_repo">
+                                            <i class="bi bi-folder-plus me-2"></i>New repository
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
                                     <li>
                                         <a class="dropdown-item" href="/index.php?page=settings">Settings</a>
                                     </li>

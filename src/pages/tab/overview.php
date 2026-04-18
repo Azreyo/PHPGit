@@ -3,30 +3,18 @@
         <article class="admin-metric-card h-100">
             <p class="admin-metric-label bi bi-person">Total Users</p>
             <h2 class="admin-metric-value" id="total-users">0</h2>
-            <div class="admin-metric-meta text-success">
-                <i class="bi bi-person"></i>
-                <span>+12.5% this month</span>
-            </div>
         </article>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
             <p class="admin-metric-label">Repositories</p>
             <h2 class="admin-metric-value" id="total-repositories">0</h2>
-            <div class="admin-metric-meta text-primary">
-                <i class="bi bi-folder2-open"></i>
-                <span>+5 created today</span>
-            </div>
         </article>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
             <p class="admin-metric-label">Security Events</p>
             <h2 class="admin-metric-value" id="total-security-events">0</h2>
-            <div class="admin-metric-meta text-warning-emphasis">
-                <i class="bi bi-shield-exclamation"></i>
-                <span>2 critical alerts</span>
-            </div>
         </article>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">

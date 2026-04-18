@@ -1,8 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\includes;
-
 
 final class AssetManifestBuilder
 {
@@ -27,9 +27,9 @@ final class AssetManifestBuilder
         foreach ($this->discoverAssets() as $asset) {
             $fullPath = $this->srcDir . $asset;
 
-            if (!file_exists($fullPath)) {
+            if (! file_exists($fullPath)) {
                 if ($verbose) {
-                    fwrite(STDERR, "  [SKIP] $asset — file not found\n");
+                    fwrite(STDERR, "  [SKIP] {$asset} — file not found\n");
                 }
                 ++$skipped;
                 continue;
@@ -50,13 +50,12 @@ final class AssetManifestBuilder
         $this->writeManifest($manifest);
 
         if ($verbose) {
-            $detail = "$ok hashed" . ($skipped ? ", $skipped skipped" : '');
-            echo "\n  Manifest written to src/" . self::MANIFEST_FILE . "  ($detail)\n";
+            $detail = "{$ok} hashed" . ($skipped ? ", {$skipped} skipped" : '');
+            echo "\n  Manifest written to src/" . self::MANIFEST_FILE . "  ({$detail})\n";
         }
 
         return $manifest;
     }
-
 
     public function manifestPath(): string
     {
@@ -90,32 +89,34 @@ final class AssetManifestBuilder
         $path = $this->manifestPath();
         $dir = dirname($path);
 
-        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
-            $msg = "Failed to create manifest directory: $dir";
+        if (! is_dir($dir) && ! mkdir($dir, 0775, true) && ! is_dir($dir)) {
+            $msg = "Failed to create manifest directory: {$dir}";
             Logging::loggingToFile($msg);
+
             throw new \RuntimeException($msg);
         }
 
         $content = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
         $tmp = tempnam($dir, '.manifest_tmp_');
         if ($tmp === false) {
-            $msg = "Failed to create temporary file in $dir";
+            $msg = "Failed to create temporary file in {$dir}";
             Logging::loggingToFile($msg);
+
             throw new \RuntimeException($msg);
         }
 
         try {
             if (file_put_contents($tmp, $content) === false) {
-                throw new \RuntimeException("Failed to write asset manifest to $path");
+                throw new \RuntimeException("Failed to write asset manifest to {$path}");
             }
-            if (!rename($tmp, $path)) {
-                throw new \RuntimeException("Failed to move asset manifest into place at $path");
+            if (! rename($tmp, $path)) {
+                throw new \RuntimeException("Failed to move asset manifest into place at {$path}");
             }
         } catch (\RuntimeException $e) {
             @unlink($tmp);
             Logging::loggingToFile($e->getMessage());
+
             throw $e;
         }
     }
 }
-

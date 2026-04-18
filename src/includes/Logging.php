@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
+
 namespace App\includes;
 
 use App\Config;
-use PDO;
 
 class Logging
 {
@@ -30,7 +31,7 @@ class Logging
 
             if (!is_dir(__DIR__ . '/../log/')) {
                 if (!mkdir(__DIR__ . '/../log/', 0775, true)) {
-                    error_log("Cannot create directory log: invalid permissions");
+                    error_log('Cannot create directory log: invalid permissions');
                 }
             }
             $file = fopen($path, 'a');
@@ -38,23 +39,24 @@ class Logging
                 fwrite($file, $pre_file);
                 fclose($file);
             } else {
-                error_log("Cannot open log file " . $path);
+                error_log('Cannot open log file ' . $path);
             }
         } else {
-            $level_num = $level;
-            $stmt = new Config()->getPdo()->prepare("SELECT id FROM level WHERE level = ?");
-            $stmt->execute([$level_num]);
-            $level_row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$level_row) {
-                self::loggingToFile("Level not found: $level_num", 4);
-                return;
-            }
-            $level_id = $level_row['id'];
             $ip = $is_security_alert ? self::getClientIP() : null;
-
-            $stmt = new Config()->getPdo()->prepare('INSERT INTO log (level_id, message, security, ip) VALUES (?, ?, ?, ?)');
-            $stmt->execute([$level_id, $sanitized_message, (int)$is_security_alert, $ip]);
+            $pdo = new Config()->getPdo();
+            try {
+                if ($pdo === null) {
+                    self::loggingToFile('Cannot log into database', 4);
+                    return;
+                }
+                $pdo->beginTransaction();
+                $stmt = new Config()->getPdo()->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$level_message, $sanitized_message, (int)$is_security_alert, $ip]);
+                $pdo->commit();
+            } catch (\PDOException $e) {
+                $pdo?->rollBack();
+                self::loggingToFile('Database error: ' . $e->getMessage(), 4);
+            }
         }
     }
 
@@ -62,7 +64,7 @@ class Logging
     {
         $ip = null;
 
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        if (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             $forwardedIps = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR']);
             foreach ($forwardedIps as $forwardedIp) {
                 $candidate = trim($forwardedIp);
@@ -73,7 +75,7 @@ class Logging
             }
         }
 
-        if ($ip === null && !empty($_SERVER['REMOTE_ADDR'])) {
+        if ($ip === null && ! empty($_SERVER['REMOTE_ADDR'])) {
             $remoteAddr = (string) $_SERVER['REMOTE_ADDR'];
             if (filter_var($remoteAddr, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6) !== false) {
                 $ip = $remoteAddr;

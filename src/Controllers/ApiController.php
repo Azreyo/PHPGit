@@ -1,19 +1,19 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Config;
 use App\Core\Controller;
 use App\includes\Logging;
-use App\includes\Security;
 use App\Services\SystemService;
-use App\Config;
 use JetBrains\PhpStorm\NoReturn;
 use PDO;
 use Throwable;
 
-class ApiController extends Controller {
-
+class ApiController extends Controller
+{
     private ?\PDO $pdo = null;
 
     public function __construct()
@@ -21,7 +21,8 @@ class ApiController extends Controller {
         $this->pdo = Config::getInstance()->getPdo();
     }
 
-    public function getCPU(): void {
+    public function getCPU(): void
+    {
         $this->requireMethod('GET');
         $this->requireAdminSession();
 
@@ -33,7 +34,8 @@ class ApiController extends Controller {
         }
     }
 
-    public function getMemory(): void {
+    public function getMemory(): void
+    {
         $this->requireMethod('GET');
         $this->requireAdminSession();
 
@@ -58,12 +60,14 @@ class ApiController extends Controller {
         }
     }
     #[NoReturn]
-    public function getHealth(): void {
+    public function getHealth(): void
+    {
         $this->requireMethod('GET');
         $this->success(['status' => 'ok']);
     }
 
-    public function system(string $metric): void {
+    public function system(string $metric): void
+    {
         $cleanMetric = preg_replace('/[^a-z_]/', '', strtolower($metric)) ?: '';
 
         match ($cleanMetric) {
@@ -81,20 +85,22 @@ class ApiController extends Controller {
             session_start();
         }
 
-        $isLoggedIn = (bool)($_SESSION['is_logged_in'] ?? false);
-        if (!$isLoggedIn) {
+        $isLoggedIn = (bool) ($_SESSION['is_logged_in'] ?? false);
+        if (! $isLoggedIn) {
             $this->error('Unauthorized', 401);
         }
     }
-    private function requireAdminSession(): void {
+
+    private function requireAdminSession(): void
+    {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
 
-        $isLoggedIn = (bool)($_SESSION['is_logged_in'] ?? false);
-        $role = (string)($_SESSION['role'] ?? '');
+        $isLoggedIn = (bool) ($_SESSION['is_logged_in'] ?? false);
+        $role = (string) ($_SESSION['role'] ?? '');
 
-        if (!$isLoggedIn || $role !== 'ADMIN') {
+        if (! $isLoggedIn || $role !== 'ADMIN') {
             $this->error('Unauthorized', 401);
         }
     }
@@ -109,20 +115,20 @@ class ApiController extends Controller {
         }
 
         try {
-            $stmt = $this->pdo->prepare("
+            $stmt = $this->pdo->prepare('
                 SELECT 
                     (SELECT COUNT(id) FROM users) AS total_users,
                     (SELECT COUNT(id) FROM repositories) AS total_repos,
                     (SELECT COUNT(id) FROM log WHERE security = 1) AS total_security_logs
-            ");
+            ');
             $stmt->execute();
             $dashboardInfo = $stmt->fetch();
-            if (!$dashboardInfo) {
-                Logging::loggingToFile("Dashboard info fetch error: No data returned", 4, true, true);
+            if (! $dashboardInfo) {
+                Logging::loggingToFile('Dashboard info fetch error: No data returned', 4, true, true);
                 $this->success([]);
             }
         } catch (Throwable $e) {
-            Logging::loggingToFile("Dashboard info fetch error: " . $e->getMessage(), 4, true, true);
+            Logging::loggingToFile('Dashboard info fetch error: ' . $e->getMessage(), 4, true, true);
             $this->error('Could not fetch dashboard info');
         }
         $this->success($dashboardInfo);
@@ -142,19 +148,52 @@ class ApiController extends Controller {
             $stmt->execute();
             $databaseInfo = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$databaseInfo) {
+            if (! $databaseInfo) {
                 $this->error('Could not fetch database uptime');
             }
 
-            $uptimeSeconds = (int)$databaseInfo['Value'];
+            $uptimeSeconds = (int) $databaseInfo['Value'];
 
             $this->success([
-                'uptime' => $uptimeSeconds
+                'uptime' => $uptimeSeconds,
             ]);
-
         } catch (Throwable $e) {
-            Logging::loggingToFile("Database uptime fetch error: " . $e->getMessage(), 4, true, true);
+            Logging::loggingToFile('Database uptime fetch error: ' . $e->getMessage(), 4, true, true);
             $this->error('Could not fetch database uptime');
+        }
+    }
+
+    private function markInboxRead(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireAdminSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $ids = $body['ids'] ?? [];
+
+        if (!is_array($ids) || $ids === []) {
+            $this->error('No IDs provided', 400);
+        }
+        $ids = array_values(array_filter(array_map('intval', $ids), fn(int $id) => $id > 0));
+
+        if ($ids === []) {
+            $this->error('No valid IDs provided', 400);
+        }
+
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->pdo->prepare(
+                "UPDATE inbox SET unread = 0 WHERE id IN ($placeholders) AND unread = 1"
+            );
+            $stmt->execute($ids);
+            $this->success(['updated' => $stmt->rowCount()]);
+        } catch (Throwable $e) {
+            Logging::loggingToFile('markInboxRead error: ' . $e->getMessage(), 4, true, true);
+            $this->error('Could not update inbox');
         }
     }
 
@@ -165,6 +204,7 @@ class ApiController extends Controller {
         match ($cleanEndpoint) {
             'getdashboardinfo' => $this->getDashboardInfo(),
             'getdatabaseuptime' => $this->getDatabaseInfo(),
+            'markinboxread' => $this->markInboxRead(),
             default => $this->notFound('Unknown API endpoint'),
         };
     }

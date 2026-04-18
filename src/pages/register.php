@@ -2,78 +2,92 @@
 
 declare(strict_types=1);
 
-use App\includes\Security;
-use App\includes\Logging;
 use App\Config;
+use App\includes\Logging;
+use App\includes\Security;
 use Random\RandomException;
 
 $config = new Config();
 $security = new Security();
 
-$errors = [];
+$errors = $_SESSION['register_errors'] ?? [];
+$prefill = $_SESSION['register_prefill'] ?? [];
+unset($_SESSION['register_errors'], $_SESSION['register_prefill']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username    = trim($_POST['username'] ?? '');
-    $email       = trim($_POST['email'] ?? '');
-    $password    = $_POST['password'] ?? '';
+    $username = trim($_POST['username'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
     $agree_terms = isset($_POST['agree-terms']);
-    $role        = 'USER';
-    $csrf_token  = $_POST['csrf_token'] ?? '';
+    $role = 'USER';
+    $csrf_token = $_POST['csrf_token'] ?? '';
 
-    if (!$security->validateCsrfToken($csrf_token)) {
-        $errors[] = 'Invalid request. Please refresh the page and try again.';
+    $post_errors = [];
+
+    if (! $security->validateCsrfToken($csrf_token)) {
+        $post_errors[] = 'Invalid request. Please refresh the page and try again.';
     }
     if (empty($username)) {
-        $errors[] = 'Username cannot be empty';
+        $post_errors[] = 'Username cannot be empty';
+    } elseif (!preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}$/', $username)) {
+        $post_errors[] = 'Username may only contain letters, numbers, hyphens and underscores, and must start with a letter or digit.';
     }
 
     if (empty($email)) {
-        $errors[] = 'Email is required';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Invalid email format';
+        $post_errors[] = 'Email is required';
+    } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $post_errors[] = 'Invalid email format';
     }
 
     if (empty($password)) {
-        $errors[] = 'Password is required';
+        $post_errors[] = 'Password is required';
     } elseif (strlen($password) < 8) {
-        $errors[] = 'Password must be at least 8 characters';
+        $post_errors[] = 'Password must be at least 8 characters';
     }
 
-    if (!$agree_terms) {
-        $errors[] = 'You must agree to the Terms of Service';
+    if (! $agree_terms) {
+        $post_errors[] = 'You must agree to the Terms of Service';
     }
 
-    if (empty($errors) && $pdo !== null) {
+    if (empty($post_errors) && $pdo !== null) {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $existingUserId = $stmt->fetchColumn();
 
         if ($existingUserId !== false) {
-            $errors[] = 'Email already registered';
+            $post_errors[] = 'Email already registered';
         } else {
             $hashed_password = password_hash($password, PASSWORD_BCRYPT);
             $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)');
 
             if ($stmt->execute([$username, $email, $hashed_password, $role])) {
-                header('Location: index.php?page=login&success=registered');
+                echo '<script>window.location.href="index.php?page=login&success=registered";</script>';
                 exit;
-            } else {
-                $errors[] = 'Registration failed. Please try again.';
             }
+            $post_errors[] = 'Registration failed. Please try again.';
         }
-    } else if ($pdo === null) {
-        $errors[] = 'Database is currently unavailable. Please try again later.';
-        Logging::loggingToFile("Unable to connect to database: " . $config->getDb() . $config->getHost(), 4);
+    } elseif ($pdo === null) {
+        $post_errors[] = 'Database is currently unavailable. Please try again later.';
+        Logging::loggingToFile('Unable to connect to database: ' . $config->getDb() . $config->getHost(), 4);
+    } elseif (! empty($post_errors)) {
     } else {
-        $errors[] = 'Unknown error occurred.';
-        Logging::loggingToFile("Unknown error occurred", -1);
+        $post_errors[] = 'Unknown error occurred.';
+        Logging::loggingToFile('Unknown error occurred', -1);
     }
+
+    $_SESSION['register_errors'] = $post_errors;
+    $_SESSION['register_prefill'] = [
+            'username' => htmlspecialchars($username, ENT_QUOTES, 'UTF-8'),
+            'email' => htmlspecialchars($email, ENT_QUOTES, 'UTF-8'),
+    ];
+    echo '<script>window.location.href="index.php?page=register";</script>';
+    exit;
 }
 
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 ?>
 <main style="position: relative; min-height: 80vh;">
@@ -101,7 +115,7 @@ try {
         <h1 class="mb-4 text-start">Register</h1>
         <div class="border border-secondary rounded p-4 w-100" style="max-width: 400px;">
 
-            <?php if (!empty($errors)): ?>
+            <?php if (! empty($errors)): ?>
                 <div class="alert alert-danger" role="alert">
                     <ul class="mb-0">
                         <?php foreach ($errors as $error): ?>
@@ -123,7 +137,7 @@ try {
                         id="user"
                         name="username"
                         aria-describedby="user"
-                        value="<?php echo htmlspecialchars($_POST['username'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                        value="<?php echo $prefill['username'] ?? ''; ?>"
                         required
                         autocomplete="username"
                     >
@@ -136,7 +150,7 @@ try {
                         id="email"
                         name="email"
                         aria-describedby="emailHelp"
-                        value="<?php echo htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                        value="<?php echo $prefill['email'] ?? ''; ?>"
                         required
                         autocomplete="email"
                     >

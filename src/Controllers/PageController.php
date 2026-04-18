@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -26,6 +27,8 @@ final class PageController
 
     private const AUTHENTICATED_USER_PAGES = [
         'settings' => 'Settings',
+        'repos' => 'Your Repositories',
+        'new_repo' => 'New Repository',
     ];
 
     private const ADMIN_PAGES = [
@@ -62,9 +65,9 @@ final class PageController
         $this->isDev = $this->config->isDev();
 
         $this->startSession();
-        $this->isLoggedIn = (bool)($_SESSION['is_logged_in'] ?? false);
-        $this->username = (string)($_SESSION['username'] ?? '');
-        $this->role = (string)($_SESSION['role'] ?? '');
+        $this->isLoggedIn = (bool) ($_SESSION['is_logged_in'] ?? false);
+        $this->username = (string) ($_SESSION['username'] ?? '');
+        $this->role = (string) ($_SESSION['role'] ?? '');
         $this->pageTitles = $this->buildPageTitles();
         $this->page = $this->resolvePage();
     }
@@ -82,10 +85,10 @@ final class PageController
                 'samesite' => 'Strict',
             ]);
 
-            ini_set('session.gc_maxlifetime', (string)$cookieLifetime);
+            ini_set('session.gc_maxlifetime', (string) $cookieLifetime);
             session_start();
 
-            if (!isset($_SESSION['initiated'])) {
+            if (! isset($_SESSION['initiated'])) {
                 session_regenerate_id(true);
                 $_SESSION['initiated'] = true;
             }
@@ -113,7 +116,7 @@ final class PageController
     private function resolvePage(): string
     {
         $rawPage = $_GET['page'] ?? 'home';
-        if (!is_string($rawPage)) {
+        if (! is_string($rawPage)) {
             $rawPage = 'home';
         }
 
@@ -122,7 +125,7 @@ final class PageController
             $page = 'home';
         }
 
-        if (!preg_match('/^[a-z0-9_]+$/', $page)) {
+        if (! preg_match('/^[a-z0-9_]+$/', $page)) {
             return '403';
         }
 
@@ -130,7 +133,7 @@ final class PageController
             return '403';
         }
 
-        if (!array_key_exists($page, $this->pageTitles)) {
+        if (! array_key_exists($page, $this->pageTitles)) {
             return '404';
         }
 
@@ -168,7 +171,7 @@ final class PageController
 
     public function renderDevPanel(): void
     {
-        if (!$this->isDev) {
+        if (! $this->isDev) {
             return;
         }
 

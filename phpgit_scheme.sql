@@ -1,4 +1,4 @@
--- PHPGit SQL schema + fake data (v4)
+-- PHPGit SQL schema only (v4)
 -- Optimized for MySQL 8+ / MariaDB 10.11+
 --
 -- ARCHITECTURE NOTE:
@@ -119,56 +119,38 @@ CREATE TABLE IF NOT EXISTS pull_requests
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS level
+CREATE TABLE IF NOT EXISTS inbox
 (
-    id         TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    level      TINYINT UNSIGNED NOT NULL,
-    `desc`     VARCHAR(50)               DEFAULT NULL,
-    created_at TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id         INT UNSIGNED                        NOT NULL AUTO_INCREMENT,
+    username   VARCHAR(50)                         NOT NULL,
+    email      VARCHAR(191)                        NOT NULL,
+    subject    VARCHAR(255)                        NOT NULL,
+    body       TEXT                                NOT NULL,
+    status     ENUM ('new', 'replied', 'archived') NOT NULL DEFAULT 'new',
+    unread     TINYINT(1)                          NOT NULL DEFAULT 1,
+    created_at TIMESTAMP                           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY ux_level_level (level)
+    INDEX ix_inbox_status (status),
+    INDEX ix_inbox_unread (unread),
+    INDEX ix_inbox_created (created_at)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS log
 (
-    id       BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
-    level_id TINYINT UNSIGNED NOT NULL,
-    message  TEXT             NOT NULL,
-    security TINYINT(1)       NOT NULL DEFAULT 0,
-    ip       TEXT                      DEFAULT NULL,
-    log_time TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id       INT UNSIGNED                                                      NOT NULL AUTO_INCREMENT,
+    level    ENUM ('Debug', 'Info', 'Warning', 'Error', 'Critical', 'Unknown') NOT NULL DEFAULT 'Unknown',
+    message  TEXT                                                              NOT NULL,
+    security TINYINT(1)                                                        NOT NULL DEFAULT 0,
+    ip       TEXT                                                                       DEFAULT NULL,
+    log_time TIMESTAMP                                                         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX ix_log_level_created (level_id, log_time),
-    INDEX ix_log_security_created (security, log_time),
-    CONSTRAINT fk_log_level FOREIGN KEY (level_id) REFERENCES level (id) ON DELETE RESTRICT
+    INDEX ix_log_level_created (level, log_time),
+    INDEX ix_log_security_created (security, log_time)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
-
-INSERT INTO users (id, username, email, password, role, display_name, bio, website)
-VALUES (1, 'admin', 'admin@phpgit.dev', '$2y$12$u7Crv3C8JbbQ2IuRDBzyfOnsJ5by1Vo7YLt51pQT8jUQEdBhz4VNC', 'ADMIN',
-        'System Administrator', 'Project maintainer', 'https://phpgit.dev'),
-       (2, 'alice', 'alice@phpgit.dev', '$2y$12$bgj9S30gtrU/zjHPbJaHNeN0yh4nnh6CX.h9vGcQ7nYBy6hxipIOe', 'USER',
-        'Alice Smith', 'Backend contributor', 'https://alice.dev'),
-       (3, 'demo', 'demo@phpgit.dev', '$2y$12$DB/7b4k2I7aptbBln7hLXeytuoRc5fsCd5euYW2cqDYW8ZQXMTp4y', 'USER',
-        'Demo Account', 'Read-only demo account', NULL)
-ON DUPLICATE KEY UPDATE username     = VALUES(username),
-                        role         = VALUES(role),
-                        display_name = VALUES(display_name),
-                        bio          = VALUES(bio),
-                        website      = VALUES(website);
-
-INSERT INTO repositories (id, owner_user_id, repo_name, slug, repo_description, stars, forks, lang, visibility,
-                          default_branch)
-VALUES (1, 1, 'phpgit-core', 'phpgit-core', 'Main PHPGit platform repository', 255, 190, 'php', 'public', 'main'),
-       (2, 2, 'bootstrap-theme', 'bootstrap-theme', 'Theme experiments for frontend', 4980, 2094, 'javascript',
-        'public', 'main')
-ON DUPLICATE KEY UPDATE repo_name        = VALUES(repo_name),
-                        repo_description = VALUES(repo_description),
-                        visibility       = VALUES(visibility),
-                        default_branch   = VALUES(default_branch);
 
 CREATE TABLE IF NOT EXISTS programming_languages
 (
@@ -180,34 +162,3 @@ CREATE TABLE IF NOT EXISTS programming_languages
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
-INSERT INTO programming_languages (lang, view, color)
-VALUES ('php', 'PHP', '#4F5D95'),
-       ('html', 'HTML', '#E34C26'),
-       ('css', 'CSS', '#264DE4'),
-       ('js', 'JavaScript', '#F7DF1E'),
-       ('ts', 'TypeScript', '#3178C6'),
-       ('py', 'Python', '#3776AB'),
-       ('java', 'Java', '#B07219'),
-       ('c', 'C', '#555555'),
-       ('cpp', 'C++', '#F34B7D'),
-       ('csharp', 'C#', '#178600'),
-       ('go', 'Go', '#00ADD8'),
-       ('ruby', 'Ruby', '#CC342D'),
-       ('swift', 'Swift', '#FA7343'),
-       ('kotlin', 'Kotlin', '#A97BFF'),
-       ('rust', 'Rust', '#DEA584'),
-       ('dart', 'Dart', '#00B4AB'),
-       ('scala', 'Scala', '#DC322F'),
-       ('shell', 'Shell', '#89E051'),
-       ('powershell', 'PowerShell', '#012456'),
-       ('r', 'R', '#198CE7')
-ON DUPLICATE KEY UPDATE view  = VALUES(view),
-                        color = VALUES(color);
-
-INSERT INTO level (id, level, `desc`)
-VALUES (1, 1, 'Debug'),
-       (2, 2, 'Info'),
-       (3, 3, 'Warning'),
-       (4, 4, 'Error'),
-       (5, 5, 'Critical')
-ON DUPLICATE KEY UPDATE `desc` = VALUES(`desc`);

@@ -1,3 +1,61 @@
+<?php
+declare(strict_types=1);
+
+use App\Config;
+use App\includes\Logging;
+use App\includes\Security;
+use Random\RandomException;
+
+$security = new Security();
+$csrf_token = null;
+$errors = [];
+
+try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $csrfToken = $_POST['csrf_token'] ?? '';
+
+        if (! $security->validateCsrfToken($csrfToken)) {
+            $errors[] = 'Invalid or expired form submission. Please try again.';
+        } elseif ($security->isRateLimited()) {
+            $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
+            Logging::loggingToFile('Too many login attempts', 2, true);
+        } else {
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+
+            if (empty($email)) {
+                $errors[] = 'Email is required.';
+            } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = 'Invalid email format.';
+            }
+
+            if (empty($password)) {
+                $errors[] = 'Password is required.';
+            }
+
+            if (empty($errors)) {
+                $config = new Config();
+                $pdo = $config->getPdo();
+                if ($pdo !== null) {
+                    //TODO: implement user update
+                } else {
+                    $errors[] = 'Database is currently unavailable. Please try again later.';
+                    Logging::loggingToFile('Unable to connect to database: ' . $config->getDb() . ' ' . $config->getHost(), 4);
+                }
+            }
+        }
+    }
+} catch (RandomException $e) {
+    Logging::loggingToFile('Error during form processing: ' . $e->getMessage(), 4);
+}
+
+try {
+    $csrf_token = $security->generateCsrfToken();
+} catch (RandomException $e) {
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
+}
+?>
+
 <div class="d-flex align-items-center gap-3 mb-5 pb-4 border-bottom border-secondary-subtle">
     <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
          style="width: 34px; height: 34px; font-size: .9rem;">
@@ -27,7 +85,7 @@
     </div>
 </div>
 
-<form action="#" method="post">
+<form method="post">
     <div class="row g-4">
         <div class="col-12">
             <label for="profile-username" class="form-label fw-semibold d-flex align-items-center gap-2">
@@ -80,4 +138,8 @@
             <i class="bi bi-check2-circle"></i> Save Profile
         </button>
     </div>
+    <input type="hidden" name="action" value="update_profile">
+    <input type="hidden" name="csrf_token"
+           value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
+
 </form>

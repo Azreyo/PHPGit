@@ -3,52 +3,53 @@
 declare(strict_types=1);
 
 use App\includes\Logging;
+
 $repos = [];
 
 if ($pdo !== null) {
     try {
         $stmt = $pdo->prepare(
-                'SELECT CONCAT(COALESCE(repo_name, \'\'), \'/\', COALESCE(slug, \'\')) AS name, repo_description AS descr, stars, forks, lang, updated_at AS updated FROM repositories;'
+                'SELECT slug AS name, repo_description AS descr, stars, forks, lang, updated_at AS updated FROM repositories;'
         );
         $stmt->execute();
         $repos = $stmt->fetchAll();
     } catch (PDOException $e) {
-        Logging::loggingToFile("Cannot execute SQL Query: " . $e->getMessage(), 4);
+        Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
     }
 } else {
-    Logging::loggingToFile("Cannot open database", 4);
+    Logging::loggingToFile('Cannot open database', 4);
 }
 
 $programming_languages = [
-        "PHP" => "#4F5D95",
-        "HTML" => "#E34C26",
-        "CSS" => "#264DE4",
-        "JavaScript" => "#F7DF1E",
-        "TypeScript" => "#3178C6",
-        "Python" => "#3776AB",
-        "Java" => "#B07219",
-        "C" => "#555555",
-        "C++" => "#F34B7D",
-        "C#" => "#178600",
-        "Go" => "#00ADD8",
-        "Ruby" => "#CC342D",
-        "Swift" => "#FA7343",
-        "Kotlin" => "#A97BFF",
-        "Rust" => "#DEA584",
-        "Dart" => "#00B4AB",
-        "Scala" => "#DC322F",
-        "Shell" => "#89E051",
-        "PowerShell" => "#012456",
-        "R" => "#198CE7",
+        'PHP' => '#4F5D95',
+        'HTML' => '#E34C26',
+        'CSS' => '#264DE4',
+        'JavaScript' => '#F7DF1E',
+        'TypeScript' => '#3178C6',
+        'Python' => '#3776AB',
+        'Java' => '#B07219',
+        'C' => '#555555',
+        'C++' => '#F34B7D',
+        'C#' => '#178600',
+        'Go' => '#00ADD8',
+        'Ruby' => '#CC342D',
+        'Swift' => '#FA7343',
+        'Kotlin' => '#A97BFF',
+        'Rust' => '#DEA584',
+        'Dart' => '#00B4AB',
+        'Scala' => '#DC322F',
+        'Shell' => '#89E051',
+        'PowerShell' => '#012456',
+        'R' => '#198CE7',
 ];
 
 $search_query = trim($_GET['q'] ?? '');
 if (strlen($search_query) > 100) {
-    header("Location: /index.php?page=414");
+    echo '<script>window.location.href="index.php?page=414";</script>';
     exit;
 }
 if ($search_query !== '') {
-    $repos = array_values(array_filter($repos, fn($r) => stripos($r['name'], $search_query) !== false || stripos($r['descr'] ?? '', $search_query) !== false));
+    $repos = array_values(array_filter($repos, fn ($r) => stripos($r['name'], $search_query) !== false || stripos($r['descr'] ?? '', $search_query) !== false));
 }
 $programming_languages = array_change_key_case($programming_languages, CASE_UPPER);
 ?>
@@ -64,7 +65,6 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
             </div>
         </section>
 
-        <!-- Search -->
         <div class="row justify-content-center mb-4">
             <div class="col-lg-8">
                 <form method="GET" action="index.php" class="d-flex gap-2">
@@ -76,7 +76,6 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
             </div>
         </div>
 
-        <!-- Filter Tabs -->
         <ul class="nav nav-tabs mb-4">
             <li class="nav-item"><a class="nav-link active" href="index.php?page=explore">All</a></li>
             <li class="nav-item"><a class="nav-link" href="index.php?page=explore&lang=php">PHP</a></li>
@@ -84,7 +83,6 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
             <li class="nav-item"><a class="nav-link" href="index.php?page=explore&lang=css">CSS</a></li>
         </ul>
 
-        <!-- Repo Cards -->
         <div class="row g-4 mb-5">
             <?php if (empty($repos)): ?>
                 <div class="col-12 text-center py-5 text-secondary">
@@ -95,7 +93,7 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
             <?php else: ?>
                 <?php foreach ($repos as $repo):
                     $rawLang = $repo['lang'] ?? '';
-                    $repo_lang = (string)$rawLang;
+                    $repo_lang = (string) $rawLang;
                     $langKey = strtoupper(trim($repo_lang));
                     $color = $programming_languages[$langKey] ?? '[#000000](#000000)';
                     ?>
@@ -109,7 +107,7 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
                                 <i class="bi bi-star"></i> Star
                             </button>
                         </div>
-                        <p class="text-secondary small mb-3"><?php echo htmlspecialchars($repo['descr'], ENT_QUOTES, 'UTF-8'); ?></p>
+                        <p class="text-secondary small mb-3"><?php echo htmlspecialchars($repo['descr'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                         <div class="d-flex align-items-center gap-3 repo-meta text-secondary">
                             <span class="d-flex align-items-center gap-1">
                                 <span class="lang-dot" style="background-color:<?php

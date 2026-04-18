@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\includes;
@@ -25,7 +26,7 @@ class ErrorHandler
 
     private function bootstrapEnv(?string $appEnv): void
     {
-        if (!isset($_ENV['APP_ENV']) && class_exists(Dotenv::class)) {
+        if (! isset($_ENV['APP_ENV']) && class_exists(Dotenv::class)) {
             $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
             $dotenv->safeLoad();
         }
@@ -48,19 +49,18 @@ class ErrorHandler
 
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool
     {
-
-        if (!$this->isDev) {
+        if (! $this->isDev) {
             return true;
         }
 
         $errorTypes = [
-            E_ERROR             => ['danger',    'Fatal Error'],
-            E_WARNING           => ['warning',   'Warning'],
-            E_NOTICE            => ['info',      'Notice'],
-            E_DEPRECATED        => ['secondary', 'Deprecated'],
-            E_USER_ERROR        => ['danger',    'User Error'],
-            E_USER_WARNING      => ['warning',   'User Warning'],
-            E_USER_NOTICE       => ['info',      'User Notice'],
+            E_ERROR => ['danger', 'Fatal Error'],
+            E_WARNING => ['warning', 'Warning'],
+            E_NOTICE => ['info', 'Notice'],
+            E_DEPRECATED => ['secondary', 'Deprecated'],
+            E_USER_ERROR => ['danger', 'User Error'],
+            E_USER_WARNING => ['warning', 'User Warning'],
+            E_USER_NOTICE => ['info', 'User Notice'],
             E_RECOVERABLE_ERROR => ['danger',    'Recoverable Error'],
         ];
 
@@ -72,7 +72,7 @@ class ErrorHandler
         }
 
         $snippet = $this->sourceSnippet($errfile, $errline);
-        $trace   = $this->backtraceTable(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
+        $trace = $this->backtraceTable(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS));
 
         $this->render(
             $variant,
@@ -90,7 +90,7 @@ class ErrorHandler
 
     public function handleException(Throwable $e): void
     {
-        if (!$this->isDev) {
+        if (! $this->isDev) {
             http_response_code(500);
             error_log(sprintf(
                 'Unhandled %s: %s in %s:%d',
@@ -104,24 +104,24 @@ class ErrorHandler
             return;
         }
 
-        $class   = get_class($e);
+        $class = get_class($e);
         $isError = $e instanceof \Error;
         $variant = $isError ? 'danger' : 'warning';
-        $label   = $isError ? 'Error' : 'Exception';
+        $label = $isError ? 'Error' : 'Exception';
 
         $frames = $e->getTrace();
         array_unshift($frames, [
-            'file'     => $e->getFile(),
-            'line'     => $e->getLine(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
             'function' => '{throw}',
-            'class'    => $class,
-            'type'     => '',
+            'class' => $class,
+            'type' => '',
         ]);
 
         $snippet = $this->sourceSnippet($e->getFile(), $e->getLine());
-        $trace   = $this->backtraceTable($frames);
+        $trace = $this->backtraceTable($frames);
 
-        $code  = $e->getCode() ? " (code: {$e->getCode()})" : '';
+        $code = $e->getCode() ? " (code: {$e->getCode()})" : '';
         $title = htmlspecialchars($class . ': ' . $e->getMessage() . $code, ENT_QUOTES, 'UTF-8');
 
         $this->render(
@@ -137,18 +137,18 @@ class ErrorHandler
 
     private function sourceSnippet(string $file, int $errorLine, int $context = 5): string
     {
-        if (!is_readable($file)) {
+        if (! is_readable($file)) {
             return '<p class="text-muted small mb-0">Source not readable.</p>';
         }
 
         $lines = file($file);
         $start = max(0, $errorLine - $context - 1);
-        $end   = min(count($lines), $errorLine + $context);
-        $rows  = '';
+        $end = min(count($lines), $errorLine + $context);
+        $rows = '';
 
         for ($i = $start; $i < $end; $i++) {
-            $lineNum     = $i + 1;
-            $code        = htmlspecialchars($lines[$i], ENT_QUOTES, 'UTF-8');
+            $lineNum = $i + 1;
+            $code = htmlspecialchars($lines[$i], ENT_QUOTES, 'UTF-8');
             $isErrorLine = ($lineNum === $errorLine);
 
             $rowStyle = $isErrorLine
@@ -184,7 +184,7 @@ class ErrorHandler
         foreach ($frames as $i => $frame) {
             $file = htmlspecialchars($frame['file'] ?? '[internal]', ENT_QUOTES, 'UTF-8');
             $line = $frame['line'] ?? '—';
-            $fn   = htmlspecialchars(
+            $fn = htmlspecialchars(
                 ($frame['class'] ?? '') . ($frame['type'] ?? '') . ($frame['function'] ?? '—'),
                 ENT_QUOTES,
                 'UTF-8'
@@ -218,18 +218,17 @@ class ErrorHandler
         string $trace,
         int $errno = 0
     ): void {
-        $id       = 'eh_' . substr(md5(uniqid('', true)), 0, 8);
-        $errCode  = $errno > 0 ? " · E{$errno}" : '';
+        $id = 'eh_' . substr(md5(uniqid('', true)), 0, 8);
+        $errCode = $errno > 0 ? " · E{$errno}" : '';
         $error_level = match ($label) {
-            "Fatal Error" => 5,
-            "Error"       => 4,
-            "Warning"     => 3,
-            "Notice"      => 2,
-            "Debug"       => 1,
-            default       => 0,
+            'Fatal Error' => 5,
+            'Error' => 4,
+            'Warning' => 3,
+            'Notice' => 2,
+            'Debug' => 1,
+            default => 0,
         };
-        Logging::loggingToFile($title . " " . $line . " " . $file, $error_level);
-
+        Logging::loggingToFile($title . ' ' . $line . ' ' . $file, $error_level);
 
         echo <<<HTML
         <div class="alert alert-{$variant} alert-dismissible fade show font-monospace small my-2 mx-2 shadow" role="alert" style="border-radius:6px;">
@@ -291,4 +290,3 @@ class ErrorHandler
         HTML;
     }
 }
-

@@ -1,71 +1,28 @@
 <?php
 
+use App\Config;
+use App\includes\Logging;
 use App\includes\Assets;
 
-$messages = [
-    [
-        'id' => 1,
-        'name' => 'Jane Doe',
-        'email' => 'jane@example.com',
-        'subject' => 'Question about self-hosting PHPGit',
-        'body' => "Hi there,\n\nI came across PHPGit and I'm really interested in running it on my own VPS. Could you point me to any documentation on setting up the Apache vhost and getting the .env configured properly?\n\nThanks a lot!",
-        'time' => '2 mins ago',
-        'unread' => true,
-        'status' => 'new',
-    ],
-    [
-        'id' => 2,
-        'name' => 'Carlos Méndez',
-        'email' => 'carlos.m@devmail.io',
-        'subject' => 'Bug report: 500 error on register page',
-        'body' => "Hello,\n\nI tried to register a new account and got a 500 Internal Server Error. This happened right after I clicked \"Create Account\". I'm on PHP 8.4 with Apache 2.4.\n\nLet me know if you need the full error log.",
-        'time' => '35 mins ago',
-        'unread' => true,
-        'status' => 'new',
-    ],
-    [
-        'id' => 3,
-        'name' => 'Priya Sharma',
-        'email' => 'priya.sharma@techcorp.com',
-        'subject' => 'Partnership inquiry',
-        'body' => "Hi PHPGit team,\n\nI represent TechCorp and we're looking for open-source Git hosting solutions to integrate into our CI/CD pipeline. Would you be open to a quick call to discuss potential collaboration?\n\nBest regards,\nPriya",
-        'time' => '2 hours ago',
-        'unread' => true,
-        'status' => 'new',
-    ],
-    [
-        'id' => 4,
-        'name' => 'Luca Bianchi',
-        'email' => 'luca@opensource.eu',
-        'subject' => 'Feature request: 2FA support',
-        'body' => "Hey,\n\nI'd love to see two-factor authentication added to PHPGit. Even a simple TOTP flow via Google Authenticator would be great for security-conscious teams.\n\nKeep up the great work!",
-        'time' => 'Yesterday',
-        'unread' => false,
-        'status' => 'replied',
-    ],
-    [
-        'id' => 5,
-        'name' => 'Sophie Turner',
-        'email' => 'sophie.t@webagency.co',
-        'subject' => 'Feedback on the UI',
-        'body' => "Hello,\n\nJust wanted to say the new settings page looks fantastic — very clean and modern. The dark mode especially is great.\n\nOne small thing: the pagination on the explore page does not seem to work correctly on mobile. Might be worth a look.\n\nCheers!",
-        'time' => '2 days ago',
-        'unread' => false,
-        'status' => 'replied',
-    ],
-    [
-        'id' => 6,
-        'name' => 'Anonymous',
-        'email' => 'noreply@spam.invalid',
-        'subject' => 'Test message',
-        'body' => "This is a test.",
-        'time' => '4 days ago',
-        'unread' => false,
-        'status' => 'archived',
-    ],
-];
+$config = new Config();
+$pdo = $config->getPDO();
 
-$unreadCount = count(array_filter($messages, fn($m) => $m['unread']));
+try {
+    if ($pdo !== null) {
+        $stmt = $pdo->prepare('SELECT id, username as name, email, subject, body, status, created_at AS time, unread FROM inbox ORDER BY created_at DESC;');
+        $stmt->execute();
+        $messages = $stmt->fetchAll();
+    } else {
+        throw new Exception('Database connection not established.');
+    }
+} catch (Exception $e) {
+    Logging::loggingToFile('Error loading inbox: ' . $e->getMessage(), 4);
+    echo '<div class="alert alert-danger">An error occurred while loading the inbox. Please try again later.</div>';
+    return;
+}
+
+
+$unreadCount = count(array_filter($messages, fn ($m) => $m['unread']));
 
 $statusMeta = [
     'new' => ['label' => 'New', 'class' => 'text-bg-primary'],
@@ -83,7 +40,10 @@ function inboxInitials(string $name): string
 {
     $parts = preg_split('/\s+/', trim($name));
     $i = strtoupper(substr($parts[0] ?? '?', 0, 1));
-    if (isset($parts[1])) $i .= strtoupper(substr($parts[1], 0, 1));
+    if (isset($parts[1])) {
+        $i .= strtoupper(substr($parts[1], 0, 1));
+    }
+
     return $i;
 }
 
@@ -157,7 +117,7 @@ function inboxInitials(string $name): string
                  onclick="inboxOpen(this)"
                  data-status="<?php echo htmlspecialchars($msg['status'], ENT_QUOTES, 'UTF-8'); ?>"
                  data-unread="<?php echo $msg['unread'] ? '1' : '0'; ?>"
-                 data-id="<?php echo (int)$msg['id']; ?>"
+                 data-id="<?php echo (int) $msg['id']; ?>"
                  data-name="<?php echo htmlspecialchars($msg['name'], ENT_QUOTES, 'UTF-8'); ?>"
                  data-email="<?php echo htmlspecialchars($msg['email'], ENT_QUOTES, 'UTF-8'); ?>"
                  data-subject="<?php echo htmlspecialchars($msg['subject'], ENT_QUOTES, 'UTF-8'); ?>"
@@ -295,4 +255,4 @@ function inboxInitials(string $name): string
     </nav>
 </div>
 
-<script src="<?= Assets::url('assets/js/index.js') ?>"></script>
+<script src="<?= Assets::url('assets/js/inbox.js') ?>"></script>

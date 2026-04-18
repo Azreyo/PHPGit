@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\includes;
 
+use App\includes\Assets;
+
 class DevPanel
 {
     private ?\PDO $pdo;
@@ -17,25 +19,25 @@ class DevPanel
     public function __construct(
         ?\PDO   $pdo,
         bool    $db_current_state,
-        string  $host    = 'n/a',
-        string  $db      = 'n/a',
+        string $host = 'n/a',
+        string $db = 'n/a',
         string  $db_user = 'n/a',
         string  $charset = 'utf8mb4',
         ?string $pdo_error = null
     ) {
-        $this->pdo              = $pdo;
+        $this->pdo = $pdo;
         $this->db_current_state = $db_current_state;
-        $this->host             = $host;
-        $this->db               = $db;
-        $this->db_user          = $db_user;
-        $this->charset          = $charset;
-        $this->pdo_error        = $pdo_error;
+        $this->host = $host;
+        $this->db = $db;
+        $this->db_user = $db_user;
+        $this->charset = $charset;
+        $this->pdo_error = $pdo_error;
     }
 
     private function convertBytes(int $size): string
     {
         $units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
-        $i     = $size > 0 ? (int) floor(log($size, 1024)) : 0;
+        $i = $size > 0 ? (int) floor(log($size, 1024)) : 0;
 
         return round($size / pow(1024, $i), 2) . ' ' . $units[$i];
     }
@@ -43,7 +45,7 @@ class DevPanel
     private function serviceIndicator(bool $status): string
     {
         $color = $status ? 'success' : 'danger';
-        $label = $status ? 'Up'      : 'Down';
+        $label = $status ? 'Up' : 'Down';
 
         return "<span class=\"btn btn-{$color} btn-sm\">{$label}</span>";
     }
@@ -51,7 +53,7 @@ class DevPanel
     private function checkStatus(bool $status): string
     {
         $color = $status ? 'success' : 'danger';
-        $label = $status ? 'Yes'     : 'No';
+        $label = $status ? 'Yes' : 'No';
 
         return "<span class=\"btn btn-{$color} btn-sm\">{$label}</span>";
     }
@@ -111,10 +113,10 @@ class DevPanel
 
     private function renderSessionPopover(): string
     {
-        $isLoggedIn    = $this->checkStatus((bool) ($_SESSION['is_logged_in'] ?? false));
-        $sessionUser   = $this->h((string) ($_SESSION['username'] ?? 'n/a'));
-        $sessionRole   = $this->h((string) ($_SESSION['role']     ?? 'n/a'));
-        $sessionLabel  = session_status() === PHP_SESSION_ACTIVE ? session_id() : 'no session';
+        $isLoggedIn = $this->checkStatus((bool) ($_SESSION['is_logged_in'] ?? false));
+        $sessionUser = $this->h((string) ($_SESSION['username'] ?? 'n/a'));
+        $sessionRole = $this->h((string) ($_SESSION['role'] ?? 'n/a'));
+        $sessionLabel = session_status() === PHP_SESSION_ACTIVE ? session_id() : 'no session';
 
         $content = '<table class="table table-sm table-borderless mb-0">'
                  . "<tr><td><strong>Authorized:</strong></td><td>{$isLoggedIn}</td></tr>"
@@ -148,8 +150,8 @@ class DevPanel
     {
         $apiStatus = false;
 
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
-        $url = "$scheme://phpgit.local/api/v1/health";
+        $scheme = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
+        $url = "{$scheme}://phpgit.local/api/v1/health";
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
@@ -157,30 +159,32 @@ class DevPanel
             CURLOPT_TIMEOUT => 5,
             CURLOPT_FAILONERROR => false,
         ]);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         $response = curl_exec($ch);
         if ($response === false) {
             $error = curl_error($ch);
-            Logging::loggingToFile("cURL error: $error", 4, true, true);
-            error_log("cURL error: $error");
+            Logging::loggingToFile("cURL error: {$error}", 4, true, true);
+            error_log("cURL error: {$error}");
         } else {
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $apiResponse = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                Logging::loggingToFile("Failed to decode API response: " . json_last_error_msg(), 4, true, true);
-                error_log("JSON error: " . json_last_error_msg());
+                Logging::loggingToFile('Failed to decode API response: ' . json_last_error_msg(), 4, true, true);
+                error_log('JSON error: ' . json_last_error_msg());
             } elseif ($httpCode >= 400) {
-                Logging::loggingToFile("API request failed with status code: $httpCode", 4, true, true);
+                Logging::loggingToFile("API request failed with status code: {$httpCode}", 4, true, true);
             } else {
                 $apiStatus = ($apiResponse['status'] ?? 'unknown') === 'ok';
             }
         }
         curl_close($ch);
-        $opcacheState     = function_exists('opcache_get_status') && opcache_get_status() !== false;
-        $mailStatus       = function_exists('mail');
+        $opcacheState = function_exists('opcache_get_status') && opcache_get_status() !== false;
+        $mailStatus = function_exists('mail');
 
-        $isDbRunning      = $this->serviceIndicator($this->db_current_state);
+        $isDbRunning = $this->serviceIndicator($this->db_current_state);
         $isOpcacheRunning = $this->serviceIndicator($opcacheState);
-        $isMailRunning    = $this->serviceIndicator($mailStatus);
+        $isMailRunning = $this->serviceIndicator($mailStatus);
         $isApiRunning = $this->serviceIndicator($apiStatus);
 
         $content = '<table class="table table-sm table-borderless mb-0">'
@@ -231,6 +235,6 @@ class DevPanel
 
         echo '</ul>';
         echo '</div>';
-        echo '<script src="/assets/js/dev.js"></script>';
+        echo '<script src="' . Assets::url('assets/js/dev.js') . '"></script>';
     }
 }

@@ -9,3 +9,7 @@ composer.phar
 certs
 apache
 /src/assets/manifest.json
+
+.php-cs-fixer.cache
+/bin/.jslint.mjs
+data/*

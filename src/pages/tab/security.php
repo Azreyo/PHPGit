@@ -1,20 +1,26 @@
 <?php
 
-use App\includes\Security;
-use App\includes\Logging;
 use App\Config;
+use App\includes\Logging;
+use App\includes\Security;
 use Random\RandomException;
 
 $security = new Security();
 $csrf_token = null;
-$error = [];
-$success = [];
+
+$error = $_SESSION['security_errors'] ?? [];
+$success = $_SESSION['security_success'] ?? [];
+unset($_SESSION['security_errors'], $_SESSION['security_success']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $csrf_token = $_POST['csrf-token'] ?? '';
+    $csrf_token_post = $_POST['csrf-token'] ?? '';
     $action = $_POST['action'] ?? '';
-    if (!$security->validateCsrfToken($csrf_token)) {
-        $error[] = 'Invalid or expired form submission. Please try again.';
-        Logging::loggingToFile("Invalid or expired form submission", 4, true);
+    $post_errors = [];
+    $post_success = [];
+
+    if (! $security->validateCsrfToken($csrf_token_post)) {
+        $post_errors[] = 'Invalid or expired form submission. Please try again.';
+        Logging::loggingToFile('Invalid or expired form submission', 4, true);
     } else {
         $config = new Config();
         if ($pdo = $config->getPdo()) {
@@ -25,39 +31,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $currentPassword = $_POST['current_password'] ?? '';
                         $newPassword = $_POST['new_password'] ?? '';
                         $confirmPassword = $_POST['confirm_password'] ?? '';
-                        if (!$currentPassword || !$newPassword || !$confirmPassword) {
-                            $error[] = 'All fields are required.';
+                        if (! $currentPassword || ! $newPassword || ! $confirmPassword) {
+                            $post_errors[] = 'All fields are required.';
                         } elseif ($newPassword !== $confirmPassword) {
-                            $error[] = 'New passwords do not match.';
+                            $post_errors[] = 'New passwords do not match.';
                         } elseif (strlen($newPassword) < 12) {
-                            $error[] = 'Password must be at least 12 characters.';
-                        } elseif (!preg_match('/\d/', $newPassword)) {
-                            $error[] = 'Password must contain at least one number.';
-                        } elseif (!preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
-                            $error[] = 'Password must contain at least one special character.';
+                            $post_errors[] = 'Password must be at least 12 characters.';
+                        } elseif (! preg_match('/\d/', $newPassword)) {
+                            $post_errors[] = 'Password must contain at least one number.';
+                        } elseif (! preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
+                            $post_errors[] = 'Password must contain at least one special character.';
                         } else {
-                            $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+                            $stmt = $pdo->prepare('SELECT password FROM users WHERE id = ?');
                             $stmt->execute([$userId]);
                             $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                            if (!$user) {
-                                $error[] = 'User not found.';
-                            } elseif (!password_verify($currentPassword, $user['password'])) {
-                                $error[] = 'Current password is incorrect.';
+                            if (! $user) {
+                                $post_errors[] = 'User not found.';
+                            } elseif (! password_verify($currentPassword, $user['password'])) {
+                                $post_errors[] = 'Current password is incorrect.';
                             } else {
                                 $pdo->beginTransaction();
                                 $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
-                                $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+                                $stmt = $pdo->prepare('UPDATE users SET password = ? WHERE id = ?');
                                 $stmt->execute([$newPasswordHash, $userId]);
                                 $pdo->commit();
-                                $success[] = 'Password changed successfully.';
+                                $post_success[] = 'Password changed successfully.';
                             }
                         }
                     } catch (Exception $e) {
                         if ($pdo->inTransaction()) {
                             $pdo->rollBack();
                         }
-                        $error[] = 'Failed to change password. Please try again.';
-                        Logging::loggingToFile("Failed to change password: " . $e->getMessage(), 4, true);
+                        $post_errors[] = 'Failed to change password. Please try again.';
+                        Logging::loggingToFile('Failed to change password: ' . $e->getMessage(), 4, true);
                     }
                     break;
                 case 'change_email':
@@ -65,67 +71,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $currentEmail = $_POST['current_email'] ?? '';
                         $newEmail = trim($_POST['new_email'] ?? '');
                         $confirmEmail = trim($_POST['confirm_email'] ?? '');
-                        $stmt = $pdo->prepare("SELECT id, email FROM users WHERE id = ?");
+                        $stmt = $pdo->prepare('SELECT id, email FROM users WHERE id = ?');
                         $stmt->execute([$userId]);
                         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if (!$user) {
-                            $error[] = 'User not found.';
+                        if (! $user) {
+                            $post_errors[] = 'User not found.';
                         } elseif ($currentEmail !== $user['email']) {
-                            $error[] = 'Current email is incorrect.';
+                            $post_errors[] = 'Current email is incorrect.';
                         } elseif ($newEmail !== $confirmEmail) {
-                            $error[] = 'New emails do not match.';
-                        } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-                            $error[] = 'New email address is not valid.';
+                            $post_errors[] = 'New emails do not match.';
+                        } elseif (! filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                            $post_errors[] = 'New email address is not valid.';
                         } else {
                             $pdo->beginTransaction();
-                            $stmt = $pdo->prepare("UPDATE users SET email = ? WHERE id = ?");
+                            $stmt = $pdo->prepare('UPDATE users SET email = ? WHERE id = ?');
                             $stmt->execute([$newEmail, $userId]);
                             $_SESSION['email'] = $newEmail;
                             $pdo->commit();
-                            $success[] = 'Email address updated successfully.';
+                            $post_success[] = 'Email address updated successfully.';
                         }
                     } catch (Exception $e) {
                         if ($pdo->inTransaction()) {
                             $pdo->rollBack();
                         }
-                        $error[] = 'Failed to change email. Please try again.';
-                        Logging::loggingToFile("Failed to change email: " . $e->getMessage(), 4, true);
+                        $post_errors[] = 'Failed to change email. Please try again.';
+                        Logging::loggingToFile('Failed to change email: ' . $e->getMessage(), 4, true);
                     }
-                    Logging::loggingToFile("Email change requested", 3);
+                    Logging::loggingToFile('Email change requested', 3);
                     break;
                 case 'delete_account':
                     try {
                         $pdo->beginTransaction();
 
-                        $stmt = $pdo->prepare("DELETE FROM issues WHERE author_user_id = ?");
+                        $stmt = $pdo->prepare('DELETE FROM issues WHERE author_user_id = ?');
                         $stmt->execute([$userId]);
 
-                        $stmt = $pdo->prepare("DELETE FROM repositories WHERE owner_user_id = ?");
+                        $stmt = $pdo->prepare('DELETE FROM repositories WHERE owner_user_id = ?');
                         $stmt->execute([$userId]);
 
-                        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+                        $stmt = $pdo->prepare('DELETE FROM users WHERE id = ?');
                         $stmt->execute([$userId]);
 
                         $pdo->commit();
                         Logging::loggingToFile("Account deleted for user ID: {$userId}", 3);
                         session_destroy();
+                        echo '<script>window.location.href="index.php?page=home";</script>';
                         exit;
                     } catch (PDOException $e) {
                         if ($pdo->inTransaction()) {
                             $pdo->rollBack();
                         }
-                        $error[] = 'Failed to delete account. Please try again.';
-                        Logging::loggingToFile("Failed to delete user: " . $e->getMessage(), 4, true);
+                        $post_errors[] = 'Failed to delete account. Please try again.';
+                        Logging::loggingToFile('Failed to delete user: ' . $e->getMessage(), 4, true);
                     }
                     break;
             }
         }
     }
+    $_SESSION['security_errors'] = $post_errors;
+    $_SESSION['security_success'] = $post_success;
+    echo '<script>window.location.href="index.php?page=settings&tab=security";</script>';
+    exit;
 }
+
 try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
-    Logging::loggingToFile("Cannot generate csrf token: " . $e->getMessage(), 4);
+    Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
 ?>
 <div class="d-flex align-items-center gap-3 mb-5 pb-4 border-bottom border-secondary-subtle">
@@ -138,7 +150,7 @@ try {
         <h6 class="fw-bold mb-0" style="letter-spacing: -0.01em;">Protect your account</h6>
     </div>
 </div>
-<?php if (!empty($success)) : ?>
+<?php if (! empty($success)) : ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <?php foreach ($success as $msg) : ?>
             <p class="mb-0"><?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?></p>
@@ -146,7 +158,7 @@ try {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
-<?php if (!empty($error)) : ?>
+<?php if (! empty($error)) : ?>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <?php foreach ($error as $err) : ?>
             <p class="mb-0"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></p>
