@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $config = new Config();
             $pdo = $config->getPdo();
             try {
+                if ($pdo === null) {
+                    throw new PDOException('Database connection is not available. Please try again later.');
+                }
                 $pdo->beginTransaction();
                 $stmt = $pdo->prepare('INSERT INTO inbox (username, email, subject, body) VALUES (?, ?, ?, ?)');
                 $stmt->execute([$contact_name, $contact_email, $contact_subject, $contact_message]);
