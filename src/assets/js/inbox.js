@@ -174,9 +174,9 @@
 
     function _apiMarkRead(ids) {
         fetch("/api/v1/markInboxRead.php", {
-            method: "POST",
+            body: JSON.stringify({ids}),
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ids: ids})
+            method: "POST"
         }).catch(function (err) {
             console.error("markInboxRead failed:", err);
         });
