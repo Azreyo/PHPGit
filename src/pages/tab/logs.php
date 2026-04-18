@@ -92,7 +92,8 @@ try {
         <?php endif; ?>
         <form method="post">
             <input type="hidden" name="action" value="wipe_logs">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+            <input type="hidden" name="csrf_token"
+                   value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="d-flex flex-wrap gap-2">
                 <button type="submit" class="btn btn-outline-danger rounded-3"
                         onclick="return confirm('Are you sure? This action cannot be undone.')">Wipe Logs
