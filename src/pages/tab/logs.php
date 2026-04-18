@@ -49,10 +49,11 @@ foreach ($logs as $l) {
             <p class="text-secondary small mb-0">Track security events, diagnostics, and operator actions in real
                 time.</p>
         </div>
-        <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-outline-secondary rounded-3">Export</button>
-            <button type="button" class="btn btn-outline-danger rounded-3">Wipe Logs</button>
-        </div>
+        <form method="post">
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-danger rounded-3">Wipe Logs</button>
+            </div>
+        </form>
     </div>
 </section>
 
