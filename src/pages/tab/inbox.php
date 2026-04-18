@@ -108,7 +108,8 @@ function inboxInitials(string $name): string
         $id = (int)$msg['id'];
         try {
             $pdo->beginTransaction();
-            $stmt = $pdo->prepare('UPDATE inbox SET unread = 0 WHERE id = 1;');
+            $stmt = $pdo->prepare('UPDATE inbox SET unread = 0 WHERE id = ? AND unread = 1;');
+            $stmt->execute([$id]);
             $stmt->execute();
             $pdo->commit();
         } catch (PDOException $e) {
