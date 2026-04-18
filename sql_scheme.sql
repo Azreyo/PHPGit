@@ -19,6 +19,24 @@
 CREATE DATABASE IF NOT EXISTS `phpgit` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
 USE `phpgit`;
 
+-- Dumping structure for table phpgit.inbox
+CREATE TABLE IF NOT EXISTS `inbox`
+(
+    `id`       int(11)                         NOT NULL AUTO_INCREMENT,
+    `username` varchar(50)                     NOT NULL,
+    `email`    varchar(50)                     NOT NULL,
+    `subject`  varchar(50)                     NOT NULL,
+    `body`     varchar(500)                    NOT NULL,
+    `time`     timestamp                       NOT NULL DEFAULT current_timestamp(),
+    `unread`   tinyint(1)                      NOT NULL DEFAULT 0,
+    `status`   enum ('new','replied','closed') NOT NULL DEFAULT 'new',
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+-- Dumping data for table phpgit.inbox: ~0 rows (approximately)
+
 -- Dumping structure for table phpgit.issues
 CREATE TABLE IF NOT EXISTS `issues`
 (
@@ -118,9 +136,9 @@ CREATE TABLE IF NOT EXISTS `repositories`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- Dumping data for table phpgit.repositories: ~2 rows (approximately)
-REPLACE INTO `repositories` (`id`, `owner_user_id`, `repo_name`, `slug`, `repo_description`, `visibility`,
-                             `default_branch`, `stars`, `forks`, `lang`, `created_at`, `updated_at`)
+-- Dumping data for table phpgit.repositories: ~1 rows (approximately)
+INSERT IGNORE INTO `repositories` (`id`, `owner_user_id`, `repo_name`, `slug`, `repo_description`, `visibility`,
+                                   `default_branch`, `stars`, `forks`, `lang`, `created_at`, `updated_at`)
 VALUES (2, 2, 'bootstrap-theme', 'bootstrap-theme', 'Theme experiments for frontend', 'public', 'main', 4980, 2094,
         'javascript', '2026-03-29 11:03:45', '2026-03-29 11:03:45');
 
@@ -140,8 +158,8 @@ CREATE TABLE IF NOT EXISTS `repository_members`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- Dumping data for table phpgit.repository_members: ~2 rows (approximately)
-REPLACE INTO `repository_members` (`repository_id`, `user_id`, `permission`, `added_at`)
+-- Dumping data for table phpgit.repository_members: ~1 rows (approximately)
+INSERT IGNORE INTO `repository_members` (`repository_id`, `user_id`, `permission`, `added_at`)
 VALUES (2, 2, 'owner', '2026-03-29 11:03:45');
 
 -- Dumping structure for table phpgit.users
@@ -169,9 +187,9 @@ CREATE TABLE IF NOT EXISTS `users`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- Dumping data for table phpgit.users: ~7 rows (approximately)
-REPLACE INTO `users` (`id`, `username`, `email`, `password`, `display_name`, `role`, `status`, `bio`, `website`,
-                      `last_login_at`, `created_at`, `updated_at`)
+-- Dumping data for table phpgit.users: ~8 rows (approximately)
+INSERT IGNORE INTO `users` (`id`, `username`, `email`, `password`, `display_name`, `role`, `status`, `bio`, `website`,
+                            `last_login_at`, `created_at`, `updated_at`)
 VALUES (1, 'admin', 'admin@phpgit.dev', '$2y$12$u7Crv3C8JbbQ2IuRDBzyfOnsJ5by1Vo7YLt51pQT8jUQEdBhz4VNC',
         'System Administrator', 'ADMIN', 'ACTIVE', 'Project maintainer', 'https://phpgit.dev', NULL,
         '2026-04-12 17:08:52', '2026-04-12 17:08:52'),
