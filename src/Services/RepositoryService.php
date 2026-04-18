@@ -22,6 +22,11 @@ class RepositoryService
         return (bool)preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,98}$/', $name);
     }
 
+    public static function isValidUsername(string $username): bool
+    {
+        return (bool)preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}$/', $username);
+    }
+
     public function create(
         int    $ownerUserId,
         string $ownerUsername,
@@ -35,6 +40,10 @@ class RepositoryService
         $description = trim($description);
         $visibility = in_array($visibility, ['public', 'private'], true) ? $visibility : 'public';
         $defaultBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', trim($defaultBranch)) ?: 'main';
+
+        if (!self::isValidUsername($ownerUsername)) {
+            return ['success' => false, 'error' => 'Invalid owner username.', 'path' => null];
+        }
 
         if (!self::isValidRepoName($repoName)) {
             return ['success' => false, 'error' => 'Invalid repository name. Use letters, numbers, hyphens, underscores, or dots.', 'path' => null];
@@ -50,19 +59,28 @@ class RepositoryService
             return ['success' => false, 'error' => 'You already have a repository with that name.', 'path' => null];
         }
 
-        $repoPath = $this->dataRoot . '/' . $ownerUsername . '/' . $repoName;
+        $realDataRoot = realpath($this->dataRoot);
+        if ($realDataRoot === false) {
+            Logging::loggingToFile('DATA_ROOT does not exist or is not accessible: ' . $this->dataRoot, 4);
+            return ['success' => false, 'error' => 'Server configuration error.', 'path' => null];
+        }
+
+        $repoPath = $realDataRoot . '/' . $ownerUsername . '/' . $repoName;
+
+        if (!str_starts_with($repoPath, $realDataRoot . '/')) {
+            Logging::loggingToFile('Path traversal attempt blocked: ' . $repoPath, 3, true);
+            return ['success' => false, 'error' => 'Invalid repository path.', 'path' => null];
+        }
 
         if (is_dir($repoPath)) {
             return ['success' => false, 'error' => 'Repository directory already exists on disk.', 'path' => null];
         }
 
-        // Create directory
         if (!mkdir($repoPath, 0755, true)) {
             Logging::loggingToFile('Failed to create repo directory: ' . $repoPath, 4);
             return ['success' => false, 'error' => 'Failed to create repository directory.', 'path' => null];
         }
 
-        // Initialise bare git repository
         $escapedPath = escapeshellarg($repoPath);
         $escapedBranch = escapeshellarg($defaultBranch);
         exec("git init --bare -b {$escapedBranch} {$escapedPath} 2>&1", $output, $exitCode);

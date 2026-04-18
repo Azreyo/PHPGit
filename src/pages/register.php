@@ -29,6 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (empty($username)) {
         $post_errors[] = 'Username cannot be empty';
+    } elseif (!preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}$/', $username)) {
+        $post_errors[] = 'Username may only contain letters, numbers, hyphens and underscores, and must start with a letter or digit.';
     }
 
     if (empty($email)) {
