@@ -163,6 +163,40 @@ class ApiController extends Controller
         }
     }
 
+    private function markInboxRead(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireAdminSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $ids = $body['ids'] ?? [];
+
+        if (!is_array($ids) || $ids === []) {
+            $this->error('No IDs provided', 400);
+        }
+        $ids = array_values(array_filter(array_map('intval', $ids), fn(int $id) => $id > 0));
+
+        if ($ids === []) {
+            $this->error('No valid IDs provided', 400);
+        }
+
+        try {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $this->pdo->prepare(
+                "UPDATE inbox SET unread = 0 WHERE id IN ($placeholders) AND unread = 1"
+            );
+            $stmt->execute($ids);
+            $this->success(['updated' => $stmt->rowCount()]);
+        } catch (Throwable $e) {
+            Logging::loggingToFile('markInboxRead error: ' . $e->getMessage(), 4, true, true);
+            $this->error('Could not update inbox');
+        }
+    }
+
     public function api(string $endpoint): void
     {
         $cleanEndpoint = preg_replace('/[^a-z_]/', '', strtolower($endpoint)) ?: '';
@@ -170,6 +204,7 @@ class ApiController extends Controller
         match ($cleanEndpoint) {
             'getdashboardinfo' => $this->getDashboardInfo(),
             'getdatabaseuptime' => $this->getDatabaseInfo(),
+            'markinboxread' => $this->markInboxRead(),
             default => $this->notFound('Unknown API endpoint'),
         };
     }

@@ -59,6 +59,7 @@
                 subj.classList.replace("fw-bold", "fw-semibold");
             }
             _updateBadge(-1);
+            _apiMarkRead([parseInt(d.id, 10)]);
         }
 
         bootstrap.Modal.getOrCreateInstance(
@@ -134,9 +135,18 @@
     };
 
     window.inboxMarkAllRead = function () {
-        document.querySelectorAll(
+        const unreadRows = Array.from(document.querySelectorAll(
             "#inboxList .inbox-msg[data-unread='1']"
-        ).forEach(function (row) {
+        ));
+        if (unreadRows.length === 0) {
+            return;
+        }
+
+        const ids = unreadRows.map(function (row) {
+            return parseInt(row.dataset.id, 10);
+        });
+
+        unreadRows.forEach(function (row) {
             row.dataset.unread = "0";
             row.classList.remove(
                 "border-primary",
@@ -159,7 +169,18 @@
         if (badge) {
             badge.remove();
         }
+        _apiMarkRead(ids);
     };
+
+    function _apiMarkRead(ids) {
+        fetch("/api/v1/markInboxRead.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ids: ids})
+        }).catch(function (err) {
+            console.error("markInboxRead failed:", err);
+        });
+    }
 
     function _updateBadge(delta) {
         const badge = document.querySelector(".badge.bg-primary.rounded-pill");

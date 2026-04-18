@@ -2,10 +2,8 @@
 
 use App\Config;
 use App\includes\Logging;
-use App\includes\Security;
 use App\includes\Assets;
 
-$security = new Security();
 $config = new Config();
 $pdo = $config->getPDO();
 
@@ -110,20 +108,6 @@ function inboxInitials(string $name): string
         $color = $avatarColor[$msg['status']] ?? 'secondary';
         $badge = $statusMeta[$msg['status']] ?? $statusMeta['new'];
         $preview = mb_strimwidth(str_replace("\n", ' ', $msg['body']), 0, 100, '…');
-        $id = (int)$msg['id'];
-        try {
-            $pdo->beginTransaction();
-            $stmt = $pdo->prepare('UPDATE inbox SET unread = 0 WHERE id = ? AND unread = 1;');
-            $stmt->execute([$id]);
-            $stmt->execute();
-            $pdo->commit();
-        } catch (PDOException $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            Logging::loggingToFile('Failed to update unread status: ' . $e->getMessage(), 4);
-            $preview = 'Failed to update unread status';
-        }
         ?>
         <article class="inbox-msg d-flex align-items-start gap-3 p-3 rounded-3 border
                         <?php echo $msg['unread'] ? 'border-primary border-opacity-25 bg-primary bg-opacity-10' : 'border-secondary-subtle bg-body-secondary'; ?>"
