@@ -79,6 +79,10 @@ class ApiController extends Controller
         };
     }
 
+    /**
+     * @internal Prepared for upcoming auth enforcement
+     * @phpstan-ignore-next-line
+     */
     private function requireLoggedInSession(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -114,6 +118,7 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
+        $dashboardInfo = null;
         try {
             $stmt = $this->pdo->prepare('
                 SELECT 
