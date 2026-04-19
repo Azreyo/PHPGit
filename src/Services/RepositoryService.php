@@ -76,6 +76,7 @@ class RepositoryService
             return ['success' => false, 'error' => 'Repository directory already exists on disk.', 'path' => null];
         }
 
+        /** @psalm-suppress TaintedFile - path is validated against $realDataRoot via str_starts_with above */
         if (!mkdir($repoPath, 0755, true)) {
             Logging::loggingToFile('Failed to create repo directory: ' . $repoPath, 4);
             return ['success' => false, 'error' => 'Failed to create repository directory.', 'path' => null];
@@ -133,6 +134,7 @@ class RepositoryService
             \RecursiveIteratorIterator::CHILD_FIRST
         );
         foreach ($items as $item) {
+            /** @psalm-suppress TaintedFile - path originates from RecursiveDirectoryIterator, not user input */
             $item->isDir() ? rmdir($item->getRealPath()) : unlink($item->getRealPath());
         }
         rmdir($path);

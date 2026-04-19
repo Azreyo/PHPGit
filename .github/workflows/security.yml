@@ -28,7 +28,7 @@ jobs:
           php-version: '8.4'
           extensions: pdo
       - run: composer install --prefer-dist
-      - run: composer require --dev phpstan/phpstan phpstan/phpstan-php-parser --no-interaction
+      - run: composer require --dev phpstan/phpstan --no-interaction
       - run: vendor/bin/phpstan analyse src/ --level=6 --no-progress
 
   psalm-taint:

@@ -37,8 +37,14 @@ use App\includes\Assets;
 <body>
 
 <?php
+$allowedPages = [
+    'home', 'about', 'contact', 'explore', 'login', 'register', 'logout',
+    '404', '403', '414', 'terms', 'settings', 'repos', 'new_repo',
+    'dashboard', 'phpinfo',
+];
+$safePage = in_array($page, $allowedPages, true) ? $page : '404';
 include __DIR__ . '/../includes/header.php';
-include __DIR__ . '/../pages/' . htmlspecialchars($page, ENT_QUOTES, 'UTF-8') . '.php';
+include __DIR__ . '/../pages/' . $safePage . '.php';
 include __DIR__ . '/../includes/footer.php';
 ?>
 
