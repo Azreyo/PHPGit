@@ -169,6 +169,7 @@ class ApiController extends Controller
         $this->requireAdminSession();
 
         if ($this->pdo === null) {
+            Logging::loggingToFile('markInboxRead error: Database connection is null', 4, true, true);
             $this->error('Database unavailable', 503);
         }
 

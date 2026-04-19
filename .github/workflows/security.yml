@@ -1,0 +1,71 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  composer-audit:
+    name: Dependency CVE Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+      - run: composer install --no-dev --prefer-dist
+      - run: composer audit
+
+  phpstan:
+    name: Static Analysis (PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo
+      - run: composer install --prefer-dist
+      - run: composer require --dev phpstan/phpstan phpstan/phpstan-php-parser --no-interaction
+      - run: vendor/bin/phpstan analyse src/ --level=6 --no-progress
+
+  psalm-taint:
+    name: Taint Analysis (Psalm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo
+      - run: composer install --prefer-dist
+      - run: composer require --dev vimeo/psalm --no-interaction
+      - run: vendor/bin/psalm --init src/ 4
+      - run: vendor/bin/psalm --taint-analysis --no-progress
+
+  secrets:
+    name: Secret Leak Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  security-headers:
+    name: PHPCS Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+      - run: composer install --prefer-dist
+      - run: |
+          composer require --dev squizlabs/php_codesniffer pheromone/phpcs-security-audit --no-interaction
+          vendor/bin/phpcs --standard=Security src/ --extensions=php --report=full || true
+
