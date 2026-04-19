@@ -42,8 +42,9 @@ jobs:
           extensions: pdo
       - run: composer install --prefer-dist
       - run: composer require --dev vimeo/psalm --no-interaction
-      - run: vendor/bin/psalm --init src/ 4
-      - run: vendor/bin/psalm --taint-analysis --no-progress
+      - run: |
+          [ -f psalm.xml ] || vendor/bin/psalm --init src/ 4
+          vendor/bin/psalm --taint-analysis --no-progress
 
   secrets:
     name: Secret Leak Detection
