@@ -6,7 +6,6 @@ use App\Services\SshKeyService;
 
 /** @var bool $is_logged_in */
 
-// ── Bootstrap service ──────────────────────────────────────────────────────
 $config = Config::getInstance();
 $pdo = $config->getPdo();
 $userId = (int)($_SESSION['user_id'] ?? 0);
@@ -44,7 +43,6 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
     </div>
 <?php endif; ?>
 
-<!-- Add Key form -->
 <div class="mb-5">
     <div class="d-flex align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center justify-content-center rounded-3 bg-success-subtle text-success flex-shrink-0"
@@ -93,7 +91,6 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
 
 <hr class="border-secondary-subtle my-5">
 
-<!-- Key list -->
 <div>
     <div class="d-flex align-items-center gap-3 mb-4">
         <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
@@ -145,7 +142,6 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
 
 <hr class="border-secondary-subtle my-5">
 
-<!-- Clone hint -->
 <div class="p-3 rounded-3 border border-secondary-subtle bg-body-secondary">
     <div class="fw-semibold mb-2" style="font-size: .9rem;"><i class="bi bi-terminal me-1"></i> SSH Clone URL format
     </div>
@@ -233,17 +229,17 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
                     body: JSON.stringify({title, public_key: pubKey}),
                 });
                 const data = await res.json();
-                if (data.success) {
+                if (res.ok && data.key) {
                     document.getElementById('ssh-key-title').value = '';
                     document.getElementById('ssh-key-value').value = '';
                     showAlert('SSH key added successfully.', 'success');
                     const emptyState = document.getElementById('ssh-empty-state');
                     if (emptyState) emptyState.remove();
-                    const row = buildKeyRow(data.data.key);
+                    const row = buildKeyRow(data.key);
                     keyList.prepend(row);
                     bindDeleteBtn(row.querySelector('.ssh-delete-btn'));
                 } else {
-                    showAlert(data.message || 'Failed to add key.', 'danger');
+                    showAlert(data.error || 'Failed to add key.', 'danger');
                 }
             } catch {
                 showAlert('Network error. Please try again.', 'danger');
@@ -265,7 +261,7 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
                         body: JSON.stringify({id: keyId}),
                     });
                     const data = await res.json();
-                    if (data.success) {
+                    if (res.ok && data.deleted) {
                         const row = keyList.querySelector(`[data-key-id="${keyId}"]`);
                         if (row) row.remove();
                         if (!keyList.querySelector('.ssh-key-row')) {
@@ -276,7 +272,7 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
                         }
                         showAlert('SSH key removed.', 'success');
                     } else {
-                        showAlert(data.message || 'Failed to delete key.', 'danger');
+                        showAlert(data.error || 'Failed to delete key.', 'danger');
                         this.disabled = false;
                     }
                 } catch {

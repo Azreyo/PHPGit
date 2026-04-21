@@ -200,12 +200,6 @@ class ApiController extends Controller
         }
     }
 
-    // ── SSH Key endpoints ─────────────────────────────────────────────────
-
-    /**
-     * POST /api/v1/addSshKey.php
-     * Body (JSON): { "title": "...", "public_key": "ssh-ed25519 ..." }
-     */
     public function addSshKey(): void
     {
         $this->requireMethod('POST');
@@ -235,10 +229,6 @@ class ApiController extends Controller
         $this->success(['key' => $result['key']]);
     }
 
-    /**
-     * DELETE /api/v1/deleteSshKey.php
-     * Body (JSON): { "id": 42 }
-     */
     public function deleteSshKey(): void
     {
         $this->requireMethod('DELETE');
@@ -265,9 +255,6 @@ class ApiController extends Controller
         $this->success(['deleted' => $keyId]);
     }
 
-    /**
-     * GET /api/v1/listSshKeys.php
-     */
     public function listSshKeys(): void
     {
         $this->requireMethod('GET');
@@ -285,7 +272,11 @@ class ApiController extends Controller
 
     private function buildSshKeyService(): SshKeyService
     {
-        $config = Config::getInstance();
+        $pdo = $this->pdo;
+        if ($pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
         $authorizedKeys = rtrim($_ENV['AUTHORIZED_KEYS_PATH'] ?? '', '/');
         $gitShellWrapper = rtrim($_ENV['GIT_SHELL_WRAPPER'] ?? '', '/');
 
@@ -296,10 +287,9 @@ class ApiController extends Controller
             $gitShellWrapper = dirname(__DIR__, 2) . '/bin/git-shell-wrapper.php';
         }
 
-        return new SshKeyService($this->pdo, $authorizedKeys, $gitShellWrapper);
+        return new SshKeyService($pdo, $authorizedKeys, $gitShellWrapper);
     }
 
-    // ── Routing ───────────────────────────────────────────────────────────
 
     public function api(string $endpoint): void
     {
