@@ -13,7 +13,7 @@ final class SystemService
         $cores = self::getCpuCoreCount();
         $loadAvg = sys_getloadavg();
 
-        if ($cores <= 0 || $loadAvg === false || ! isset($loadAvg[0])) {
+        if ($cores <= 0 || $loadAvg === false) {
             return 0.0;
         }
 
@@ -23,6 +23,9 @@ final class SystemService
         return round($usage, 2);
     }
 
+    /**
+     * @return array<string, float>
+     */
     public static function getMemoryUsage(): array
     {
         $memInfo = @file('/proc/meminfo', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -75,7 +78,7 @@ final class SystemService
     {
         $total = disk_total_space('/');
         $free = disk_free_space('/');
-        if ($total === false || $free === false || $total === 0) {
+        if ($total === false || $free === false || $total === 0.0) {
             throw new RuntimeException('Unable to read disk space');
         }
         $used = $total - $free;

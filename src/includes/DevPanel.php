@@ -158,7 +158,7 @@ class DevPanel
             CURLOPT_FAILONERROR => false,
         ]);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         $response = curl_exec($ch);
         if ($response === false) {
             $error = curl_error($ch);

@@ -56,7 +56,7 @@ class Logging
                 $stmt->execute([$level_message, $sanitized_message, (int) $is_security_alert, $ip]);
                 $pdo->commit();
             } catch (\PDOException $e) {
-                $pdo?->rollBack();
+                $pdo->rollBack();
                 self::loggingToFile('Database error: ' . $e->getMessage(), 4);
             }
         }

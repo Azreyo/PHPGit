@@ -9,7 +9,7 @@ use App\includes\DevPanel;
 
 final class PageController
 {
-    /** @var array<string, string> */
+    /** @var array<int|string, string> */
     private const PAGE_TITLES = [
         'home' => 'Home',
         'about' => 'About us',
@@ -46,7 +46,7 @@ final class PageController
     private string $page;
     private bool $isLoggedIn;
     private bool $isDev;
-    /** @var array<string, string> */
+    /** @var array<int|string, string> */
     private array $pageTitles;
 
     private ?\PDO $pdo;
@@ -104,7 +104,7 @@ final class PageController
         }
     }
 
-    /** @return array<string, string> */
+    /** @return array<int|string, string> */
     private function buildPageTitles(): array
     {
         $titles = self::PAGE_TITLES;

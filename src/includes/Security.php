@@ -60,7 +60,7 @@ class Security
 
     public function recordFailedAttempt(): void
     {
-        $this->login_attempts = ($this->login_attempts ?? 0) + 1;
+        $this->login_attempts = $this->login_attempts + 1;
         $_SESSION['login_attempts'] = $this->login_attempts;
         $_SESSION['login_attempt_time'] = $this->login_attempt_time;
     }

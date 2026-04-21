@@ -27,6 +27,9 @@ class RepositoryService
         return (bool) preg_match('/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}$/', $username);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function create(
         int    $ownerUserId,
         string $ownerUsername,
@@ -114,6 +117,9 @@ class RepositoryService
         return ['success' => true, 'error' => null, 'path' => $repoPath];
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function getByOwner(int $ownerUserId): array
     {
         $stmt = $this->pdo->prepare(
