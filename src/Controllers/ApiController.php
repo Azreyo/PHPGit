@@ -8,7 +8,6 @@ use App\Config;
 use App\Core\Controller;
 use App\includes\Logging;
 use App\Services\SystemService;
-use JetBrains\PhpStorm\NoReturn;
 use PDO;
 use Throwable;
 
@@ -59,7 +58,7 @@ class ApiController extends Controller
             $this->error($e->getMessage());
         }
     }
-    #[NoReturn]
+
     public function getHealth(): void
     {
         $this->requireMethod('GET');

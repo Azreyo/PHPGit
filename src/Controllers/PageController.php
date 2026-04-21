@@ -38,6 +38,7 @@ final class PageController
     private string $page;
     private bool $isLoggedIn;
     private bool $isDev;
+    /** @var array<string, string> */
     private array $pageTitles;
 
     private ?\PDO $pdo;
@@ -95,6 +96,7 @@ final class PageController
         }
     }
 
+    /** @return array<string, string> */
     private function buildPageTitles(): array
     {
         $titles = self::PAGE_TITLES;
@@ -121,9 +123,6 @@ final class PageController
         }
 
         $page = preg_replace('/[^a-z0-9_]/', '', strtolower($rawPage)) ?: 'home';
-        if ($page === '') {
-            $page = 'home';
-        }
 
         if (! preg_match('/^[a-z0-9_]+$/', $page)) {
             return '403';
