@@ -121,6 +121,36 @@ class RepositoryService
     }
 
     /**
+     * Look up a repository by its "owner/repo" slug string.
+     * Resolves via the owner username + repo_name join so the query works
+     * regardless of what value is stored in the slug column.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getBySlug(string $slug): ?array
+    {
+        $parts = explode('/', $slug, 2);
+        if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {
+            return null;
+        }
+        [$ownerUsername, $repoName] = $parts;
+
+        $stmt = $this->pdo->prepare(
+            'SELECT r.id, r.owner_user_id, r.repo_name, r.slug, r.repo_description, r.visibility,
+                    r.default_branch, r.stars, r.forks, r.lang, r.created_at, r.updated_at,
+                    u.username AS owner_username, u.display_name AS owner_display_name
+             FROM repositories r
+             JOIN users u ON u.id = r.owner_user_id
+             WHERE u.username = ? AND r.repo_name = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$ownerUsername, $repoName]);
+        $row = $stmt->fetch();
+
+        return $row !== false ? $row : null;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function getByOwner(int $ownerUserId): array

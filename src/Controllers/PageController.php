@@ -22,6 +22,7 @@ final class PageController
         '403' => 'Forbidden',
         '414' => 'URI too long',
         'terms' => 'Terms of Service',
+        'repo_view' => 'Repository',
     ];
 
     /** @var array<string, string> */

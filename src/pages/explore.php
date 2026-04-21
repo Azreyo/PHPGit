@@ -11,7 +11,13 @@ $repos = [];
 if ($pdo !== null) {
     try {
         $stmt = $pdo->prepare(
-            'SELECT slug AS name, repo_description AS descr, stars, forks, lang, updated_at AS updated FROM repositories;'
+                'SELECT CONCAT(u.username, \'/\', r.repo_name) AS name,
+                    r.repo_description AS descr, r.stars, r.forks, r.lang,
+                    r.updated_at AS updated
+             FROM repositories r
+             JOIN users u ON u.id = r.owner_user_id
+             WHERE r.visibility = \'public\'
+             ORDER BY r.updated_at DESC'
         );
         $stmt->execute();
         $repos = $stmt->fetchAll();
@@ -102,7 +108,8 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
                 <div class="col-md-6">
                     <div class="repo-card h-100">
                         <div class="d-flex align-items-start justify-content-between mb-2">
-                            <a href="#" class="fw-semibold text-primary text-decoration-none">
+                            <a href="/<?php echo htmlspecialchars($repo['name'], ENT_QUOTES, 'UTF-8'); ?>"
+                               class="fw-semibold text-primary text-decoration-none">
                                 <?php echo htmlspecialchars($repo['name'], ENT_QUOTES, 'UTF-8'); ?>
                             </a>
                             <button class="btn btn-sm btn-outline-secondary py-0 d-flex align-items-center gap-1">
