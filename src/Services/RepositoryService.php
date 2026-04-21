@@ -76,6 +76,9 @@ class RepositoryService
             return ['success' => false, 'error' => 'Invalid repository path.', 'path' => null];
         }
 
+        // Path has been validated against realDataRoot; untaint for static-analysis tools.
+        $repoPath = self::untaintPath($repoPath);
+
         if (is_dir($repoPath)) {
             return ['success' => false, 'error' => 'Repository directory already exists on disk.', 'path' => null];
         }
@@ -134,6 +137,18 @@ class RepositoryService
         return $stmt->fetchAll();
     }
 
+    /**
+     * Marks a file-system path as safe after validation.
+     * The taint-escape annotation tells Psalm's taint analysis that this
+     * function is an intentional sanitization point for file paths.
+     *
+     * @psalm-taint-escape file
+     */
+    private static function untaintPath(string $path): string
+    {
+        return $path;
+    }
+
     private function removeDirectory(string $path): void
     {
         if (! is_dir($path)) {
@@ -144,7 +159,6 @@ class RepositoryService
             \RecursiveIteratorIterator::CHILD_FIRST
         );
         foreach ($items as $item) {
-            /** @psalm-suppress TaintedFile - path originates from RecursiveDirectoryIterator, not user input */
             $item->isDir() ? rmdir($item->getRealPath()) : unlink($item->getRealPath());
         }
         rmdir($path);
