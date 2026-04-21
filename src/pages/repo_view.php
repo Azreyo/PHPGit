@@ -12,7 +12,6 @@ use App\includes\Logging;
 $config = Config::getInstance();
 $pdo = $config->getPdo();
 
-// ── Slug validation ────────────────────────────────────────────────────────
 $rawSlug = trim($_GET['slug'] ?? '');
 if (strlen($rawSlug) > 200) {
     http_response_code(414);
@@ -25,7 +24,6 @@ if ($rawSlug === '' || !preg_match('#^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}/[a-zA-Z0-9]
     return;
 }
 
-// ── Load repo from DB ──────────────────────────────────────────────────────
 $repo = null;
 if ($pdo !== null) {
     try {
@@ -41,7 +39,6 @@ if ($repo === null) {
     return;
 }
 
-// ── Access control ─────────────────────────────────────────────────────────
 $sessionUserId = (int)($_SESSION['user_id'] ?? 0);
 $isOwner = $is_logged_in && $sessionUserId === (int)$repo['owner_user_id'];
 $isAdmin = $is_logged_in && $role === 'ADMIN';
@@ -52,19 +49,16 @@ if ($repo['visibility'] === 'private' && !$isOwner && !$isAdmin) {
     return;
 }
 
-// ── Git reader ─────────────────────────────────────────────────────────────
 $dataRoot = $config->getDataRoot();
 $repoPath = $dataRoot . '/' . $repo['owner_username'] . '/' . $repo['repo_name'];
 $git = new GitReaderService($repoPath);
 $isEmpty = $git->isEmpty();
 
-// Branch from query param (sanitised)
 $currentBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', $_GET['branch'] ?? $repo['default_branch']);
 if ($currentBranch === '') {
     $currentBranch = $repo['default_branch'];
 }
 
-// ── Git data (only if repo has commits) ───────────────────────────────────
 $branches = [];
 $treeEntries = [];
 $commitMap = [];
@@ -81,8 +75,6 @@ if (!$isEmpty) {
     $commitCount = $git->getCommitCount($currentBranch);
     $langBreakdown = $git->getLanguageBreakdown($currentBranch);
     $readmeContent = $git->getReadme($currentBranch);
-
-    // Update primary language in DB if changed
     $primaryLang = $langBreakdown[0]['lang'] ?? null;
     if ($pdo !== null && $primaryLang !== null && $primaryLang !== ($repo['lang'] ?? null)) {
         try {
@@ -93,7 +85,6 @@ if (!$isEmpty) {
     }
 }
 
-// ── View helpers ───────────────────────────────────────────────────────────
 $rName = htmlspecialchars($repo['repo_name'], ENT_QUOTES, 'UTF-8');
 $rDesc = htmlspecialchars($repo['repo_description'] ?? '', ENT_QUOTES, 'UTF-8');
 $rVis = $repo['visibility'];
@@ -128,7 +119,6 @@ function rv_e(string $s): string
 ?>
 
 <style>
-    /* ── Repo view styles ─────────────────────────────────────────────── */
     .rv-header-tabs .nav-link {
         font-size: .875rem;
         padding: .4rem .75rem;
@@ -258,7 +248,6 @@ function rv_e(string $s): string
 
 <main class="container-xl py-4">
 
-    <!-- ── Repo header ──────────────────────────────────────────────────── -->
     <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
         <i class="bi bi-folder2 text-secondary" style="font-size:1.1rem;"></i>
         <h1 class="mb-0 fs-5 fw-normal">
@@ -274,7 +263,6 @@ function rv_e(string $s): string
         <p class="text-secondary mb-2 ms-4" style="font-size:.9rem;"><?= $rDesc ?></p>
     <?php endif; ?>
 
-    <!-- ── Tab bar ──────────────────────────────────────────────────────── -->
     <ul class="nav rv-header-tabs mt-3 mb-0">
         <li class="nav-item">
             <a class="nav-link active d-flex align-items-center gap-1" href="/<?= $rSlug ?>">
@@ -302,14 +290,11 @@ function rv_e(string $s): string
         <?php endif; ?>
     </ul>
 
-    <!-- ── Main content ─────────────────────────────────────────────────── -->
     <div class="row g-4 mt-0 pt-3 border-top" style="border-color:var(--bs-border-color)!important;">
 
-        <!-- Left: Code area -->
         <div class="col-lg-9">
 
             <?php if ($isEmpty): ?>
-                <!-- ══ EMPTY REPO STATE ══════════════════════════════════════ -->
                 <div class="border rounded-3 overflow-hidden" style="border-color:var(--bs-border-color)!important;">
                     <div class="p-4 text-center border-bottom" style="background:var(--bs-secondary-bg);">
                         <i class="bi bi-folder2-open" style="font-size:2.5rem;color:var(--brand);"></i>
@@ -320,7 +305,6 @@ function rv_e(string $s): string
                     </div>
 
                     <div class="p-4">
-                        <!-- Clone URL switcher -->
                         <p class="fw-semibold mb-2">Quick setup — copy a URL to get started</p>
                         <div class="d-flex align-items-center gap-0 mb-4">
                             <div class="btn-group me-2" role="group">
@@ -781,11 +765,9 @@ function inlineMarkdown(string $text): string
     $s = preg_replace('/~~(.+?)~~/', '<del>$1</del>', $s) ?? $s;
     return $s;
 }
-
 ?>
 
 <script>
-    // ── Clone URL helpers ─────────────────────────────────────────────────────
     const HTTP_URL = '<?= $httpUrl ?>';
     const SSH_URL = '<?= $sshUrl ?>';
 

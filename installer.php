@@ -251,6 +251,7 @@ function buildApacheConfig(
     <Directory {$documentRoot}>
         AllowOverride All
         Require all granted
+        CGIPassAuth On
     </Directory>
 
     ErrorLog {$apacheLogDir}/phpgit_error.log
