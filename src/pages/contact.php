@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($post_errors)) {
             $config = new Config();
             $pdo = $config->getPdo();
+
             try {
                 if ($pdo === null) {
                     throw new PDOException('Database connection is not available. Please try again later.');

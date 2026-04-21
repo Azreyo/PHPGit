@@ -118,6 +118,7 @@ class ApiController extends Controller
         }
 
         $dashboardInfo = null;
+
         try {
             $stmt = $this->pdo->prepare('
                 SELECT 
@@ -180,10 +181,10 @@ class ApiController extends Controller
         $body = json_decode(file_get_contents('php://input'), true);
         $ids = $body['ids'] ?? [];
 
-        if (!is_array($ids) || $ids === []) {
+        if (! is_array($ids) || $ids === []) {
             $this->error('No IDs provided', 400);
         }
-        $ids = array_values(array_filter(array_map('intval', $ids), fn(int $id) => $id > 0));
+        $ids = array_values(array_filter(array_map('intval', $ids), fn (int $id) => $id > 0));
 
         if ($ids === []) {
             $this->error('No valid IDs provided', 400);
@@ -192,7 +193,7 @@ class ApiController extends Controller
         try {
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
             $stmt = $this->pdo->prepare(
-                "UPDATE inbox SET unread = 0 WHERE id IN ($placeholders) AND unread = 1"
+                "UPDATE inbox SET unread = 0 WHERE id IN ({$placeholders}) AND unread = 1"
             );
             $stmt->execute($ids);
             $this->success(['updated' => $stmt->rowCount()]);

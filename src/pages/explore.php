@@ -9,7 +9,7 @@ $repos = [];
 if ($pdo !== null) {
     try {
         $stmt = $pdo->prepare(
-                'SELECT slug AS name, repo_description AS descr, stars, forks, lang, updated_at AS updated FROM repositories;'
+            'SELECT slug AS name, repo_description AS descr, stars, forks, lang, updated_at AS updated FROM repositories;'
         );
         $stmt->execute();
         $repos = $stmt->fetchAll();

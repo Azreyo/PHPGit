@@ -46,7 +46,7 @@ foreach ($logs as $l) {
 }
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'wipe_logs') {
-    if (!$security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
+    if (! $security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } else {
         try {
@@ -81,7 +81,7 @@ try {
             <p class="text-secondary small mb-0">Track security events, diagnostics, and operator actions in real
                 time.</p>
         </div>
-        <?php if (!empty($errors)): ?>
+        <?php if (! empty($errors)): ?>
             <div class="alert alert-danger" role="alert">
                 <ul class="mb-0">
                     <?php foreach ($errors as $error): ?>

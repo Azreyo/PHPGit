@@ -99,6 +99,7 @@ final class PageController
     /** @return array<string, string> */
     private function buildPageTitles(): array
     {
+        /** @var array<string, string> $titles */
         $titles = self::PAGE_TITLES;
 
         if ($this->isDev) {
@@ -106,9 +107,9 @@ final class PageController
         }
 
         if ($this->isLoggedIn) {
-            $titles = array_merge($titles, self::AUTHENTICATED_USER_PAGES);
+            $titles += self::AUTHENTICATED_USER_PAGES;
             if ($this->role === 'ADMIN') {
-                $titles = array_merge($titles, self::ADMIN_PAGES);
+                $titles += self::ADMIN_PAGES;
             }
         }
 

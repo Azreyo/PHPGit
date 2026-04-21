@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Core;
 
-use JetBrains\PhpStorm\NoReturn;
-
 class Controller
 {
-    #[NoReturn]
+    /**
+     * @param array<mixed> $data
+     * @param array<string, string> $headers
+     * @return never
+     */
     protected function json(array $data, int $statusCode = 200, array $headers = []): void
     {
         http_response_code($statusCode);
@@ -22,31 +24,37 @@ class Controller
         exit;
     }
 
-    #[NoReturn]
+    /**
+     * @param array<mixed> $data
+     * @return never
+     */
     protected function success(array $data, int $statusCode = 200): void
     {
         $this->json($data, $statusCode);
     }
 
-    #[NoReturn]
+    /** @return never */
     protected function error(string $message, int $statusCode = 500): void
     {
         $this->json(['error' => $message], $statusCode);
     }
 
-    #[NoReturn]
+    /** @return never */
     protected function badRequest(string $message = 'Bad request'): void
     {
         $this->error($message, 400);
     }
 
-    #[NoReturn]
+    /** @return never */
     protected function notFound(string $message = 'Not found'): void
     {
         $this->error($message, 404);
     }
 
-    #[NoReturn]
+    /**
+     * @param array<string> $allowedMethods
+     * @return never
+     */
     protected function methodNotAllowed(array $allowedMethods): void
     {
         $methods = array_values(array_unique(array_map('strtoupper', $allowedMethods)));

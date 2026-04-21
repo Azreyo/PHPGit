@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\includes;
 
-use App\includes\Assets;
-
 class DevPanel
 {
     private ?\PDO $pdo;

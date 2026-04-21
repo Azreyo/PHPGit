@@ -8,9 +8,10 @@ use App\includes\Security;
 use App\Services\RepositoryService;
 use Random\RandomException;
 
-if (!$is_logged_in) {
+if (! $is_logged_in) {
     http_response_code(403);
     include __DIR__ . '/403.php';
+
     return;
 }
 
@@ -21,13 +22,13 @@ $errors = $_SESSION['repo_errors'] ?? [];
 $prefill = $_SESSION['repo_prefill'] ?? [];
 unset($_SESSION['repo_errors'], $_SESSION['repo_prefill']);
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = (int) ($_SESSION['user_id'] ?? 0);
 $username = htmlspecialchars($_SESSION['username'] ?? '', ENT_QUOTES, 'UTF-8');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrfToken = $_POST['csrf_token'] ?? '';
 
-    if (!$security->validateCsrfToken($csrfToken)) {
+    if (! $security->validateCsrfToken($csrfToken)) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } else {
         $repoName = trim($_POST['repo_name'] ?? '');
@@ -37,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($repoName)) {
             $errors[] = 'Repository name is required.';
-        } elseif (!RepositoryService::isValidRepoName($repoName)) {
+        } elseif (! RepositoryService::isValidRepoName($repoName)) {
             $errors[] = 'Invalid repository name. Use letters, numbers, hyphens, underscores, or dots (no leading dot/hyphen).';
         }
 
@@ -45,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Description must be 500 characters or fewer.';
         }
 
-        if (!in_array($visibility, ['public', 'private'], true)) {
+        if (! in_array($visibility, ['public', 'private'], true)) {
             $visibility = 'public';
         }
 
@@ -99,7 +100,7 @@ $f = [
     <h1 class="mb-1 fs-3"><i class="bi bi-folder-plus me-2"></i>Create a new repository</h1>
     <p class="text-secondary mb-4">A repository contains all project files, including the revision history.</p>
 
-    <?php if (!empty($errors)): ?>
+    <?php if (! empty($errors)): ?>
         <div class="alert alert-danger">
             <ul class="mb-0">
                 <?php foreach ($errors as $err): ?>
