@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Config;
 use App\Services\RepositoryService;
 
+/** @var bool $is_logged_in */
+
+
 if (! $is_logged_in) {
     http_response_code(403);
     include __DIR__ . '/403.php';

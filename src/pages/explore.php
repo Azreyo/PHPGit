@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Config;
 use App\includes\Logging;
 
+$pdo = (new Config())->getPDO();
 $repos = [];
 
 if ($pdo !== null) {

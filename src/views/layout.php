@@ -3,6 +3,13 @@ declare(strict_types=1);
 
 use App\includes\Assets;
 
+
+/** @var string $page_title */
+/** @var string $page */
+/** @var string $is_dev */
+/** @var bool $is_logged_in */
+/** @var App\controllers\PageController $this */
+/** @var string $role */
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">

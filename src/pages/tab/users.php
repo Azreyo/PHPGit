@@ -11,7 +11,6 @@ $config = new Config();
 $security = new Security();
 $csrf_token = null;
 $errors = [];
-$success = [];
 $users = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($config->getPdo() === null) {
@@ -49,15 +48,6 @@ try {
             <p class="text-secondary small mb-0">Manage accounts, roles, and moderation status from one table.</p>
         </div>
         <div class="col-12 col-md-4 text-md-end">
-            <?php if (! empty($success)): ?>
-                <div class="alert alert-success" role="alert">
-                    <ul class="mb-0">
-                        <?php foreach ($success as $s): ?>
-                            <li><?php echo htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
             <?php if (! empty($errors)): ?>
                 <div class="alert alert-danger" role="alert">
                     <ul class="mb-0">

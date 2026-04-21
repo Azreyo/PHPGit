@@ -9,6 +9,7 @@ use App\includes\DevPanel;
 
 final class PageController
 {
+    /** @var array<string, string> */
     private const PAGE_TITLES = [
         'home' => 'Home',
         'about' => 'About us',
@@ -23,14 +24,21 @@ final class PageController
         'terms' => 'Terms of Service',
     ];
 
-    private const RESTRICTED_PAGES = ['env', 'htaccess', 'config'];
+    /** @var array<string, string> */
+    private const RESTRICTED_PAGES = [
+        'env' => 'env',
+        'htaccess' => 'htaccess',
+        'config' => 'config',
+    ];
 
+    /** @var array<string, string> */
     private const AUTHENTICATED_USER_PAGES = [
         'settings' => 'Settings',
         'repos' => 'Your Repositories',
         'new_repo' => 'New Repository',
     ];
 
+    /** @var array<string, string> */
     private const ADMIN_PAGES = [
         'dashboard' => 'Dashboard',
     ];
@@ -99,7 +107,6 @@ final class PageController
     /** @return array<string, string> */
     private function buildPageTitles(): array
     {
-        /** @var array<string, string> $titles */
         $titles = self::PAGE_TITLES;
 
         if ($this->isDev) {

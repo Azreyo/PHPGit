@@ -10,6 +10,8 @@ use Random\RandomException;
 $config = new Config();
 $security = new Security();
 
+$csrf_token = null;
+$pdo = $config->getPDO();
 $errors = $_SESSION['register_errors'] ?? [];
 $prefill = $_SESSION['register_prefill'] ?? [];
 unset($_SESSION['register_errors'], $_SESSION['register_prefill']);

@@ -6,6 +6,8 @@ use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
 
+/** @var string $username */
+
 $security = new Security();
 $csrf_token = null;
 $errors = [];

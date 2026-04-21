@@ -5,11 +5,13 @@ use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
 
+/** @var bool $is_dev */
+
 $config = new Config();
 $security = new Security();
 
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';
-
+$csrf_token = null;
 $errors = $_SESSION['login_errors'] ?? [];
 $prefill_email = $_SESSION['login_prefill_email'] ?? '';
 unset($_SESSION['login_errors'], $_SESSION['login_prefill_email']);

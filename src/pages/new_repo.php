@@ -8,6 +8,8 @@ use App\includes\Security;
 use App\Services\RepositoryService;
 use Random\RandomException;
 
+/** @var bool $is_logged_in */
+
 if (! $is_logged_in) {
     http_response_code(403);
     include __DIR__ . '/403.php';
