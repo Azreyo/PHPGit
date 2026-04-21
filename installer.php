@@ -460,8 +460,105 @@ function installPhpGit(): void
             echo "Error creating assets directory: " . $e->getMessage() . "\n";
         }
 
+        echo "\n--- Git Server Setup ---\n";
+        $setupGitServer = askYesNo('Set up SSH git server (creates a system git user)', true);
+
+        if ($setupGitServer) {
+            installGitServer($projectRoot);
+        } else {
+            echo "Skipping git server setup.\n";
+        }
+
         echo "Done!\n";
     }
+}
+
+/**
+ * Set up the git system user and SSH infrastructure.
+ */
+function installGitServer(string $projectRoot): void
+{
+    if (!commandExists('sudo')) {
+        echo "sudo not found – skipping git server setup.\n";
+        return;
+    }
+
+    $gitUser = askInput('Git system username', 'git');
+    $gitUser = preg_replace('/[^a-z0-9_-]/', '', strtolower($gitUser)) ?: 'git';
+    $dataRoot = askInput('Data root (bare repos storage path)', $projectRoot . '/data');
+    $wrapperPath = $projectRoot . '/bin/git-shell-wrapper.php';
+    $gitShell = trim((string)shell_exec('which git-shell')) ?: '/usr/bin/git-shell';
+    $phpBin = PHP_BINARY;
+
+    exec('id ' . escapeshellarg($gitUser) . ' >/dev/null 2>&1', $unused, $exitCode);
+    if ($exitCode !== 0) {
+        echo "Creating system user '{$gitUser}'…\n";
+        runShellCommandSafe(
+            'sudo adduser --system --shell ' . escapeshellarg($gitShell) .
+            ' --gecos ' . escapeshellarg('PHPGit SSH user') .
+            ' --group --disabled-password ' . escapeshellarg($gitUser)
+        );
+    } else {
+        echo "System user '{$gitUser}' already exists.\n";
+    }
+
+    $homeDir = trim((string)shell_exec('getent passwd ' . escapeshellarg($gitUser) . " | cut -d: -f6")) ?: "/home/{$gitUser}";
+
+    $sshDir = $homeDir . '/.ssh';
+    $authorizedKeys = $sshDir . '/authorized_keys';
+
+    runShellCommandSafe('sudo mkdir -p ' . escapeshellarg($sshDir));
+    runShellCommandSafe('sudo touch ' . escapeshellarg($authorizedKeys));
+    runShellCommandSafe('sudo chown -R ' . escapeshellarg($gitUser . ':' . $gitUser) . ' ' . escapeshellarg($sshDir));
+    runShellCommandSafe('sudo chmod 700 ' . escapeshellarg($sshDir));
+    runShellCommandSafe('sudo chmod 600 ' . escapeshellarg($authorizedKeys));
+
+    echo "SSH directory configured at {$sshDir}\n";
+
+    if (is_file($wrapperPath)) {
+        chmod($wrapperPath, 0755);
+    }
+
+    if (!is_dir($dataRoot)) {
+        runShellCommandSafe('sudo mkdir -p ' . escapeshellarg($dataRoot));
+    }
+    runShellCommandSafe('sudo chown -R ' . escapeshellarg($gitUser . ':' . $gitUser) . ' ' . escapeshellarg($dataRoot));
+    runShellCommandSafe('sudo chmod 755 ' . escapeshellarg($dataRoot));
+
+    $envFile = $projectRoot . '/src/.env';
+    if (is_file($envFile)) {
+        $envContent = file_get_contents($envFile) ?: '';
+        $updates = [
+            'GIT_SYSTEM_USER' => $gitUser,
+            'AUTHORIZED_KEYS_PATH' => $authorizedKeys,
+            'GIT_SHELL_WRAPPER' => $wrapperPath,
+            'DATA_ROOT' => $dataRoot,
+            'SSH_HOST' => $_ENV['APP_HOST'] ?? 'phpgit.local',
+        ];
+        foreach ($updates as $key => $value) {
+            $escapedVal = str_replace(['"', '$'], ['\\"', '\\$'], $value);
+            if (preg_match('/^' . preg_quote($key, '/') . '=/m', $envContent)) {
+                $envContent = preg_replace(
+                    '/^' . preg_quote($key, '/') . '=.*/m',
+                    $key . '=' . $escapedVal,
+                    $envContent
+                ) ?? $envContent;
+            } else {
+                $envContent .= "\n{$key}={$escapedVal}";
+            }
+        }
+        file_put_contents($envFile, $envContent);
+        echo ".env updated with git server variables.\n";
+    }
+
+    echo "\n✔  Git server setup complete.\n";
+    echo "   Bare repos will be stored in:   {$dataRoot}\n";
+    echo "   authorized_keys file:            {$authorizedKeys}\n";
+    echo "   Shell wrapper:                   {$wrapperPath}\n";
+    echo "\n   SSH clone URL format:\n";
+    echo "   {$gitUser}@<host>:username/repository.git\n\n";
+    echo "   HTTP clone URL format (after setting up Apache):\n";
+    echo "   http://<host>/username/repository.git\n\n";
 }
 
 installPhpGit();

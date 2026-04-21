@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Config;
 use App\Core\Controller;
 use App\includes\Logging;
+use App\Services\SshKeyService;
 use App\Services\SystemService;
 use PDO;
 use Throwable;
@@ -78,10 +79,6 @@ class ApiController extends Controller
         };
     }
 
-    /**
-     * @internal Prepared for upcoming auth enforcement
-     * @phpstan-ignore-next-line
-     */
     private function requireLoggedInSession(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -203,6 +200,107 @@ class ApiController extends Controller
         }
     }
 
+    // ── SSH Key endpoints ─────────────────────────────────────────────────
+
+    /**
+     * POST /api/v1/addSshKey.php
+     * Body (JSON): { "title": "...", "public_key": "ssh-ed25519 ..." }
+     */
+    public function addSshKey(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireLoggedInSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $body = json_decode((string)file_get_contents('php://input'), true);
+        $title = trim((string)($body['title'] ?? ''));
+        $publicKey = trim((string)($body['public_key'] ?? ''));
+
+        if ($title === '' || $publicKey === '') {
+            $this->error('Title and public_key are required', 400);
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $service = $this->buildSshKeyService();
+
+        $result = $service->addKey($userId, $title, $publicKey);
+
+        if (!$result['success']) {
+            $this->error($result['error'] ?? 'Failed to add key', 400);
+        }
+
+        $this->success(['key' => $result['key']]);
+    }
+
+    /**
+     * DELETE /api/v1/deleteSshKey.php
+     * Body (JSON): { "id": 42 }
+     */
+    public function deleteSshKey(): void
+    {
+        $this->requireMethod('DELETE');
+        $this->requireLoggedInSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $body = json_decode((string)file_get_contents('php://input'), true);
+        $keyId = (int)($body['id'] ?? 0);
+
+        if ($keyId <= 0) {
+            $this->error('Invalid key ID', 400);
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $service = $this->buildSshKeyService();
+
+        if (!$service->deleteKey($keyId, $userId)) {
+            $this->error('Key not found or not owned by you', 404);
+        }
+
+        $this->success(['deleted' => $keyId]);
+    }
+
+    /**
+     * GET /api/v1/listSshKeys.php
+     */
+    public function listSshKeys(): void
+    {
+        $this->requireMethod('GET');
+        $this->requireLoggedInSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $service = $this->buildSshKeyService();
+
+        $this->success(['keys' => $service->listKeys($userId)]);
+    }
+
+    private function buildSshKeyService(): SshKeyService
+    {
+        $config = Config::getInstance();
+        $authorizedKeys = rtrim($_ENV['AUTHORIZED_KEYS_PATH'] ?? '', '/');
+        $gitShellWrapper = rtrim($_ENV['GIT_SHELL_WRAPPER'] ?? '', '/');
+
+        if ($authorizedKeys === '') {
+            $authorizedKeys = '/home/git/.ssh/authorized_keys';
+        }
+        if ($gitShellWrapper === '') {
+            $gitShellWrapper = dirname(__DIR__, 2) . '/bin/git-shell-wrapper.php';
+        }
+
+        return new SshKeyService($this->pdo, $authorizedKeys, $gitShellWrapper);
+    }
+
+    // ── Routing ───────────────────────────────────────────────────────────
+
     public function api(string $endpoint): void
     {
         $cleanEndpoint = preg_replace('/[^a-z_]/', '', strtolower($endpoint)) ?: '';
@@ -211,6 +309,9 @@ class ApiController extends Controller
             'getdashboardinfo' => $this->getDashboardInfo(),
             'getdatabaseuptime' => $this->getDatabaseInfo(),
             'markinboxread' => $this->markInboxRead(),
+            'addsshkey' => $this->addSshKey(),
+            'deletesshkey' => $this->deleteSshKey(),
+            'listsshkeys' => $this->listSshKeys(),
             default => $this->notFound('Unknown API endpoint'),
         };
     }
