@@ -137,7 +137,7 @@ class GitReaderService
     public function isEmpty(): bool
     {
         $exitCode = 1;
-        $result = $this->git('rev-parse HEAD 2>/dev/null', $exitCode);
+        $result = $this->git('rev-parse --verify HEAD 2>/dev/null', $exitCode);
         return $exitCode !== 0 || trim($result) === '';
     }
 
@@ -591,7 +591,7 @@ class GitReaderService
     private function git(string $subCommand, int &$exitCode = 0): string
     {
         $safePath = escapeshellarg($this->repoPath);
-        $cmd = "git -C {$safePath} {$subCommand} 2>/dev/null";
+        $cmd = "git -C {$safePath} {$subCommand} 2>/dev/null 2>&1";
         $output = [];
         exec($cmd, $output, $exitCode);
         return implode("\n", $output);
