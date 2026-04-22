@@ -10,7 +10,7 @@ use App\includes\DevPanel;
 final class PageController
 {
     /** @var array<int|string, string> */
-    private const PAGE_TITLES = [
+    private const array PAGE_TITLES = [
         'home' => 'Home',
         'about' => 'About us',
         'contact' => 'Contact',
@@ -83,11 +83,6 @@ final class PageController
         $this->page = $this->resolvePage();
     }
 
-
-    public function getAllowedPages(): array
-    {
-        return array_keys($this->pageTitles);
-    }
 
     private function startSession(): void
     {

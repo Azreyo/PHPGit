@@ -44,9 +44,12 @@ use App\Controllers\PageController;
 <body>
 
 <?php
-$allowedPages = new PageController()->getAllowedPages();
-$allowedPages = array_flip($allowedPages);
-$safePage = isset($allowedPages[$page]) ? $page : '404';
+$allowedPages = [
+        'home', 'about', 'contact', 'explore', 'login', 'register', 'logout',
+        '404', '403', '414', 'terms', 'settings', 'repos', 'new_repo',
+        'dashboard', 'phpinfo', 'repo_view', 'profile_viewer',
+];
+$safePage = in_array($page, $allowedPages, true) ? $page : '404';
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../pages/' . $safePage . '.php';
 include __DIR__ . '/../includes/footer.php';
