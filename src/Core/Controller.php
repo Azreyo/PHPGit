@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use http\Exception\InvalidArgumentException;
+
 class Controller
 {
     /**
-     * @param array $data
+     * @param array<mixed> $data
      * @param int $statusCode
      * @param array<string, string> $headers
      * @return void
@@ -26,7 +28,7 @@ class Controller
     }
 
     /**
-     * @param array $data
+     * @param array<mixed> $data
      * @param int $statusCode
      * @return void
      */
