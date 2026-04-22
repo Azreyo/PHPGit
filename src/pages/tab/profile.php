@@ -10,6 +10,7 @@ $config = new Config();
 $security = new Security();
 $csrf_token = '';
 $errors = [];
+$user = [];
 $user_id = $_SESSION['user_id'];
 try {
     $pdo = $config->getPDO();
