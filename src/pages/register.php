@@ -94,7 +94,6 @@ try {
 ?>
 <main style="position: relative; min-height: 80vh;">
 
-    <!-- Terminal: absolutely positioned on the left, desktop only -->
     <div class="d-none d-lg-flex align-items-center justify-content-center"
          style="position: absolute; top: 0; left: 0; bottom: 0; width: 45%; padding: 2rem 1.5rem; z-index: 0;">
         <div class="phpgit-terminal-wrap w-100" style="max-width: 600px;">
@@ -111,7 +110,6 @@ try {
         </div>
     </div>
 
-    <!-- Original form: unchanged -->
     <div class="container d-flex flex-column align-items-end justify-content-center"
          style="min-height: 80vh; position: relative; z-index: 1;">
         <h1 class="mb-4 text-start">Register</h1>

@@ -45,7 +45,7 @@ $sshUrl = $rv->sshUrl;
 $httpBase = $rv->httpBase;
 ?>
 <link rel="stylesheet" href="<?= Assets::url('assets/css/repo_view.css') ?>">
-<main class="container-xl py-4">
+<main class="container-fluid px-4 px-xl-5 py-5" style="max-width:1600px;margin:0 auto;">
     <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
         <i class="bi bi-folder2 text-secondary" style="font-size:1.1rem;"></i>
         <h1 class="mb-0 fs-5 fw-normal">
@@ -86,7 +86,7 @@ $httpBase = $rv->httpBase;
             </li>
         <?php endif; ?>
     </ul>
-    <div class="row g-4 mt-0 pt-3 border-top" style="border-color:var(--bs-border-color)!important;">
+    <div class="row g-3 mt-0 pt-4 border-top" style="border-color:var(--bs-border-color)!important;">
         <?php if (!$isEmpty && !empty($fullFileTree)): ?>
             <div class="col-lg-2 d-none d-lg-block">
                 <div class="rv-tree-panel">
@@ -100,7 +100,7 @@ $httpBase = $rv->httpBase;
                 </div>
             </div>
         <?php endif; ?>
-        <div class="<?= !$isEmpty && !empty($fullFileTree) ? 'col-lg-7' : 'col-lg-9' ?>">
+        <div class="<?= !$isEmpty && !empty($fullFileTree) ? 'col-lg-8' : 'col-lg-10' ?>">
             <?php if ($isEmpty): ?>
                 <div class="border rounded-3 overflow-hidden" style="border-color:var(--bs-border-color)!important;">
                     <div class="p-4 text-center border-bottom" style="background:var(--bs-secondary-bg);">
@@ -412,7 +412,7 @@ $httpBase = $rv->httpBase;
                 <?php endif; ?>
             <?php endif; ?>
         </div>
-        <div class="col-lg-3">
+        <div class="col-lg-2">
             <div class="rv-sidebar-section">
                 <h6 class="fw-bold mb-3">About</h6>
                 <?php if ($rDesc !== ''): ?>

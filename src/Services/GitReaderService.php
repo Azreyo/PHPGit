@@ -382,6 +382,209 @@ class GitReaderService
         return $breakdown[0]['lang'] ?? null;
     }
 
+    /**
+     * Return 'blob', 'tree', or null for a path on a given ref.
+     */
+    public function getObjectType(string $ref, string $path): ?string
+    {
+        $safe = escapeshellarg($ref . ':' . $path);
+        $exitCode = 1;
+        $raw = $this->git("cat-file -t {$safe}", $exitCode);
+        if ($exitCode !== 0) {
+            return null;
+        }
+        $type = trim($raw);
+        return in_array($type, ['blob', 'tree'], true) ? $type : null;
+    }
+
+    /**
+     * List tree entries inside a sub-directory path.
+     *
+     * @return list<array{type: string, mode: string, hash: string, name: string}>
+     */
+    public function getTreeAtPath(string $ref, string $path): array
+    {
+        $safeRef = escapeshellarg($ref . ':' . $path);
+        $raw = $this->git("ls-tree {$safeRef}");
+        if (trim($raw) === '') {
+            return [];
+        }
+        $entries = [];
+        foreach (explode("\n", trim($raw)) as $line) {
+            if ($line === '') {
+                continue;
+            }
+            if (!preg_match('/^(\d+)\s+(blob|tree)\s+([0-9a-f]+)\t(.+)$/', $line, $m)) {
+                continue;
+            }
+            $entries[] = ['mode' => $m[1], 'type' => $m[2], 'hash' => $m[3], 'name' => $m[4]];
+        }
+        usort($entries, static function (array $a, array $b): int {
+            if ($a['type'] !== $b['type']) {
+                return $a['type'] === 'tree' ? -1 : 1;
+            }
+            return strcmp($a['name'], $b['name']);
+        });
+        return $entries;
+    }
+
+    /**
+     * Read a blob's content. Returns metadata + content string.
+     *
+     * @return array{content: string|null, binary: bool, truncated: bool, size: int, lines: int}
+     */
+    public function getFileContent(string $ref, string $path, int $maxBytes = 524288): array
+    {
+        $safe = escapeshellarg($ref . ':' . $path);
+        $exitCode = 1;
+        $sizeStr = $this->git("cat-file -s {$safe}", $exitCode);
+        $size = $exitCode === 0 ? (int)trim($sizeStr) : 0;
+
+        if ($exitCode !== 0) {
+            return ['content' => null, 'binary' => false, 'truncated' => false, 'size' => 0, 'lines' => 0];
+        }
+
+        $safePath = escapeshellarg($this->repoPath);
+        $raw = shell_exec("git -C {$safePath} show {$safe} 2>/dev/null");
+        if ($raw === null) {
+            return ['content' => null, 'binary' => false, 'truncated' => false, 'size' => $size, 'lines' => 0];
+        }
+
+        if (str_contains($raw, "\x00")) {
+            return ['content' => null, 'binary' => true, 'truncated' => false, 'size' => $size, 'lines' => 0];
+        }
+
+        $truncated = false;
+        if (strlen($raw) > $maxBytes) {
+            $raw = substr($raw, 0, $maxBytes);
+            $truncated = true;
+        }
+
+        $lines = substr_count($raw, "\n") + 1;
+        return ['content' => $raw, 'binary' => false, 'truncated' => $truncated, 'size' => $size, 'lines' => $lines];
+    }
+
+    /**
+     * Last commit that touched a specific path.
+     *
+     * @return array{hash: string, short: string, subject: string, time: string, rel: string, author: string}|null
+     */
+    public function getLastCommitForPath(string $ref, string $path): ?array
+    {
+        $safeRef = escapeshellarg($ref);
+        $safePath = escapeshellarg($path);
+        $raw = $this->git(
+            "log {$safeRef} -1 --format='%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an' -- {$safePath}"
+        );
+        $raw = trim($raw);
+        if ($raw === '') {
+            return null;
+        }
+        $p = explode("\x1f", $raw, 6);
+        $p = array_pad($p, 6, '');
+        return [
+            'hash' => $p[0], 'short' => $p[1],
+            'subject' => $p[2], 'time' => $p[3],
+            'rel' => $p[4], 'author' => $p[5],
+        ];
+    }
+
+    /**
+     * Build a commit map keyed by filename for entries inside a sub-directory.
+     *
+     * @return array<string, array{hash: string, short: string, subject: string, time: string, rel: string, author: string}>
+     */
+    public function getLastCommitPerEntryAtPath(string $ref, string $path, int $logLimit = 500): array
+    {
+        $safeRef = escapeshellarg($ref);
+        $safePath = escapeshellarg($path);
+        $raw = $this->git(
+            "log {$safeRef} -n {$logLimit} --name-only " .
+            "--format='%x00%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an' -- {$safePath}"
+        );
+
+        $map = [];
+        $current = null;
+        $prefix = rtrim($path, '/') . '/';
+
+        foreach (explode("\n", $raw) as $line) {
+            if (str_starts_with($line, "\x00")) {
+                $p = explode("\x1f", ltrim($line, "\x00"), 6);
+                $p = array_pad($p, 6, '');
+                $current = [
+                    'hash' => $p[0], 'short' => $p[1],
+                    'subject' => $p[2], 'time' => $p[3],
+                    'rel' => $p[4], 'author' => $p[5],
+                ];
+            } elseif ($current !== null && trim($line) !== '') {
+                $rel = str_starts_with($line, $prefix) ? substr($line, strlen($prefix)) : $line;
+                $topLevel = explode('/', $rel, 2)[0];
+                if ($topLevel !== '' && !isset($map[$topLevel])) {
+                    $map[$topLevel] = $current;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Returns a nested tree structure of all files/dirs in the repo.
+     * Format: [ 'name' => string, 'type' => 'tree'|'blob', 'children' => array<mixed> ][]
+     * Limited to 2000 entries to prevent DoS on giant repos.
+     *
+     * @return list<array{name: string, type: string, children: array<mixed>}>
+     */
+    public function getFullFileTree(string $ref): array
+    {
+        $safe = escapeshellarg($ref);
+        $lines = explode("\n", $this->git("ls-tree -r --name-only {$safe}"));
+        /** @var array<string, array{name: string, type: string, children: array<mixed>}> $root */
+        $root = [];
+        $count = 0;
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || ++$count > 2000) {
+                continue;
+            }
+            $parts = explode('/', $line);
+            $node = &$root;
+            foreach ($parts as $i => $part) {
+                if ($part === '') {
+                    continue;
+                }
+                /** @var array<string, array{name: string, type: string, children: array<mixed>}> $node */
+                if (!array_key_exists($part, $node)) {
+                    $isLeaf = ($i === count($parts) - 1);
+                    $node[$part] = ['name' => $part, 'type' => $isLeaf ? 'blob' : 'tree', 'children' => []];
+                }
+                /** @var array<string, array{name: string, type: string, children: array<mixed>}> $node [$part]['children'] */
+                $node = &$node[$part]['children'];
+            }
+            unset($node);
+        }
+        // Sort: directories first, then files, both alphabetically
+        /** @var \Closure(array<mixed>):void $sort */
+        $sort = static function (array &$nodes) use (&$sort): void {
+            uasort($nodes, static function (mixed $a, mixed $b): int {
+                /** @var array{name:string,type:string} $a */
+                /** @var array{name:string,type:string} $b */
+                if ($a['type'] !== $b['type']) {
+                    return $a['type'] === 'tree' ? -1 : 1;
+                }
+                return strcasecmp($a['name'], $b['name']);
+            });
+            foreach ($nodes as &$n) {
+                /** @var array{name:string,type:string,children:array<mixed>} $n */
+                if ($n['type'] === 'tree' && !empty($n['children'])) {
+                    $sort($n['children']);
+                }
+            }
+            unset($n);
+        };
+        $sort($root);
+        return array_values($root);
+    }
 
     private function git(string $subCommand, int &$exitCode = 0): string
     {
