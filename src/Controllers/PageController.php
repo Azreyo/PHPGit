@@ -83,6 +83,12 @@ final class PageController
         $this->page = $this->resolvePage();
     }
 
+
+    public function getAllowedPages(): array
+    {
+        return array_keys($this->pageTitles);
+    }
+
     private function startSession(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {

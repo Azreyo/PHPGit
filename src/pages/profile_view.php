@@ -31,7 +31,7 @@ if ($requestedUsername === '') {
     </div>
 
     <form method="get" class="row g-3 mb-4">
-        <input type="hidden" name="page" value="profile_viewer">
+        <input type="hidden" name="page" value="profile_view">
         <div class="col-12 col-md-9">
             <label for="user" class="form-label">Username</label>
             <input

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use App\includes\Assets;
-
+use App\Controllers\PageController;
 
 /** @var string $page_title */
 /** @var string $page */
@@ -44,12 +44,9 @@ use App\includes\Assets;
 <body>
 
 <?php
-$allowedPages = [
-    'home', 'about', 'contact', 'explore', 'login', 'register', 'logout',
-    '404', '403', '414', 'terms', 'settings', 'repos', 'new_repo',
-        'dashboard', 'phpinfo', 'repo_view', 'profile_viewer',
-];
-$safePage = in_array($page, $allowedPages, true) ? $page : '404';
+$allowedPages = new PageController()->getAllowedPages();
+$allowedPages = array_flip($allowedPages);
+$safePage = isset($allowedPages[$page]) ? $page : '404';
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../pages/' . $safePage . '.php';
 include __DIR__ . '/../includes/footer.php';
