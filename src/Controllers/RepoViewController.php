@@ -69,7 +69,7 @@ final class RepoViewController
     public function handle(bool $isLoggedIn, string $role): bool
     {
         $config = Config::getInstance();
-        $pdo = $config->getPdo();
+        $pdo = $config->getPDO();
 
         $rawSlug = trim($_GET['slug'] ?? '');
         if (strlen($rawSlug) > 200) {

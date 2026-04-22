@@ -171,7 +171,7 @@ function queryRun(string $query): void
 {
     try {
         $config = new Config();
-        $pdo = $config->getPdo();
+        $pdo = $config->getPDO();
         if ($pdo === null || !$pdo instanceof PDO) {
             throw new RuntimeException('Database connection is not available. Check src/.env DB_* values.');
         }
@@ -587,7 +587,7 @@ BASH;
     try {
         require_once $projectRoot . '/vendor/autoload.php';
         $config = new Config();
-        $pdo = $config->getPdo();
+        $pdo = $config->getPDO();
         if ($pdo !== null) {
             $svc = new \App\Services\SshKeyService($pdo, $authorizedKeys, $wrapperPath);
             $svc->rebuildAuthorizedKeys();

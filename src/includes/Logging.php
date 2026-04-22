@@ -43,7 +43,7 @@ class Logging
             }
         } else {
             $ip = $is_security_alert ? self::getClientIP() : null;
-            $pdo = new Config()->getPdo();
+            $pdo = new Config()->getPDO();
 
             try {
                 if ($pdo === null) {
@@ -52,7 +52,7 @@ class Logging
                     return;
                 }
                 $pdo->beginTransaction();
-                $stmt = new Config()->getPdo()->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
+                $stmt = new Config()->getPDO()->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
                 $stmt->execute([$level_message, $sanitized_message, (int) $is_security_alert, $ip]);
                 $pdo->commit();
             } catch (\PDOException $e) {

@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($post_errors)) {
-            $pdo = $config->getPdo();
+            $pdo = $config->getPDO();
             if ($pdo !== null) {
                 $stmt = $pdo->prepare(
                     'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'

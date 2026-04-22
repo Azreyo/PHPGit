@@ -13,7 +13,7 @@ $csrf_token = '';
 $errors = [];
 $users = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($config->getPdo() === null) {
+    if ($config->getPDO() === null) {
         $errors[] = 'Database connection is not available. Please try again later.';
     }
     if (! $security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -23,8 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 try {
-    if ($config->getPdo() !== null) {
-        $stmt = $config->getPdo()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
+    if ($config->getPDO() !== null) {
+        $stmt = $config->getPDO()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
         $stmt->execute();
         $users = $stmt->fetchAll();
     }

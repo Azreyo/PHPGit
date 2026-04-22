@@ -21,8 +21,8 @@ $flash = $_SESSION['repo_flash'] ?? null;
 unset($_SESSION['repo_flash']);
 
 $repos = [];
-if ($config->getPdo() !== null) {
-    $service = new RepositoryService($config->getPdo(), $config->getDataRoot());
+if ($config->getPDO() !== null) {
+    $service = new RepositoryService($config->getPDO(), $config->getDataRoot());
     $repos = $service->getByOwner($userId);
 }
 

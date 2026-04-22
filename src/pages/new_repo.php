@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
-            $pdoConn = $config->getPdo();
+            $pdoConn = $config->getPDO();
             if ($pdoConn === null) {
                 $errors[] = 'Database is currently unavailable. Please try again later.';
             } else {

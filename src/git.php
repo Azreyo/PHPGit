@@ -41,7 +41,7 @@ $service = $_GET['service'] ?? '';
 $isWriteOp = ($service === 'git-receive-pack')
     || str_ends_with($gitPath, '/git-receive-pack');
 $config = Config::getInstance();
-$pdo = $config->getPdo();
+$pdo = $config->getPDO();
 
 if ($pdo === null) {
     http_response_code(503);

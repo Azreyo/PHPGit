@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($post_errors)) {
             $config = new Config();
-            $pdo = $config->getPdo();
+            $pdo = $config->getPDO();
 
             try {
                 if ($pdo === null) {

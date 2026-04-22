@@ -18,7 +18,7 @@ class ApiController extends Controller
 
     public function __construct()
     {
-        $this->pdo = Config::getInstance()->getPdo();
+        $this->pdo = Config::getInstance()->getPDO();
     }
 
     public function getCPU(): void

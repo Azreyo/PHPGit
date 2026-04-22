@@ -65,7 +65,7 @@ final class PageController
     {
         $this->config = $config ?? Config::getInstance();
 
-        $this->pdo = $this->config->getPdo();
+        $this->pdo = $this->config->getPDO();
         $this->dbCurrentState = $this->config->isDbOnline();
         $this->host = $this->config->getHost();
         $this->db = $this->config->getDb();

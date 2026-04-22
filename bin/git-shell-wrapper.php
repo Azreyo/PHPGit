@@ -40,7 +40,7 @@ if ($userId <= 0) {
 
 // ── Connect to DB ──────────────────────────────────────────────────────────
 $config = Config::getInstance();
-$pdo = $config->getPdo();
+$pdo = $config->getPDO();
 if ($pdo === null) {
     die_err('Database unavailable. Contact administrator.');
 }

@@ -53,7 +53,7 @@ final class RawController
         }
 
         $config = Config::getInstance();
-        $pdo = $config->getPdo();
+        $pdo = $config->getPDO();
         $repo = null;
 
         if ($pdo !== null) {

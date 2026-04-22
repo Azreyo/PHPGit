@@ -7,7 +7,7 @@ use App\Services\SshKeyService;
 /** @var bool $is_logged_in */
 
 $config = Config::getInstance();
-$pdo = $config->getPdo();
+$pdo = $config->getPDO();
 $userId = (int)($_SESSION['user_id'] ?? 0);
 
 $sshKeys = [];

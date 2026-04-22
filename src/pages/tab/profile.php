@@ -37,7 +37,7 @@ try {
 
             if (empty($errors)) {
                 $config = new Config();
-                $pdo = $config->getPdo();
+                $pdo = $config->getPDO();
                 if ($pdo !== null) {
                     //TODO: implement user update
                 } else {
