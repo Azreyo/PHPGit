@@ -217,8 +217,8 @@ $profilePathUsername = rawurlencode($profileUsername);
                                 <div class="row g-2 row-cols-3 row-cols-md-6 row-cols-xl-12">
                                     <?php foreach ($contributionsByMonth as $month): ?>
                                         <?php
-                                        $monthCount = (int)($month['count'] ?? 0);
-                                        $monthLabel = (string)($month['label'] ?? '');
+                                        $monthCount = (int)($month['count']);
+                                        $monthLabel = (string)($month['label']);
                                         $monthIntensityClass = 'bg-body-tertiary text-secondary';
                                         if ($monthCount >= 15) {
                                             $monthIntensityClass = 'bg-success text-white';

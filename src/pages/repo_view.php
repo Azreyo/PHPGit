@@ -43,6 +43,19 @@ $rForks = $rv->rForks;
 $httpUrl = $rv->httpUrl;
 $sshUrl = $rv->sshUrl;
 $httpBase = $rv->httpBase;
+
+$isPrivileged = $isOwner || $isAdmin;
+$requestedTab = isset($_GET['tab']) ? strtolower(trim((string)$_GET['tab'])) : 'code';
+$allowedTabs = ['code', 'issues', 'pulls'];
+if ($isPrivileged) {
+    $allowedTabs[] = 'settings';
+}
+$activeTab = in_array($requestedTab, $allowedTabs, true) ? $requestedTab : 'code';
+
+$codeTabUrl = '/' . $rSlug;
+$issuesTabUrl = '/' . $rSlug . '?tab=issues';
+$pullsTabUrl = '/' . $rSlug . '?tab=pulls';
+$settingsTabUrl = '/' . $rSlug . '?tab=settings';
 ?>
 <link rel="stylesheet" href="<?= Assets::url('assets/css/repo_view.css') ?>">
 <main class="container-fluid px-4 px-xl-5 py-5" style="max-width:1600px;margin:0 auto;">
@@ -62,30 +75,132 @@ $httpBase = $rv->httpBase;
     <?php endif; ?>
     <ul class="nav rv-header-tabs mt-3 mb-0">
         <li class="nav-item">
-            <a class="nav-link active d-flex align-items-center gap-1" href="/<?= $rSlug ?>">
+            <a class="nav-link d-flex align-items-center gap-1 <?= $activeTab === 'code' ? 'active' : 'text-secondary' ?>"
+               href="<?= RepoViewController::e($codeTabUrl) ?>">
                 <i class="bi bi-code-square"></i> Code
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+            <a class="nav-link d-flex align-items-center gap-1 <?= $activeTab === 'issues' ? 'active' : 'text-secondary' ?>"
+               href="<?= RepoViewController::e($issuesTabUrl) ?>">
                 <i class="bi bi-exclamation-circle"></i> Issues
-                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:.7rem;">0</span>
+                <span class="badge <?= $activeTab === 'issues' ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-secondary' ?> ms-1"
+                      style="font-size:.7rem;">0</span>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+            <a class="nav-link d-flex align-items-center gap-1 <?= $activeTab === 'pulls' ? 'active' : 'text-secondary' ?>"
+               href="<?= RepoViewController::e($pullsTabUrl) ?>">
                 <i class="bi bi-git"></i> Pull Requests
-                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:.7rem;">0</span>
+                <span class="badge <?= $activeTab === 'pulls' ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-secondary' ?> ms-1"
+                      style="font-size:.7rem;">0</span>
             </a>
         </li>
-        <?php if ($isOwner || $isAdmin): ?>
+        <?php if ($isPrivileged): ?>
             <li class="nav-item ms-auto">
-                <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+                <a class="nav-link d-flex align-items-center gap-1 <?= $activeTab === 'settings' ? 'active' : 'text-secondary' ?>"
+                   href="<?= RepoViewController::e($settingsTabUrl) ?>">
                     <i class="bi bi-gear"></i> Settings
                 </a>
             </li>
         <?php endif; ?>
     </ul>
+    <?php if ($activeTab !== 'code'): ?>
+        <div class="pt-4 border-top" style="border-color:var(--bs-border-color)!important;">
+            <?php if ($activeTab === 'issues'): ?>
+                <div class="border rounded-3 overflow-hidden">
+                    <div class="px-4 py-3 border-bottom bg-body-secondary d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="mb-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-exclamation-circle"></i>
+                                Issues
+                            </h5>
+                            <p class="text-secondary mb-0" style="font-size:.85rem;">Track bugs and discuss tasks
+                                for <?= RepoViewController::e($rName) ?>.</p>
+                        </div>
+                        <button class="btn btn-sm btn-success" type="button" disabled>
+                            <i class="bi bi-plus-lg me-1"></i>New issue
+                        </button>
+                    </div>
+                    <div class="p-5 text-center">
+                        <i class="bi bi-chat-square-text text-secondary" style="font-size:2.4rem;"></i>
+                        <h5 class="fw-bold mt-3 mb-1">No issues yet</h5>
+                        <p class="text-secondary mb-0">This is a visual placeholder. Backend issue logic can be
+                            connected later.</p>
+                    </div>
+                </div>
+            <?php elseif ($activeTab === 'pulls'): ?>
+                <div class="border rounded-3 overflow-hidden">
+                    <div class="px-4 py-3 border-bottom bg-body-secondary d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="mb-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-git"></i>
+                                Pull Requests
+                            </h5>
+                            <p class="text-secondary mb-0" style="font-size:.85rem;">Propose and review changes before
+                                merging into <?= RepoViewController::e($rBranch) ?>.</p>
+                        </div>
+                        <button class="btn btn-sm btn-success" type="button" disabled>
+                            <i class="bi bi-diagram-3 me-1"></i>New pull request
+                        </button>
+                    </div>
+                    <div class="p-5 text-center">
+                        <i class="bi bi-git text-secondary" style="font-size:2.4rem;"></i>
+                        <h5 class="fw-bold mt-3 mb-1">No pull requests yet</h5>
+                        <p class="text-secondary mb-0">Visual-only layout is ready. You can wire backend comparison and
+                            merge flow next.</p>
+                    </div>
+                </div>
+            <?php elseif ($isPrivileged): ?>
+                <div class="border rounded-3 overflow-hidden mb-3">
+                    <div class="px-4 py-3 border-bottom bg-body-secondary">
+                        <h5 class="mb-1 d-flex align-items-center gap-2">
+                            <i class="bi bi-gear"></i>
+                            Repository settings
+                        </h5>
+                        <p class="text-secondary mb-0" style="font-size:.85rem;">Visual shell for repository
+                            configuration.</p>
+                    </div>
+                    <div class="p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-secondary">Repository name</label>
+                                <input type="text" class="form-control" value="<?= RepoViewController::e($rName) ?>"
+                                       disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-secondary">Default branch</label>
+                                <input type="text" class="form-control" value="<?= RepoViewController::e($rBranch) ?>"
+                                       disabled>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-secondary">Description</label>
+                                <textarea class="form-control" rows="3"
+                                          disabled><?= RepoViewController::e($rDesc !== '' ? $rDesc : 'No description.') ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="border border-danger-subtle rounded-3 overflow-hidden">
+                    <div class="px-4 py-3 border-bottom border-danger-subtle bg-danger-subtle">
+                        <h6 class="mb-1 fw-bold text-danger d-flex align-items-center gap-2">
+                            <i class="bi bi-exclamation-triangle"></i>Danger zone
+                        </h6>
+                        <p class="mb-0 text-danger-emphasis" style="font-size:.82rem;">Visual-only actions. Connect real
+                            handlers in backend when ready.</p>
+                    </div>
+                    <div class="p-4 d-flex flex-column gap-2">
+                        <button class="btn btn-outline-danger text-start" type="button" disabled>Transfer ownership
+                        </button>
+                        <button class="btn btn-outline-danger text-start" type="button" disabled>Archive this
+                            repository
+                        </button>
+                        <button class="btn btn-danger text-start" type="button" disabled>Delete this repository</button>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php else: ?>
     <div class="row g-3 mt-0 pt-4 border-top" style="border-color:var(--bs-border-color)!important;">
         <?php if (!$isEmpty && !empty($fullFileTree)): ?>
             <div class="col-lg-2 d-none d-lg-block">
@@ -509,6 +624,7 @@ $httpBase = $rv->httpBase;
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </main>
 <script>
     const HTTP_URL = '<?= $httpUrl ?>';
