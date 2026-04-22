@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 use App\includes\Assets;
-use App\Controllers\PageController;
 
 /** @var string $page_title */
 /** @var string $page */
@@ -46,7 +45,7 @@ use App\Controllers\PageController;
 <?php
 $allowedPages = [
         'home', 'about', 'contact', 'explore', 'login', 'register', 'logout',
-        '404', '403', '414', 'terms', 'settings', 'repos', 'new_repo',
+        '404', '403', '414', 'terms', 'settings', 'new_repo',
         'dashboard', 'phpinfo', 'repo_view', 'profile_view',
 ];
 $safePage = in_array($page, $allowedPages, true) ? $page : '404';

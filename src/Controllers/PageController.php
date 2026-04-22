@@ -36,7 +36,6 @@ final class PageController
     /** @var array<string, string> */
     private const AUTHENTICATED_USER_PAGES = [
         'settings' => 'Settings',
-        'repos' => 'Your Repositories',
         'new_repo' => 'New Repository',
     ];
 
