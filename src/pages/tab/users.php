@@ -59,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 } else {
                     $errors[] = 'Database connection is not available. Please try again later.';
+                    Logging::loggingToFile('Database connection is not available: ' . $config->getDb() . ' ' . $config->getHost(), 4);
                 }
             } catch (PDOException $e) {
                 Logging::loggingToFile('Error checking existing email: ' . $e->getMessage(), 4);
