@@ -13,6 +13,10 @@ class Dashboard
     private const array ALLOWED_TABS = ['overview', 'users', 'logs', 'inbox'];
     private const string TAB_DIR = __DIR__ . '/../pages/tab/';
 
+    /**
+     * @param array<string, mixed> $session
+     * @param array<string, mixed> $get
+     */
     public function __construct(array $session, array $get)
     {
         $this->is_logged_in = ! empty($session['is_logged_in']);

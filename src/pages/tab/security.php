@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Logging::loggingToFile('Invalid or expired form submission', 4, true);
     } else {
         $config = new Config();
-        if ($pdo = $config->getPdo()) {
+        if ($pdo = $config->getPDO()) {
             $userId = $_SESSION['user_id'];
             switch ($action) {
                 case 'change_password':

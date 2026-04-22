@@ -9,12 +9,11 @@ use Random\RandomException;
 
 $config = new Config();
 $security = new Security();
-$csrf_token = null;
+$csrf_token = '';
 $errors = [];
-$success = [];
 $users = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($config->getPdo() === null) {
+    if ($config->getPDO() === null) {
         $errors[] = 'Database connection is not available. Please try again later.';
     }
     if (! $security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -24,8 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 try {
-    if ($config->getPdo() !== null) {
-        $stmt = $config->getPdo()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
+    if ($config->getPDO() !== null) {
+        $stmt = $config->getPDO()->prepare('SELECT username, email, role, status, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
         $stmt->execute();
         $users = $stmt->fetchAll();
     }
@@ -49,15 +48,6 @@ try {
             <p class="text-secondary small mb-0">Manage accounts, roles, and moderation status from one table.</p>
         </div>
         <div class="col-12 col-md-4 text-md-end">
-            <?php if (! empty($success)): ?>
-                <div class="alert alert-success" role="alert">
-                    <ul class="mb-0">
-                        <?php foreach ($success as $s): ?>
-                            <li><?php echo htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
             <?php if (! empty($errors)): ?>
                 <div class="alert alert-danger" role="alert">
                     <ul class="mb-0">

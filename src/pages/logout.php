@@ -4,10 +4,12 @@ declare(strict_types=1);
 use App\includes\Logging;
 use App\includes\Security;
 
+/** @var bool $is_logged_in */
+
 $security = new Security();
 $render_logout = false;
 $csrf_error = false;
-
+$csrf_token = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrf_token = $_POST['csrf_token'] ?? '';
     if (! $security->validateCsrfToken($csrf_token)) {

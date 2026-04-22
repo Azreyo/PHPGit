@@ -12,10 +12,14 @@ class Settings
     private const array ALLOWED_TABS = ['profile', 'security', 'appearance', 'notifications', 'privacy', 'ssh-keys'];
     private const  string TAB_DIR = __DIR__ . '/../pages/tab/';
 
+    /**
+     * @param array<string, mixed> $session
+     * @param array<string, mixed> $get
+     */
     public function __construct(array $session, array $get)
     {
         $this->is_logged_in = ! empty($session['is_logged_in']);
-        $this->username = $session['username'] ?? '';
+        $this->username = isset($session['username']) && is_string($session['username']) ? $session['username'] : '';
         $security = new Security();
         $tabParam = $get['tab'] ?? 'profile';
         if (! is_string($tabParam)) {
@@ -121,8 +125,7 @@ class Settings
             $isActive = $this->current_tab === $tab;
             $group = $tabMeta[$tab]['group'];
             if (! in_array($group, $renderedGroups, true)):
-                $renderedGroups[] = $group;
-                $extraTop = empty($renderedGroups) ? '' : 'mt-2';
+                $extraTop = $renderedGroups !== [] ? 'mt-2' : '';
                 $renderedGroups[] = $group;
                 ?>
                         <p class="text-secondary text-uppercase fw-bold px-2 pt-3 mb-2 <?php echo $extraTop; ?>"

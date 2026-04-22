@@ -9,6 +9,7 @@ use App\includes\DevPanel;
 
 final class PageController
 {
+    /** @var array<int|string, string> */
     private const PAGE_TITLES = [
         'home' => 'Home',
         'about' => 'About us',
@@ -21,16 +22,24 @@ final class PageController
         '403' => 'Forbidden',
         '414' => 'URI too long',
         'terms' => 'Terms of Service',
+        'repo_view' => 'Repository',
     ];
 
-    private const RESTRICTED_PAGES = ['env', 'htaccess', 'config'];
+    /** @var array<string, string> */
+    private const RESTRICTED_PAGES = [
+        'env' => 'env',
+        'htaccess' => 'htaccess',
+        'config' => 'config',
+    ];
 
+    /** @var array<string, string> */
     private const AUTHENTICATED_USER_PAGES = [
         'settings' => 'Settings',
         'repos' => 'Your Repositories',
         'new_repo' => 'New Repository',
     ];
 
+    /** @var array<string, string> */
     private const ADMIN_PAGES = [
         'dashboard' => 'Dashboard',
     ];
@@ -38,6 +47,7 @@ final class PageController
     private string $page;
     private bool $isLoggedIn;
     private bool $isDev;
+    /** @var array<int|string, string> */
     private array $pageTitles;
 
     private ?\PDO $pdo;
@@ -55,7 +65,7 @@ final class PageController
     {
         $this->config = $config ?? Config::getInstance();
 
-        $this->pdo = $this->config->getPdo();
+        $this->pdo = $this->config->getPDO();
         $this->dbCurrentState = $this->config->isDbOnline();
         $this->host = $this->config->getHost();
         $this->db = $this->config->getDb();
@@ -95,6 +105,7 @@ final class PageController
         }
     }
 
+    /** @return array<int|string, string> */
     private function buildPageTitles(): array
     {
         $titles = self::PAGE_TITLES;
@@ -104,9 +115,9 @@ final class PageController
         }
 
         if ($this->isLoggedIn) {
-            $titles = array_merge($titles, self::AUTHENTICATED_USER_PAGES);
+            $titles += self::AUTHENTICATED_USER_PAGES;
             if ($this->role === 'ADMIN') {
-                $titles = array_merge($titles, self::ADMIN_PAGES);
+                $titles += self::ADMIN_PAGES;
             }
         }
 
@@ -121,9 +132,6 @@ final class PageController
         }
 
         $page = preg_replace('/[^a-z0-9_]/', '', strtolower($rawPage)) ?: 'home';
-        if ($page === '') {
-            $page = 'home';
-        }
 
         if (! preg_match('/^[a-z0-9_]+$/', $page)) {
             return '403';

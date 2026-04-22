@@ -6,8 +6,10 @@ use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
 
+/** @var string $username */
+
 $security = new Security();
-$csrf_token = null;
+$csrf_token = '';
 $errors = [];
 
 try {
@@ -35,7 +37,7 @@ try {
 
             if (empty($errors)) {
                 $config = new Config();
-                $pdo = $config->getPdo();
+                $pdo = $config->getPDO();
                 if ($pdo !== null) {
                     //TODO: implement user update
                 } else {

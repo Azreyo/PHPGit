@@ -172,6 +172,9 @@ class ErrorHandler
         return '<table style="width:100%;border-collapse:collapse;font-size:.78rem;">' . $rows . '</table>';
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $frames
+     */
     private function backtraceTable(array $frames): string
     {
         array_shift($frames);

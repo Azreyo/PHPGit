@@ -1,0 +1,640 @@
+<?php
+declare(strict_types=1);
+
+use App\Controllers\RepoViewController;
+use App\includes\Assets;
+/** @var bool $is_logged_in */
+/** @var string $role */
+$rv = new RepoViewController();
+if (!$rv->handle($is_logged_in, $role)) {
+    return;
+}
+$rawSlug = $rv->rawSlug;
+$currentBranch = $rv->currentBranch;
+$currentPath = $rv->currentPath;
+$viewMode = $rv->viewMode;
+$isEmpty = $rv->isEmpty;
+$isOwner = $rv->isOwner;
+$isAdmin = $rv->isAdmin;
+$branches = $rv->branches;
+$treeEntries = $rv->treeEntries;
+$commitMap = $rv->commitMap;
+$latestCommit = $rv->latestCommit;
+$commitCount = $rv->commitCount;
+$langBreakdown = $rv->langBreakdown;
+$readmeContent = $rv->readmeContent;
+$subEntries = $rv->subEntries;
+$subCommitMap = $rv->subCommitMap;
+$pathLatestCommit = $rv->pathLatestCommit;
+$fileData = $rv->fileData;
+$fullFileTree = $rv->fullFileTree;
+$breadcrumbs = $rv->breadcrumbs;
+$rName = $rv->rName;
+$rDesc = $rv->rDesc;
+$rVis = $rv->rVis;
+$rBranch = $rv->rBranch;
+$rOwner = $rv->rOwner;
+$rDisp = $rv->rDisp;
+$rSlug = $rv->rSlug;
+$rCreated = $rv->rCreated;
+$rUpdated = $rv->rUpdated;
+$rStars = $rv->rStars;
+$rForks = $rv->rForks;
+$httpUrl = $rv->httpUrl;
+$sshUrl = $rv->sshUrl;
+$httpBase = $rv->httpBase;
+?>
+<link rel="stylesheet" href="<?= Assets::url('assets/css/repo_view.css') ?>">
+<main class="container-fluid px-4 px-xl-5 py-5" style="max-width:1600px;margin:0 auto;">
+    <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+        <i class="bi bi-folder2 text-secondary" style="font-size:1.1rem;"></i>
+        <h1 class="mb-0 fs-5 fw-normal">
+            <a href="/<?= $rSlug ?>" class="text-decoration-none"><?= $rOwner ?></a>
+            <span class="text-secondary mx-1">/</span>
+            <a href="/<?= $rSlug ?>" class="fw-bold text-decoration-none"><?= $rName ?></a>
+        </h1>
+        <span class="badge fw-normal align-middle <?= $rVis === 'private' ? 'bg-secondary' : 'text-secondary border border-secondary-subtle bg-transparent' ?>">
+            <?= $rVis === 'private' ? '<i class="bi bi-lock-fill me-1"></i>Private' : '<i class="bi bi-globe me-1"></i>Public' ?>
+        </span>
+    </div>
+    <?php if ($rDesc !== ''): ?>
+        <p class="text-secondary mb-2 ms-4" style="font-size:.9rem;"><?= $rDesc ?></p>
+    <?php endif; ?>
+    <ul class="nav rv-header-tabs mt-3 mb-0">
+        <li class="nav-item">
+            <a class="nav-link active d-flex align-items-center gap-1" href="/<?= $rSlug ?>">
+                <i class="bi bi-code-square"></i> Code
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+                <i class="bi bi-exclamation-circle"></i> Issues
+                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:.7rem;">0</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+                <i class="bi bi-git"></i> Pull Requests
+                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:.7rem;">0</span>
+            </a>
+        </li>
+        <?php if ($isOwner || $isAdmin): ?>
+            <li class="nav-item ms-auto">
+                <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+                    <i class="bi bi-gear"></i> Settings
+                </a>
+            </li>
+        <?php endif; ?>
+    </ul>
+    <div class="row g-3 mt-0 pt-4 border-top" style="border-color:var(--bs-border-color)!important;">
+        <?php if (!$isEmpty && !empty($fullFileTree)): ?>
+            <div class="col-lg-2 d-none d-lg-block">
+                <div class="rv-tree-panel">
+                    <div class="rv-tree-panel-header">
+                        <i class="bi bi-folder2 text-secondary" style="font-size:.9rem;"></i>
+                        <span>Files</span>
+                    </div>
+                    <div class="rv-tree-scroll">
+                        <?php RepoViewController::renderTree($fullFileTree, $rawSlug, $currentBranch, $currentPath); ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+        <div class="<?= !$isEmpty && !empty($fullFileTree) ? 'col-lg-8' : 'col-lg-10' ?>">
+            <?php if ($isEmpty): ?>
+                <div class="border rounded-3 overflow-hidden" style="border-color:var(--bs-border-color)!important;">
+                    <div class="p-4 text-center border-bottom" style="background:var(--bs-secondary-bg);">
+                        <i class="bi bi-folder2-open" style="font-size:2.5rem;color:var(--brand);"></i>
+                        <h4 class="fw-bold mt-3 mb-1">Get started with <?= $rName ?></h4>
+                        <p class="text-secondary mb-0" style="font-size:.9rem;">
+                            This is an empty repository. Use the instructions below to push your first commit.
+                        </p>
+                    </div>
+                    <div class="p-4">
+                        <p class="fw-semibold mb-2">Quick setup — copy a URL to get started</p>
+                        <div class="d-flex align-items-center gap-0 mb-4">
+                            <div class="btn-group me-2" role="group">
+                                <input type="radio" class="btn-check" name="cloneProto" id="protoHTTP" checked>
+                                <label class="btn btn-sm btn-outline-secondary" for="protoHTTP"
+                                       onclick="setCloneUrl('http')">HTTPS</label>
+                                <input type="radio" class="btn-check" name="cloneProto" id="protoSSH">
+                                <label class="btn btn-sm btn-outline-secondary" for="protoSSH"
+                                       onclick="setCloneUrl('ssh')">SSH</label>
+                            </div>
+                            <code id="cloneUrlDisplay" class="rv-clone-url flex-grow-1"><?= $httpUrl ?></code>
+                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyCloneUrl(this)"
+                                    title="Copy URL">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <p class="fw-semibold mb-2"><i class="bi bi-terminal me-1"></i>Create a new repository
+                                    on the command line</p>
+                                <div class="rv-empty-code">
+                                    <code>echo "# <?= $rName ?>" >> README.md</code>
+                                    <code>git init</code>
+                                    <code>git add README.md</code>
+                                    <code>git commit -m "first commit"</code>
+                                    <code>git branch -M <?= $rBranch ?></code>
+                                    <code>git remote add origin <span
+                                                class="clone-url-inline text-warning"><?= $httpUrl ?></span></code>
+                                    <code>git push -u origin <?= $rBranch ?></code>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="fw-semibold mb-2"><i class="bi bi-arrow-up-circle me-1"></i>Push an existing
+                                    repository</p>
+                                <div class="rv-empty-code">
+                                    <code>git remote add origin <span
+                                                class="clone-url-inline text-warning"><?= $httpUrl ?></span></code>
+                                    <code>git branch -M <?= $rBranch ?></code>
+                                    <code>git push -u origin <?= $rBranch ?></code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1"
+                                type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-git"></i> <?= $rBranch ?>
+                        </button>
+                        <ul class="dropdown-menu shadow-sm">
+                            <li><h6 class="dropdown-header">Branches</h6></li>
+                            <?php foreach ($branches as $b): /** @var string $b */ ?>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2 <?= $b === $currentBranch ? 'fw-bold' : '' ?>"
+                                       href="/<?= $rSlug ?>?branch=<?= RepoViewController::e($b) ?>">
+                                        <?php if ($b === $currentBranch): ?>
+                                            <i class="bi bi-check2 text-success"></i>
+                                        <?php else: ?>
+                                            <i class="bi bi-git text-secondary"></i>
+                                        <?php endif; ?>
+                                        <?= RepoViewController::e($b) ?>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php if ($currentPath !== ''): ?>
+                        <nav class="rv-breadcrumb d-flex align-items-center flex-wrap"
+                             style="font-size:.875rem; gap:.1rem;">
+                            <?php foreach ($breadcrumbs as $i => $crumb): ?>
+                                <?php if ($i > 0): ?><span class="sep">/</span><?php endif; ?>
+                                <?php if ($crumb['url'] !== null): ?>
+                                    <a href="<?= RepoViewController::e($crumb['url']) ?>"><?= RepoViewController::e($crumb['label']) ?></a>
+                                <?php else: ?>
+                                    <span class="fw-semibold"><?= RepoViewController::e($crumb['label']) ?></span>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </nav>
+                    <?php endif; ?>
+                    <span class="text-secondary small ms-auto">
+                        <strong class="text-body"><?= number_format($commitCount) ?></strong>
+                        commit<?= $commitCount !== 1 ? 's' : '' ?>
+                    </span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-success dropdown-toggle d-flex align-items-center gap-1"
+                                type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-code-slash"></i> Code
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow p-3" style="min-width:320px;">
+                            <p class="fw-semibold mb-2" style="font-size:.85rem;">Clone</p>
+                            <ul class="nav nav-pills nav-fill mb-2" style="font-size:.78rem;">
+                                <li class="nav-item">
+                                    <a class="nav-link active py-1" href="#"
+                                       onclick="switchCloneTab('http',this);return false;">HTTPS</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link py-1" href="#"
+                                       onclick="switchCloneTab('ssh',this);return false;">SSH</a>
+                                </li>
+                            </ul>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="cloneUrlInput" class="form-control font-monospace"
+                                       style="font-size:.75rem;" value="<?= $httpUrl ?>" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyCloneInput()"
+                                        title="Copy">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <p class="text-secondary mt-2 mb-0" style="font-size:.75rem;">
+                                Use Git over HTTPS or SSH with your credentials.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <?php if ($viewMode === 'root' || $viewMode === 'tree'): ?>
+                    <?php
+                    $dispEntries = ($viewMode === 'root') ? $treeEntries : $subEntries;
+                    $dispCommitMap = ($viewMode === 'root') ? $commitMap : $subCommitMap;
+                    $dispCommit = ($viewMode === 'root') ? $latestCommit : $pathLatestCommit;
+                    $parentUrl = null;
+                    if ($viewMode === 'tree') {
+                        $parentParts = explode('/', $currentPath);
+                        array_pop($parentParts);
+                        $parentPathStr = implode('/', $parentParts);
+                        $parentUrl = $parentPathStr !== ''
+                                ? RepoViewController::pathUrl($rawSlug, $currentBranch, $parentPathStr)
+                                : '/' . $rawSlug . '?branch=' . urlencode($currentBranch);
+                    }
+                    ?>
+                    <?php if ($dispCommit !== null): ?>
+                        <div class="border rounded-top-3 rv-latest-commit px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
+                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($dispCommit['author']))) ?>?s=24&d=identicon"
+                                 class="rounded-circle" width="20" height="20" alt="" loading="lazy">
+                            <span class="fw-semibold"
+                                  style="font-size:.85rem;"><?= RepoViewController::e($dispCommit['author']) ?></span>
+                            <span class="text-secondary"
+                                  style="font-size:.85rem; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <?= RepoViewController::e($dispCommit['subject']) ?>
+                            </span>
+                            <span class="text-secondary" style="font-size:.8rem; white-space:nowrap;">
+                                <a href="#" class="text-secondary text-decoration-none font-monospace"
+                                   title="<?= RepoViewController::e($dispCommit['hash']) ?>"><?= RepoViewController::e($dispCommit['short']) ?></a>
+                                &middot; <?= RepoViewController::time($dispCommit['time'], $dispCommit['rel']) ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+                    <div class="border <?= $dispCommit !== null ? 'border-top-0 rounded-bottom-3' : 'rounded-3' ?> overflow-hidden">
+                        <table class="table table-hover table-sm rv-file-table mb-0">
+                            <tbody>
+                            <?php if ($viewMode === 'tree' && $parentUrl !== null): // @phpstan-ignore notIdentical.alwaysTrue ?>
+                                <tr class="rv-parent-row">
+                                    <td style="width:2rem;"><i class="bi bi-folder-fill text-secondary opacity-50"></i>
+                                    </td>
+                                    <td colspan="3"><a class="rv-file-link"
+                                                       href="<?= RepoViewController::e($parentUrl) ?>">..</a></td>
+                                </tr>
+                            <?php endif; ?>
+                            <?php foreach ($dispEntries as $entry): ?>
+                                <?php
+                                $isDir = $entry['type'] === 'tree';
+                                $eName = RepoViewController::e($entry['name']);
+                                $icon = $isDir ? '<i class="bi bi-folder-fill text-warning"></i>' : RepoViewController::fileIcon($entry['name']);
+                                $cmt = $dispCommitMap[$entry['name']] ?? null;
+                                $ePath = ($currentPath !== '' ? $currentPath . '/' : '') . $entry['name'];
+                                $eUrl = RepoViewController::pathUrl($rawSlug, $currentBranch, $ePath);
+                                ?>
+                                <tr>
+                                    <td style="width:2rem;"><?= $icon ?></td>
+                                    <td><a class="rv-file-link"
+                                           href="<?= RepoViewController::e($eUrl) ?>"><?= $eName ?></a></td>
+                                    <td class="rv-commit-subject d-none d-md-table-cell">
+                                        <?= $cmt !== null ? RepoViewController::e($cmt['subject']) : '' ?>
+                                    </td>
+                                    <td class="text-secondary text-end text-nowrap" style="font-size:.78rem;">
+                                        <?= $cmt !== null ? RepoViewController::time($cmt['time'], $cmt['rel']) : '' ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($dispEntries)): ?>
+                                <tr>
+                                    <td colspan="4" class="text-center text-secondary py-4">Empty directory.</td>
+                                </tr>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php if ($viewMode === 'root' && $readmeContent !== null): ?>
+                        <div class="border rounded-3 mt-3">
+                            <div class="border-bottom px-3 py-2 d-flex align-items-center gap-2 bg-body-secondary rounded-top-3">
+                                <i class="bi bi-book text-secondary"></i>
+                                <span class="fw-semibold" style="font-size:.875rem;">README.md</span>
+                            </div>
+                            <div class="rv-readme px-4 py-3">
+                                <?= RepoViewController::renderMarkdown($readmeContent) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php elseif ($viewMode === 'blob' && $fileData !== null): ?>
+                    <?php
+                    $fileName = basename($currentPath);
+                    $fileSize = $fileData['size'];
+                    $isBinary = $fileData['binary'];
+                    $isTrunc = $fileData['truncated'];
+                    $fileLines = $fileData['lines'];
+                    $fileContent = $fileData['content'];
+                    $hlClass = 'language-' . RepoViewController::hlLang($fileName);
+                    ?>
+                    <?php if ($pathLatestCommit !== null): ?>
+                        <div class="border rounded-top-3 rv-latest-commit px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
+                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($pathLatestCommit['author']))) ?>?s=24&d=identicon"
+                                 class="rounded-circle" width="20" height="20" alt="" loading="lazy">
+                            <span class="fw-semibold"
+                                  style="font-size:.85rem;"><?= RepoViewController::e($pathLatestCommit['author']) ?></span>
+                            <span class="text-secondary"
+                                  style="font-size:.85rem; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <?= RepoViewController::e($pathLatestCommit['subject']) ?>
+                            </span>
+                            <span class="text-secondary" style="font-size:.8rem; white-space:nowrap;">
+                                <span class="font-monospace"
+                                      title="<?= RepoViewController::e($pathLatestCommit['hash']) ?>"><?= RepoViewController::e($pathLatestCommit['short']) ?></span>
+                                &middot; <?= RepoViewController::time($pathLatestCommit['time'], $pathLatestCommit['rel']) ?>
+                            </span>
+                        </div>
+                    <?php endif; ?>
+                    <div class="border <?= $pathLatestCommit !== null ? 'border-top-0 rounded-bottom-3' : 'rounded-3' ?> overflow-hidden rv-file-viewer">
+                        <div class="d-flex align-items-center gap-3 flex-wrap px-3 py-2"
+                             style="background:var(--bs-secondary-bg); border-bottom:1px solid var(--bs-border-color); font-size:.82rem;">
+                            <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                                <?= RepoViewController::fileIcon($fileName) ?>
+                                <span class="fw-semibold"><?= RepoViewController::e($fileName) ?></span>
+                                <?php if (!$isBinary && $fileContent !== null): ?>
+                                    <span class="text-secondary"><?= number_format($fileLines) ?> line<?= $fileLines !== 1 ? 's' : '' ?></span>
+                                    <span class="text-secondary">·</span>
+                                <?php endif; ?>
+                                <span class="text-secondary"><?= RepoViewController::size($fileSize) ?></span>
+                                <?php if ($isTrunc): ?>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle"
+                                          style="font-size:.68rem;">truncated</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="d-flex gap-2 flex-shrink-0">
+                                <?php if (!$isBinary && $fileContent !== null): ?>
+                                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                                            onclick="rvCopyFile(this)" title="Copy file content">
+                                        <i class="bi bi-clipboard" id="rv-copy-icon"></i>
+                                        <span class="d-none d-sm-inline">Copy</span>
+                                    </button>
+                                <?php endif; ?>
+                                <a href="<?= RepoViewController::e('/' . $rawSlug . '?' . http_build_query(['branch' => $currentBranch, 'path' => $currentPath, 'raw' => '1'])) ?>"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                    <span class="d-none d-sm-inline">Raw</span>
+                                </a>
+                            </div>
+                        </div>
+                        <?php if ($isBinary): ?>
+                            <div class="text-center py-5 text-secondary">
+                                <i class="bi bi-file-binary" style="font-size:2rem;"></i>
+                                <p class="mt-2 mb-0" style="font-size:.9rem;">Binary file
+                                    · <?= RepoViewController::size($fileSize) ?></p>
+                            </div>
+                        <?php elseif ($fileContent === null): ?>
+                            <div class="text-center py-5 text-secondary">
+                                <i class="bi bi-exclamation-triangle" style="font-size:2rem;"></i>
+                                <p class="mt-2 mb-0" style="font-size:.9rem;">Could not read file content.</p>
+                            </div>
+                        <?php else: ?>
+                            <div style="overflow-x:auto;">
+                                <table class="rv-line-table" id="rv-code-table">
+                                    <tbody>
+                                    <?php
+                                    $codeLines = explode("\n", $fileContent);
+                                    if (end($codeLines) === '') {
+                                        array_pop($codeLines);
+                                    }
+                                    foreach ($codeLines as $ln => $codeLine): ?>
+                                        <tr id="L<?= $ln + 1 ?>" class="rv-line">
+                                            <td class="rv-line-num"
+                                                onclick="rvToggleLine(<?= $ln + 1 ?>)"><?= $ln + 1 ?></td>
+                                            <td class="rv-line-code"><?= htmlspecialchars($codeLine, ENT_QUOTES, 'UTF-8') ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <pre style="display:none;"><code id="rv-hl-src"
+                                                             class="<?= RepoViewController::e($hlClass) ?>"><?= htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8') ?></code></pre>
+                            <?php if ($isTrunc): ?>
+                                <div class="px-3 py-2 text-secondary text-center"
+                                     style="font-size:.8rem; background:var(--bs-secondary-bg); border-top:1px solid var(--bs-border-color);">
+                                    <i class="bi bi-scissors me-1"></i>Truncated at 512 KB.
+                                </div>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+        <div class="col-lg-2">
+            <div class="rv-sidebar-section">
+                <h6 class="fw-bold mb-3">About</h6>
+                <?php if ($rDesc !== ''): ?>
+                    <p class="text-secondary mb-3" style="font-size:.875rem;"><?= $rDesc ?></p>
+                <?php else: ?>
+                    <p class="text-secondary mb-3" style="font-size:.875rem; font-style:italic;">No description.</p>
+                <?php endif; ?>
+                <div class="d-flex flex-column gap-2 text-secondary" style="font-size:.85rem;">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-star"></i>
+                        <strong class="text-body"><?= number_format($rStars) ?></strong> stars
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-diagram-2"></i>
+                        <strong class="text-body"><?= number_format($rForks) ?></strong> forks
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-clock"></i>
+                        Updated <?= $rUpdated ?>
+                    </div>
+                </div>
+            </div>
+            <?php if (!empty($langBreakdown)): ?>
+                <div class="rv-sidebar-section">
+                    <h6 class="fw-bold mb-3">Languages</h6>
+                    <div class="rv-lang-bar mb-3">
+                        <?php foreach ($langBreakdown as $lang): ?>
+                            <div class="rv-lang-bar-seg"
+                                 title="<?= RepoViewController::e($lang['lang']) ?> <?= $lang['pct'] ?>%"
+                                 style="width:<?= $lang['pct'] ?>%;background:<?= RepoViewController::e($lang['color']) ?>;"></div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="d-flex flex-column gap-1">
+                        <?php foreach ($langBreakdown as $lang): ?>
+                            <div class="d-flex align-items-center justify-content-between gap-2"
+                                 style="font-size:.825rem;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="width:.7rem;height:.7rem;border-radius:50%;background:<?= RepoViewController::e($lang['color']) ?>;display:inline-block;flex-shrink:0;"></span>
+                                    <span class="fw-medium"><?= RepoViewController::e($lang['lang']) ?></span>
+                                </div>
+                                <span class="text-secondary"><?= $lang['pct'] ?>%</span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+            <div class="rv-sidebar-section">
+                <h6 class="fw-bold mb-3">Clone</h6>
+                <div class="d-flex flex-column gap-2">
+                    <div>
+                        <div class="text-secondary mb-1"
+                             style="font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">
+                            HTTPS
+                        </div>
+                        <div class="d-flex gap-1">
+                            <code class="rv-clone-url flex-grow-1 d-block"
+                                  style="font-size:.73rem;"><?= $httpUrl ?></code>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    onclick="navigator.clipboard.writeText('<?= $httpUrl ?>')" title="Copy HTTPS URL">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-secondary mb-1"
+                             style="font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">
+                            SSH
+                        </div>
+                        <div class="d-flex gap-1">
+                            <code class="rv-clone-url flex-grow-1 d-block"
+                                  style="font-size:.73rem;"><?= $sshUrl ?></code>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    onclick="navigator.clipboard.writeText('<?= $sshUrl ?>')" title="Copy SSH URL">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="rv-sidebar-section">
+                <div class="d-flex flex-column gap-2 text-secondary" style="font-size:.82rem;">
+                    <div>
+                        <i class="bi bi-person me-1"></i>
+                        <a href="#" class="text-decoration-none text-secondary"><?= $rDisp ?></a>
+                        <span class="text-secondary">(@<?= $rOwner ?>)</span>
+                    </div>
+                    <div><i class="bi bi-calendar me-1"></i> Created <?= $rCreated ?></div>
+                    <div><i class="bi bi-git me-1"></i> Default branch: <code><?= $rBranch ?></code></div>
+                    <?php if (!$isEmpty): ?>
+                        <div><i class="bi bi-clock-history me-1"></i> <?= number_format($commitCount) ?>
+                            commit<?= $commitCount !== 1 ? 's' : '' ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<script>
+    const HTTP_URL = '<?= $httpUrl ?>';
+    const SSH_URL = '<?= $sshUrl ?>';
+
+    function setCloneUrl(proto) {
+        const url = (proto === "ssh" ? SSH_URL : HTTP_URL);
+        const el = document.getElementById("cloneUrlDisplay");
+        if (el) {
+            el.textContent = url;
+        }
+        document.querySelectorAll(".clone-url-inline")
+            .forEach((e) => e.textContent = url);
+    }
+
+    function copyCloneUrl(btn) {
+        const el = document.getElementById("cloneUrlDisplay");
+        if (!el) {
+            return;
+        }
+        navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = "<i class='bi bi-check2 text-success'></i>";
+            setTimeout(() => btn.innerHTML = orig, 1500);
+        });
+    }
+
+    function switchCloneTab(proto, tabEl) {
+        const url = proto === "ssh" ? SSH_URL : HTTP_URL;
+        const inp = document.getElementById("cloneUrlInput");
+        if (inp) {
+            inp.value = url;
+        }
+        tabEl.closest(".nav")
+            .querySelectorAll(".nav-link")
+            .forEach((l) => l.classList.remove("active"));
+        tabEl.classList.add("active");
+    }
+
+    function copyCloneInput() {
+        const inp = document.getElementById("cloneUrlInput");
+        if (!inp) {
+            return;
+        }
+        navigator.clipboard.writeText(inp.value);
+    }
+
+    function rvCopyFile(btn) {
+        const src = document.getElementById("rv-hl-src");
+        if (!src) {
+            return;
+        }
+        navigator.clipboard.writeText(src.textContent).then(() => {
+            const icon = document.getElementById("rv-copy-icon");
+            if (icon) {
+                icon.className = "bi bi-check2 text-success";
+                setTimeout(() => {
+                    icon.className = "bi bi-clipboard";
+                }, 1800);
+            }
+        });
+    }
+
+    function rvToggleLine(n) {
+        const row = document.getElementById("L" + n);
+        if (!row) {
+            return;
+        }
+        row.classList.toggle("rv-line-highlighted");
+    }
+
+    function rvTreeToggle(el, e) {
+        const li = el.parentElement;
+        if (!li) {
+            return;
+        }
+        const children = li.querySelector(".rv-tree-children");
+        if (!children) {
+            return;
+        }
+        e.preventDefault();
+        const isOpen = children.classList.toggle("rv-open");
+        const caret = el.querySelector(".rv-tree-toggle i");
+        if (caret) {
+            caret.className = (
+                isOpen ? "bi bi-caret-down-fill" : "bi bi-caret-right-fill"
+            );
+        }
+        window.location.href = el.href;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const src = document.getElementById("rv-hl-src");
+        const table = document.getElementById("rv-code-table");
+        if (!src || !table || typeof hljs === "undefined") {
+            return;
+        }
+
+        hljs.highlightElement(src);
+
+        const highlightedLines = src.innerHTML.split("\n");
+        const codeCells = table.querySelectorAll(".rv-line-code");
+        codeCells.forEach(function (cell, i) {
+            cell.innerHTML = (
+                highlightedLines[i] !== undefined ? highlightedLines[i] : ""
+            );
+        });
+    });
+
+    (function () {
+        const el = document.getElementById("hljs-css");
+        if (!el) {
+            return;
+        }
+        const t = document.documentElement.getAttribute("data-bs-theme");
+        if (t === "light") {
+            el.href =
+                "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/" +
+                "styles/github.min.css";
+        }
+    })();
+
+
+</script>
+<?php if ($viewMode === 'blob' && $fileData !== null && !$fileData['binary'] && $fileData['content'] !== null): ?>
+    <link rel="stylesheet" id="hljs-css"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<?php endif; ?>

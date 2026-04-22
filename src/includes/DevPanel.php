@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\includes;
 
-use App\includes\Assets;
-
 class DevPanel
 {
     private ?\PDO $pdo;
@@ -160,7 +158,7 @@ class DevPanel
             CURLOPT_FAILONERROR => false,
         ]);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         $response = curl_exec($ch);
         if ($response === false) {
             $error = curl_error($ch);

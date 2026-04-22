@@ -20,8 +20,8 @@ class Logging
         };
 
         $sanitized_message = preg_replace('/[\r\n\t\0]/', '', $message);
-        if (!$save_to_database) {
-            if (!$is_security_alert) {
+        if (! $save_to_database) {
+            if (! $is_security_alert) {
                 $path = __DIR__ . '/../log/log-' . date('d-m-Y') . '.log';
                 $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . "\n";
             } else {
@@ -29,8 +29,8 @@ class Logging
                 $pre_file = '[ ' . date(DATE_ATOM) . ' ] ' . '[' . $level_message . '] ' . $sanitized_message . ' [ ' . self::getClientIP() . ' ]' . "\n";
             }
 
-            if (!is_dir(__DIR__ . '/../log/')) {
-                if (!mkdir(__DIR__ . '/../log/', 0775, true)) {
+            if (! is_dir(__DIR__ . '/../log/')) {
+                if (! mkdir(__DIR__ . '/../log/', 0775, true)) {
                     error_log('Cannot create directory log: invalid permissions');
                 }
             }
@@ -43,18 +43,20 @@ class Logging
             }
         } else {
             $ip = $is_security_alert ? self::getClientIP() : null;
-            $pdo = new Config()->getPdo();
+            $pdo = new Config()->getPDO();
+
             try {
                 if ($pdo === null) {
                     self::loggingToFile('Cannot log into database', 4);
+
                     return;
                 }
                 $pdo->beginTransaction();
-                $stmt = new Config()->getPdo()->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
-                $stmt->execute([$level_message, $sanitized_message, (int)$is_security_alert, $ip]);
+                $stmt = new Config()->getPDO()->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$level_message, $sanitized_message, (int) $is_security_alert, $ip]);
                 $pdo->commit();
             } catch (\PDOException $e) {
-                $pdo?->rollBack();
+                $pdo->rollBack();
                 self::loggingToFile('Database error: ' . $e->getMessage(), 4);
             }
         }

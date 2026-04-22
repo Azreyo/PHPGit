@@ -3,6 +3,13 @@ declare(strict_types=1);
 
 use App\includes\Assets;
 
+
+/** @var string $page_title */
+/** @var string $page */
+/** @var string $is_dev */
+/** @var bool $is_logged_in */
+/** @var App\controllers\PageController $this */
+/** @var string $role */
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
@@ -37,8 +44,14 @@ use App\includes\Assets;
 <body>
 
 <?php
+$allowedPages = [
+    'home', 'about', 'contact', 'explore', 'login', 'register', 'logout',
+    '404', '403', '414', 'terms', 'settings', 'repos', 'new_repo',
+        'dashboard', 'phpinfo', 'repo_view',
+];
+$safePage = in_array($page, $allowedPages, true) ? $page : '404';
 include __DIR__ . '/../includes/header.php';
-include __DIR__ . '/../pages/' . htmlspecialchars($page, ENT_QUOTES, 'UTF-8') . '.php';
+include __DIR__ . '/../pages/' . $safePage . '.php';
 include __DIR__ . '/../includes/footer.php';
 ?>
 

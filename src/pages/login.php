@@ -5,11 +5,13 @@ use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
 
+/** @var bool $is_dev */
+
 $config = new Config();
 $security = new Security();
 
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';
-
+$csrf_token = null;
 $errors = $_SESSION['login_errors'] ?? [];
 $prefill_email = $_SESSION['login_prefill_email'] ?? '';
 unset($_SESSION['login_errors'], $_SESSION['login_prefill_email']);
@@ -45,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($post_errors)) {
-            $pdo = $config->getPdo();
+            $pdo = $config->getPDO();
             if ($pdo !== null) {
                 $stmt = $pdo->prepare(
                     'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'

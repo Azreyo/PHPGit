@@ -1,14 +1,19 @@
-<?php
+<?php /** @noinspection PhpNoReturnAttributeCanBeAddedInspection */
 
 declare(strict_types=1);
 
 namespace App\Core;
 
-use JetBrains\PhpStorm\NoReturn;
+use http\Exception\InvalidArgumentException;
 
 class Controller
 {
-    #[NoReturn]
+    /**
+     * @param array<mixed> $data
+     * @param int $statusCode
+     * @param array<string, string> $headers
+     * @return void
+     */
     protected function json(array $data, int $statusCode = 200, array $headers = []): void
     {
         http_response_code($statusCode);
@@ -22,31 +27,48 @@ class Controller
         exit;
     }
 
-    #[NoReturn]
+    /**
+     * @param array<mixed> $data
+     * @param int $statusCode
+     * @return void
+     */
     protected function success(array $data, int $statusCode = 200): void
     {
         $this->json($data, $statusCode);
     }
 
-    #[NoReturn]
+    /**
+     * @param string $message
+     * @param int $statusCode
+     * @return void
+     */
     protected function error(string $message, int $statusCode = 500): void
     {
         $this->json(['error' => $message], $statusCode);
     }
 
-    #[NoReturn]
+    /**
+     * @param string $message
+     * @return void
+     */
     protected function badRequest(string $message = 'Bad request'): void
     {
         $this->error($message, 400);
     }
 
-    #[NoReturn]
+    /**
+     * @param string $message
+     * @return void
+     */
     protected function notFound(string $message = 'Not found'): void
     {
         $this->error($message, 404);
     }
 
-    #[NoReturn]
+    /**
+     * @param array<string> $allowedMethods
+     * @return void
+     */
     protected function methodNotAllowed(array $allowedMethods): void
     {
         $methods = array_values(array_unique(array_map('strtoupper', $allowedMethods)));

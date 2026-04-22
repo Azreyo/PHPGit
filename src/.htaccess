@@ -12,6 +12,8 @@ DirectoryIndex index.php
     RewriteEngine On
     RewriteBase /
 
+    # Pass HTTP Authorization header to PHP (needed for git HTTP auth)
+    RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
     RewriteRule ^(assets/(?:(?:css|js)/[^/]+|img/[^/]+))\.[a-f0-9]{8}\.(css|js|png|jpg|jpeg|gif|svg|webp|ico)$ /$1.$2 [L]
 
@@ -20,6 +22,15 @@ DirectoryIndex index.php
     RewriteRule ^ - [F,L]
 
     RewriteRule ^(?:vendor|log|certs)(?:/|$) - [F,L,NC]
+
+    # Git HTTP Smart Protocol: {user}/{repo}.git/...  →  git.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^([a-zA-Z0-9][a-zA-Z0-9_-]{0,49})/([a-zA-Z0-9][a-zA-Z0-9._-]{0,98})\.git(/.*)?$ git.php?_git_user=$1&_git_repo=$2&_git_path=$3 [L,QSA]
+
+    # Pretty repo URLs: username/repo_name -> repo_view page
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-zA-Z0-9][a-zA-Z0-9_-]{0,49})/([a-zA-Z0-9][a-zA-Z0-9._-]{0,98})/?$ index.php?page=repo_view&slug=$1/$2 [L,QSA]
 
     # Allow extensionless
     RewriteCond %{REQUEST_FILENAME} !-f

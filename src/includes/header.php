@@ -5,8 +5,12 @@ use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
 
+/** @var string $page */
+/** @var bool $is_logged_in */
+/** @var string $role */
+
 $security = new Security();
-$csrf_token = null;
+$csrf_token = '';
 
 try {
     $csrf_token = $security->generateCsrfToken();

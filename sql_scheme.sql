@@ -22,20 +22,23 @@ USE `phpgit`;
 -- Dumping structure for table phpgit.inbox
 CREATE TABLE IF NOT EXISTS `inbox`
 (
-    `id`       int(11)                         NOT NULL AUTO_INCREMENT,
-    `username` varchar(50)                     NOT NULL,
-    `email`    varchar(50)                     NOT NULL,
-    `subject`  varchar(50)                     NOT NULL,
-    `body`     varchar(500)                    NOT NULL,
-    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-    `unread` tinyint(1) NOT NULL DEFAULT 1,
-    `status` enum ('new','replied','archived') NOT NULL DEFAULT 'new',
+    `id`         int(11)                         NOT NULL AUTO_INCREMENT,
+    `username`   varchar(50)                     NOT NULL,
+    `email`      varchar(50)                     NOT NULL,
+    `subject`    varchar(50)                     NOT NULL,
+    `body`       varchar(500)                    NOT NULL,
+    `created_at` timestamp                       NOT NULL DEFAULT current_timestamp(),
+    `unread`     tinyint(1)                      NOT NULL DEFAULT 1,
+    `status`     enum ('new','replied','closed') NOT NULL DEFAULT 'new',
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
+  AUTO_INCREMENT = 2
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- Dumping data for table phpgit.inbox: ~0 rows (approximately)
+-- Dumping data for table phpgit.inbox: ~1 rows (approximately)
+INSERT IGNORE INTO `inbox` (`id`, `username`, `email`, `subject`, `body`, `created_at`, `unread`, `status`)
+VALUES (1, 'asdas', 'test@test.com', 'dasd', 'dasdasdsa', '2026-04-18 10:49:12', 0, 'new');
 
 -- Dumping structure for table phpgit.issues
 CREATE TABLE IF NOT EXISTS `issues`
@@ -62,7 +65,13 @@ CREATE TABLE IF NOT EXISTS `issues`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- Dumping data for table phpgit.issues: ~0 rows (approximately)
+-- Dumping data for table phpgit.issues: ~2 rows (approximately)
+INSERT IGNORE INTO `issues` (`id`, `repository_id`, `author_user_id`, `assignee_user_id`, `title`, `body`, `status`,
+                             `created_at`, `closed_at`)
+VALUES (1, 1, 3, 2, 'Login error on invalid CSRF token', 'Reproducible when session expires before submit.', 'open',
+        '2026-04-21 15:09:34', NULL),
+       (2, 2, 1, 2, 'Dark mode contrast improvement', 'Buttons in dark mode need higher contrast.', 'open',
+        '2026-04-21 15:09:34', NULL);
 
 -- Dumping structure for table phpgit.log
 CREATE TABLE IF NOT EXISTS `log`
@@ -80,6 +89,19 @@ CREATE TABLE IF NOT EXISTS `log`
   COLLATE = utf8mb4_unicode_ci;
 
 -- Dumping data for table phpgit.log: ~0 rows (approximately)
+
+-- Dumping structure for table phpgit.programming_languages
+CREATE TABLE IF NOT EXISTS `programming_languages`
+(
+    `lang`  varchar(50)  NOT NULL,
+    `view`  varchar(100) NOT NULL,
+    `color` char(7)      NOT NULL,
+    PRIMARY KEY (`lang`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
+-- Dumping data for table phpgit.programming_languages: ~0 rows (approximately)
 
 -- Dumping structure for table phpgit.pull_requests
 CREATE TABLE IF NOT EXISTS `pull_requests`
@@ -108,6 +130,12 @@ CREATE TABLE IF NOT EXISTS `pull_requests`
   COLLATE = utf8mb4_unicode_ci;
 
 -- Dumping data for table phpgit.pull_requests: ~0 rows (approximately)
+INSERT IGNORE INTO `pull_requests` (`id`, `repository_id`, `author_user_id`, `from_branch_name`, `to_branch_name`,
+                                    `from_head_hash`, `to_head_hash`, `title`, `body`, `status`, `created_at`,
+                                    `merged_at`)
+VALUES (1, 1, 2, 'feature/auth-hardening', 'main', '2222222222222222222222222222222222222222222222222222222222222222',
+        '1111111111111111111111111111111111111111111111111111111111111111', 'Improve auth hardening',
+        'Adds stricter checks and cleaner redirects.', 'open', '2026-04-21 15:09:34', NULL);
 
 -- Dumping structure for table phpgit.repositories
 CREATE TABLE IF NOT EXISTS `repositories`
@@ -132,15 +160,23 @@ CREATE TABLE IF NOT EXISTS `repositories`
     KEY `ix_repositories_popular` (`visibility`, `stars` DESC),
     CONSTRAINT `fk_repositories_owner` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB
-  AUTO_INCREMENT = 3
+  AUTO_INCREMENT = 7
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- Dumping data for table phpgit.repositories: ~1 rows (approximately)
+-- Dumping data for table phpgit.repositories: ~4 rows (approximately)
 INSERT IGNORE INTO `repositories` (`id`, `owner_user_id`, `repo_name`, `slug`, `repo_description`, `visibility`,
                                    `default_branch`, `stars`, `forks`, `lang`, `created_at`, `updated_at`)
-VALUES (2, 2, 'bootstrap-theme', 'bootstrap-theme', 'Theme experiments for frontend', 'public', 'main', 4980, 2094,
-        'javascript', '2026-03-29 11:03:45', '2026-03-29 11:03:45');
+VALUES (1, 1, 'phpgit-core', 'phpgit-core', 'Main PHPGit platform repository', 'public', 'main', 255, 190, 'php',
+        '2026-04-21 15:09:34', '2026-04-21 15:09:34'),
+       (2, 2, 'bootstrap-theme', 'bootstrap-theme', 'Theme experiments for frontend', 'public', 'main', 4980, 2094,
+        'javascript', '2026-03-29 11:03:45', '2026-03-29 11:03:45'),
+       (4, 1, 'PHPGit', 'admin/PHPGit', 'git based on pure php', 'public', 'main', 0, 0, NULL, '2026-04-18 16:02:20',
+        '2026-04-18 16:02:20'),
+       (5, 1, 'test', 'admin/test', 'testing', 'public', 'main', 0, 0, 'Markdown', '2026-04-21 15:00:32',
+        '2026-04-21 15:55:11'),
+       (6, 3, 'test-demo', 'demo/test-demo', 'test', 'private', 'main', 0, 0, NULL, '2026-04-21 17:43:11',
+        '2026-04-21 17:43:11');
 
 -- Dumping structure for table phpgit.repository_members
 CREATE TABLE IF NOT EXISTS `repository_members`
@@ -158,9 +194,36 @@ CREATE TABLE IF NOT EXISTS `repository_members`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- Dumping data for table phpgit.repository_members: ~1 rows (approximately)
+-- Dumping data for table phpgit.repository_members: ~7 rows (approximately)
 INSERT IGNORE INTO `repository_members` (`repository_id`, `user_id`, `permission`, `added_at`)
-VALUES (2, 2, 'owner', '2026-03-29 11:03:45');
+VALUES (1, 1, 'owner', '2026-04-21 15:09:34'),
+       (1, 2, 'write', '2026-04-21 15:09:34'),
+       (1, 3, 'read', '2026-04-21 15:09:34'),
+       (2, 1, 'maintainer', '2026-04-21 15:09:34'),
+       (2, 2, 'owner', '2026-03-29 11:03:45'),
+       (4, 1, 'owner', '2026-04-18 16:02:20'),
+       (5, 1, 'owner', '2026-04-21 15:00:32'),
+       (6, 3, 'owner', '2026-04-21 17:43:11');
+
+-- Dumping structure for table phpgit.ssh_keys
+CREATE TABLE IF NOT EXISTS `ssh_keys`
+(
+    `id`          int(10) unsigned NOT NULL AUTO_INCREMENT,
+    `user_id`     int(10) unsigned NOT NULL,
+    `title`       varchar(100)     NOT NULL,
+    `key_type`    varchar(50)      NOT NULL,
+    `public_key`  text             NOT NULL,
+    `fingerprint` varchar(100)     NOT NULL,
+    `created_at`  timestamp        NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ux_ssh_keys_fingerprint` (`fingerprint`),
+    KEY `ix_ssh_keys_user` (`user_id`),
+    CONSTRAINT `fk_ssh_keys_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 3
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 
 -- Dumping structure for table phpgit.users
 CREATE TABLE IF NOT EXISTS `users`
@@ -187,12 +250,12 @@ CREATE TABLE IF NOT EXISTS `users`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
--- Dumping data for table phpgit.users: ~8 rows (approximately)
+-- Dumping data for table phpgit.users: ~7 rows (approximately)
 INSERT IGNORE INTO `users` (`id`, `username`, `email`, `password`, `display_name`, `role`, `status`, `bio`, `website`,
                             `last_login_at`, `created_at`, `updated_at`)
-VALUES (1, 'admin', 'admin@phpgit.dev', '$2y$12$u7Crv3C8JbbQ2IuRDBzyfOnsJ5by1Vo7YLt51pQT8jUQEdBhz4VNC',
+VALUES (1, 'admin', 'admin@phpgit.dev', '$2y$12$kyryYUsN06.oUdGxk7yCv.XaolMwOUeGopoccjnySCf3T/w17Mqf6',
         'System Administrator', 'ADMIN', 'ACTIVE', 'Project maintainer', 'https://phpgit.dev', NULL,
-        '2026-04-12 17:08:52', '2026-04-12 17:08:52'),
+        '2026-04-12 17:08:52', '2026-04-21 15:54:25'),
        (2, 'alice', 'alice@phpgit.dev', '$2y$12$bgj9S30gtrU/zjHPbJaHNeN0yh4nnh6CX.h9vGcQ7nYBy6hxipIOe', 'Alice Smith',
         'USER', 'ACTIVE', 'Backend contributor', 'https://alice.dev', NULL, '2026-03-29 11:03:45',
         '2026-03-29 11:03:45'),

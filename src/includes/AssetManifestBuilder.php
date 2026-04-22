@@ -18,6 +18,9 @@ final class AssetManifestBuilder
     {
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function build(bool $verbose = false): array
     {
         $manifest = [];
@@ -62,6 +65,9 @@ final class AssetManifestBuilder
         return $this->srcDir . self::MANIFEST_FILE;
     }
 
+    /**
+     * @return list<string>
+     */
     public function discoverAssets(): array
     {
         $assets = [];
@@ -84,6 +90,9 @@ final class AssetManifestBuilder
         return substr(md5_file($fullPath), 0, 8);
     }
 
+    /**
+     * @param array<string, string> $manifest
+     */
     private function writeManifest(array $manifest): void
     {
         $path = $this->manifestPath();

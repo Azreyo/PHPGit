@@ -1,8 +1,8 @@
 <?php
 
 use App\Config;
-use App\includes\Logging;
 use App\includes\Assets;
+use App\includes\Logging;
 
 $config = new Config();
 $pdo = $config->getPDO();
@@ -18,9 +18,9 @@ try {
 } catch (Exception $e) {
     Logging::loggingToFile('Error loading inbox: ' . $e->getMessage(), 4);
     echo '<div class="alert alert-danger">An error occurred while loading the inbox. Please try again later.</div>';
+
     return;
 }
-
 
 $unreadCount = count(array_filter($messages, fn ($m) => $m['unread']));
 

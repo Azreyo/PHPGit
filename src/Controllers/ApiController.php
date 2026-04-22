@@ -7,8 +7,8 @@ namespace App\Controllers;
 use App\Config;
 use App\Core\Controller;
 use App\includes\Logging;
+use App\Services\SshKeyService;
 use App\Services\SystemService;
-use JetBrains\PhpStorm\NoReturn;
 use PDO;
 use Throwable;
 
@@ -18,7 +18,7 @@ class ApiController extends Controller
 
     public function __construct()
     {
-        $this->pdo = Config::getInstance()->getPdo();
+        $this->pdo = Config::getInstance()->getPDO();
     }
 
     public function getCPU(): void
@@ -59,7 +59,7 @@ class ApiController extends Controller
             $this->error($e->getMessage());
         }
     }
-    #[NoReturn]
+
     public function getHealth(): void
     {
         $this->requireMethod('GET');
@@ -113,6 +113,8 @@ class ApiController extends Controller
         if ($this->pdo === null) {
             $this->error('Database unavailable', 503);
         }
+
+        $dashboardInfo = null;
 
         try {
             $stmt = $this->pdo->prepare('
@@ -169,16 +171,17 @@ class ApiController extends Controller
         $this->requireAdminSession();
 
         if ($this->pdo === null) {
+            Logging::loggingToFile('markInboxRead error: Database connection is null', 4, true, true);
             $this->error('Database unavailable', 503);
         }
 
         $body = json_decode(file_get_contents('php://input'), true);
         $ids = $body['ids'] ?? [];
 
-        if (!is_array($ids) || $ids === []) {
+        if (! is_array($ids) || $ids === []) {
             $this->error('No IDs provided', 400);
         }
-        $ids = array_values(array_filter(array_map('intval', $ids), fn(int $id) => $id > 0));
+        $ids = array_values(array_filter(array_map('intval', $ids), fn (int $id) => $id > 0));
 
         if ($ids === []) {
             $this->error('No valid IDs provided', 400);
@@ -187,7 +190,7 @@ class ApiController extends Controller
         try {
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
             $stmt = $this->pdo->prepare(
-                "UPDATE inbox SET unread = 0 WHERE id IN ($placeholders) AND unread = 1"
+                "UPDATE inbox SET unread = 0 WHERE id IN ({$placeholders}) AND unread = 1"
             );
             $stmt->execute($ids);
             $this->success(['updated' => $stmt->rowCount()]);
@@ -197,6 +200,97 @@ class ApiController extends Controller
         }
     }
 
+    public function addSshKey(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireLoggedInSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $body = json_decode((string)file_get_contents('php://input'), true);
+        $title = trim((string)($body['title'] ?? ''));
+        $publicKey = trim((string)($body['public_key'] ?? ''));
+
+        if ($title === '' || $publicKey === '') {
+            $this->error('Title and public_key are required', 400);
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $service = $this->buildSshKeyService();
+
+        $result = $service->addKey($userId, $title, $publicKey);
+
+        if (!$result['success']) {
+            $this->error($result['error'] ?? 'Failed to add key', 400);
+        }
+
+        $this->success(['key' => $result['key']]);
+    }
+
+    public function deleteSshKey(): void
+    {
+        $this->requireMethod('DELETE');
+        $this->requireLoggedInSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $body = json_decode((string)file_get_contents('php://input'), true);
+        $keyId = (int)($body['id'] ?? 0);
+
+        if ($keyId <= 0) {
+            $this->error('Invalid key ID', 400);
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $service = $this->buildSshKeyService();
+
+        if (!$service->deleteKey($keyId, $userId)) {
+            $this->error('Key not found or not owned by you', 404);
+        }
+
+        $this->success(['deleted' => $keyId]);
+    }
+
+    public function listSshKeys(): void
+    {
+        $this->requireMethod('GET');
+        $this->requireLoggedInSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $service = $this->buildSshKeyService();
+
+        $this->success(['keys' => $service->listKeys($userId)]);
+    }
+
+    private function buildSshKeyService(): SshKeyService
+    {
+        $pdo = $this->pdo;
+        if ($pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $authorizedKeys = rtrim($_ENV['AUTHORIZED_KEYS_PATH'] ?? '', '/');
+        $gitShellWrapper = rtrim($_ENV['GIT_SHELL_WRAPPER'] ?? '', '/');
+
+        if ($authorizedKeys === '') {
+            $authorizedKeys = '/home/git/.ssh/authorized_keys';
+        }
+        if ($gitShellWrapper === '') {
+            $gitShellWrapper = dirname(__DIR__, 2) . '/bin/git-shell-wrapper.php';
+        }
+
+        return new SshKeyService($pdo, $authorizedKeys, $gitShellWrapper);
+    }
+
+
     public function api(string $endpoint): void
     {
         $cleanEndpoint = preg_replace('/[^a-z_]/', '', strtolower($endpoint)) ?: '';
@@ -205,6 +299,9 @@ class ApiController extends Controller
             'getdashboardinfo' => $this->getDashboardInfo(),
             'getdatabaseuptime' => $this->getDatabaseInfo(),
             'markinboxread' => $this->markInboxRead(),
+            'addsshkey' => $this->addSshKey(),
+            'deletesshkey' => $this->deleteSshKey(),
+            'listsshkeys' => $this->listSshKeys(),
             default => $this->notFound('Unknown API endpoint'),
         };
     }
