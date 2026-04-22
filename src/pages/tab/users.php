@@ -13,13 +13,82 @@ $csrf_token = '';
 $errors = [];
 $users = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($config->getPDO() === null) {
-        $errors[] = 'Database connection is not available. Please try again later.';
-    }
+    $action = $_POST['action'] ?? '';
     if (! $security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     }
-    // TODO : sprav to
+    switch ($action) {
+        case 'create_user':
+            $username = trim($_POST['username'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $role = $_POST['role'] ?? 'USER';
+            $status = $_POST['status'] ?? 'ACTIVE';
+
+            if (empty($username)) {
+                $errors[] = 'Username is required.';
+            }
+            if (empty($email)) {
+                $errors[] = 'Email is required.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = 'Invalid email format.';
+            }
+            if (empty($password)) {
+                $errors[] = 'Password is required.';
+            } elseif (strlen($password) < 8) {
+                $errors[] = 'Password must be at least 8 characters long.';
+            }
+            if (!in_array($role, ['USER', 'ADMIN'], true)) {
+                $errors[] = 'Invalid role selected.';
+            }
+            if (!in_array($status, ['ACTIVE', 'INACTIVE', 'SUSPENDED'], true)) {
+                $errors[] = 'Invalid status selected.';
+            }
+            try {
+                $pdo = $config->getPDO();
+                if ($pdo !== null) {
+                    $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE email = ?');
+                    $stmt->execute([$email]);
+                    if ($stmt->fetchColumn() > 0) {
+                        $errors[] = 'Email is already in use.';
+                    }
+                    $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE username = ?');
+                    $stmt->execute([$username]);
+                    if ($stmt->fetchColumn() > 0) {
+                        $errors[] = 'Username is already taken.';
+                    }
+                } else {
+                    $errors[] = 'Database connection is not available. Please try again later.';
+                }
+            } catch (PDOException $e) {
+                Logging::loggingToFile('Error checking existing email: ' . $e->getMessage(), 4);
+                $errors[] = 'An error occurred while validating the email. Please try again.';
+            }
+
+            if (empty($errors)) {
+                try {
+                    $pdo = $config->getPDO();
+                    if ($pdo !== null) {
+                        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                        $stmt = $pdo->prepare(
+                                'INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)'
+                        );
+                        $stmt->execute([$username, $email, $hashedPassword, $role, $status]);
+                        echo '<script>window.location.href="index.php?page=dashboard&tab=users&success=created";</script>';
+                        exit;
+                    } else {
+                        $errors[] = 'Database connection is not available. Please try again later.';
+                    }
+                } catch (PDOException $e) {
+                    Logging::loggingToFile('Error creating user: ' . $e->getMessage(), 4);
+                    $errors[] = 'An error occurred while creating the user. Please try again.';
+                }
+            }
+            break;
+        default:
+            Logging::loggingToFile('Unknown form action: ' . ($_POST['action'] ?? ''), 4);
+            break;
+    }
 }
 
 try {
