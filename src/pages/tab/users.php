@@ -9,7 +9,7 @@ use Random\RandomException;
 
 $config = new Config();
 $security = new Security();
-$csrf_token = null;
+$csrf_token = '';
 $errors = [];
 $users = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

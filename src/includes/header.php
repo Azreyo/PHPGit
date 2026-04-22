@@ -10,7 +10,7 @@ use Random\RandomException;
 /** @var string $role */
 
 $security = new Security();
-$csrf_token = null;
+$csrf_token = '';
 
 try {
     $csrf_token = $security->generateCsrfToken();

@@ -564,7 +564,9 @@ class GitReaderService
             unset($node);
         }
         // Sort: directories first, then files, both alphabetically
-        /** @var \Closure(array<mixed>):void $sort */
+        /**
+         * @param array $nodes
+         */
         $sort = static function (array &$nodes) use (&$sort): void {
             uasort($nodes, static function (mixed $a, mixed $b): int {
                 /** @var array{name:string,type:string} $a */

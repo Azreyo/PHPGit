@@ -4,10 +4,10 @@
 
 PHPGit is a school project and does not currently follow strict release versioning for security support.
 
-| Version/Branch | Supported |
-| --- | --- |
-| `main` (latest) | :white_check_mark: |
-| Older commits/forks | :x: |
+| Version/Branch      | Supported          |
+|---------------------|--------------------|
+| `main` (latest)     | :white_check_mark: |
+| Older commits/forks | :x:                |
 
 ## Security Scope
 

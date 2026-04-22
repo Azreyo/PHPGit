@@ -9,7 +9,7 @@ use Random\RandomException;
 /** @var string $username */
 
 $security = new Security();
-$csrf_token = null;
+$csrf_token = '';
 $errors = [];
 
 try {

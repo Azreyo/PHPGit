@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpNoReturnAttributeCanBeAddedInspection */
 
 declare(strict_types=1);
 
@@ -7,9 +7,10 @@ namespace App\Core;
 class Controller
 {
     /**
-     * @param array<mixed> $data
+     * @param array $data
+     * @param int $statusCode
      * @param array<string, string> $headers
-     * @return never
+     * @return void
      */
     protected function json(array $data, int $statusCode = 200, array $headers = []): void
     {
@@ -25,27 +26,38 @@ class Controller
     }
 
     /**
-     * @param array<mixed> $data
-     * @return never
+     * @param array $data
+     * @param int $statusCode
+     * @return void
      */
     protected function success(array $data, int $statusCode = 200): void
     {
         $this->json($data, $statusCode);
     }
 
-    /** @return never */
+    /**
+     * @param string $message
+     * @param int $statusCode
+     * @return void
+     */
     protected function error(string $message, int $statusCode = 500): void
     {
         $this->json(['error' => $message], $statusCode);
     }
 
-    /** @return never */
+    /**
+     * @param string $message
+     * @return void
+     */
     protected function badRequest(string $message = 'Bad request'): void
     {
         $this->error($message, 400);
     }
 
-    /** @return never */
+    /**
+     * @param string $message
+     * @return void
+     */
     protected function notFound(string $message = 'Not found'): void
     {
         $this->error($message, 404);
@@ -53,7 +65,7 @@ class Controller
 
     /**
      * @param array<string> $allowedMethods
-     * @return never
+     * @return void
      */
     protected function methodNotAllowed(array $allowedMethods): void
     {
