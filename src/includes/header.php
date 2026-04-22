@@ -8,6 +8,7 @@ use Random\RandomException;
 /** @var string $page */
 /** @var bool $is_logged_in */
 /** @var string $role */
+/** @var string $username */
 
 $security = new Security();
 $csrf_token = '';
@@ -59,6 +60,14 @@ try {
                                     <li>
                                         <a class="dropdown-item" href="/index.php?page=new_repo">
                                             <i class="bi bi-folder-plus me-2"></i>New repository
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/<?php echo rawurlencode($username); ?>">
+                                            <i class="bi bi-person me-2"></i>Your profile
                                         </a>
                                     </li>
                                     <li>

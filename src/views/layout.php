@@ -47,7 +47,7 @@ use App\includes\Assets;
 $allowedPages = [
     'home', 'about', 'contact', 'explore', 'login', 'register', 'logout',
     '404', '403', '414', 'terms', 'settings', 'repos', 'new_repo',
-        'dashboard', 'phpinfo', 'repo_view',
+        'dashboard', 'phpinfo', 'repo_view', 'profile_viewer',
 ];
 $safePage = in_array($page, $allowedPages, true) ? $page : '404';
 include __DIR__ . '/../includes/header.php';

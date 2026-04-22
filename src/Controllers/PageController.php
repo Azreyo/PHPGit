@@ -23,7 +23,7 @@ final class PageController
         '414' => 'URI too long',
         'terms' => 'Terms of Service',
         'repo_view' => 'Repository',
-        'profile_viewer' => 'Profile',
+        'profile_view' => 'Profile',
     ];
 
     /** @var array<string, string> */
