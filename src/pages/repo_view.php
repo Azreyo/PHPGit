@@ -164,18 +164,22 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                     <div class="p-4">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold text-secondary">Repository name</label>
-                                <input type="text" class="form-control" value="<?= RepoViewController::e($rName) ?>"
+                                <label for="repoNamePreview" class="form-label small fw-semibold text-secondary">Repository
+                                    name</label>
+                                <input id="repoNamePreview" type="text" class="form-control"
+                                       value="<?= RepoViewController::e($rName) ?>"
                                        disabled>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold text-secondary">Default branch</label>
-                                <input type="text" class="form-control" value="<?= RepoViewController::e($rBranch) ?>"
+                                <label for="repoBranchPreview" class="form-label small fw-semibold text-secondary">Default
+                                    branch</label>
+                                <input id="repoBranchPreview" type="text" class="form-control"
+                                       value="<?= RepoViewController::e($rBranch) ?>"
                                        disabled>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-semibold text-secondary">Description</label>
-                                <textarea class="form-control" rows="3"
+                                <label for="repoDescriptionPreview" class="form-label small fw-semibold text-secondary">Description</label>
+                                <textarea id="repoDescriptionPreview" class="form-control" rows="3"
                                           disabled><?= RepoViewController::e($rDesc !== '' ? $rDesc : 'No description.') ?></textarea>
                             </div>
                         </div>
