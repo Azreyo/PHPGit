@@ -67,7 +67,7 @@ class Logging
         $ip = null;
 
         if (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $forwardedIps = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $forwardedIps = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
             foreach ($forwardedIps as $forwardedIp) {
                 $candidate = trim($forwardedIp);
                 if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6) !== false) {

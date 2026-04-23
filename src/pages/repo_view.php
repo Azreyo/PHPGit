@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
+use App\Config;
 use App\Controllers\RepoViewController;
 use App\includes\Assets;
+use App\includes\Logging;
 
 /** @var bool $is_logged_in */
 /** @var string $role */
@@ -10,6 +12,10 @@ $rv = new RepoViewController();
 if (! $rv->handle($is_logged_in, $role)) {
     return;
 }
+
+$config = Config::getInstance();
+$pdo = $config->getPDO();
+
 $rawSlug = $rv->rawSlug;
 $currentBranch = $rv->currentBranch;
 $currentPath = $rv->currentPath;
@@ -17,6 +23,7 @@ $viewMode = $rv->viewMode;
 $isEmpty = $rv->isEmpty;
 $isOwner = $rv->isOwner;
 $isAdmin = $rv->isAdmin;
+$repo = $rv->repo;
 $branches = $rv->branches;
 $treeEntries = $rv->treeEntries;
 $commitMap = $rv->commitMap;
@@ -70,6 +77,7 @@ $codeTabUrl = '/' . $rSlug;
 $issuesTabUrl = '/' . $rSlug . '?tab=issues';
 $pullsTabUrl = '/' . $rSlug . '?tab=pulls';
 $settingsTabUrl = '/' . $rSlug . '?tab=settings';
+
 ?>
 <link rel="stylesheet" href="<?= Assets::url('assets/css/repo_view.css') ?>">
 <main class="container-fluid px-4 px-xl-5 py-5" style="max-width:1600px;margin:0 auto;">
@@ -380,8 +388,6 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                             <i class="bi bi-gear"></i>
                             Repository settings
                         </h5>
-                        <p class="text-secondary mb-0" style="font-size:.85rem;">Visual shell for repository
-                            configuration.</p>
                     </div>
                     <div class="p-4">
                         <form method="POST" class="row g-3">
@@ -450,16 +456,13 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                         <h6 class="mb-1 fw-bold text-danger d-flex align-items-center gap-2">
                             <i class="bi bi-exclamation-triangle"></i>Danger zone
                         </h6>
-                        <p class="mb-0 text-danger-emphasis" style="font-size:.82rem;">These actions are intentionally
-                            disabled for now.</p>
                     </div>
                     <div class="p-4 d-flex flex-column gap-2">
-                        <button class="btn btn-outline-danger text-start" type="button" disabled>Transfer ownership
-                        </button>
-                        <button class="btn btn-outline-danger text-start" type="button" disabled>Archive this
-                            repository
-                        </button>
-                        <button class="btn btn-danger text-start" type="button" disabled>Delete this repository</button>
+                        <form method="post">
+                            <input type="hidden" name="csrf_token" value="<?= RepoViewController::e($csrfToken); ?>">
+                            <input type="hidden" name="repo_action" value="repo_delete">
+                            <button class="btn btn-danger text-start" type="submit" onclick="return confirm('Are you sure you want to delete this repository?')">Delete this repository</button>
+                        </form>
                     </div>
                 </div>
             <?php endif; ?>
