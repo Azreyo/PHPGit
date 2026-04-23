@@ -165,6 +165,61 @@ class ApiController extends Controller
         }
     }
 
+    private function getLogs(): void
+    {
+        $this->requireMethod('GET');
+        $this->requireAdminSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+
+        $defaultLimit = 100;
+        $maxLimit = 1000;
+        $requestedLimit = filter_input(
+            INPUT_GET,
+            'limit',
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1, 'max_range' => $maxLimit]]
+        );
+        $limit = $requestedLimit === false || $requestedLimit === null
+            ? $defaultLimit
+            : $requestedLimit;
+
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT ?'
+            );
+            $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            Logging::loggingToFile('Logs fetch error: ' . $e->getMessage(), 4, true, true);
+            $this->error('Could not fetch logs');
+        }
+
+        $counters = [
+            'critical' => 0,
+            'error' => 0,
+            'warning' => 0,
+            'info' => 0,
+        ];
+
+        foreach ($logs as $log) {
+            $level = strtolower((string)($log['level'] ?? ''));
+            if (array_key_exists($level, $counters)) {
+                $counters[$level]++;
+            }
+        }
+
+        $this->success([
+            'logs' => $logs,
+            'limit' => $limit,
+            'count' => count($logs),
+            'counters' => $counters,
+        ]);
+    }
+
     private function markInboxRead(): void
     {
         $this->requireMethod('POST');
@@ -297,6 +352,7 @@ class ApiController extends Controller
         match ($cleanEndpoint) {
             'getdashboardinfo' => $this->getDashboardInfo(),
             'getdatabaseuptime' => $this->getDatabaseInfo(),
+            'getlogs' => $this->getLogs(),
             'markinboxread' => $this->markInboxRead(),
             'addsshkey' => $this->addSshKey(),
             'deletesshkey' => $this->deleteSshKey(),

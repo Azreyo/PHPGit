@@ -83,6 +83,22 @@
         ).hide();
         window.inboxFilter();
     };
+    window.inboxReplied = function () {
+        if (!currentArticle) {
+            return;
+        }
+        currentArticle.dataset.status = "replied";
+        const badgeEl = currentArticle.querySelector(".badge");
+        if (badgeEl) {
+            badgeEl.textContent = "Replied";
+            badgeEl.className = "badge text-bg-success rounded-pill";
+            badgeEl.style.fontSize = ".72rem";
+        }
+        bootstrap.Modal.getInstance(
+            document.getElementById("inboxModal")
+        ).hide();
+        window.inboxFilter();
+    }
 
     window.inboxSetTab = function (btn, filter) {
         activeFilter = filter;

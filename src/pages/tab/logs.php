@@ -13,6 +13,7 @@ $pdo = $config->getPDO();
 $logs = [];
 $csrf_token = null;
 $default_log_limit = 100;
+$logs_api_endpoint = '/api/v1/getLogs.php';
 
 try {
     if ($pdo === null) {
@@ -24,6 +25,8 @@ try {
 } catch (PDOException $e) {
     Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
 }
+
+$count = count($logs);
 
 $critical_count = 0;
 $error_count = 0;
@@ -106,27 +109,34 @@ try {
     </div>
 </section>
 
-<section class="admin-log-shell">
+<section class="admin-log-shell"
+         data-logs-endpoint="<?php echo htmlspecialchars($logs_api_endpoint, ENT_QUOTES, 'UTF-8'); ?>">
     <header class="admin-log-toolbar">
-        <div class="input-group input-group-sm" style="max-width: 75px;">
-            <label for="log-search-by-int" class="visually-hidden">Search logs</label>
-            <input type="number" class="form-control bg-transparent border-light border-opacity-25 text-light"
-                   id="log-search-by-int" value="100">
-        </div>
+        <form id="log-limit-form" class="d-flex align-items-center gap-2" method="get"
+              action="<?php echo htmlspecialchars($logs_api_endpoint, ENT_QUOTES, 'UTF-8'); ?>">
+            <label for="log-search-by-int" class="visually-hidden">Log limit</label>
+            <div class="input-group input-group-sm" style="max-width: 185px;">
+                <input type="number" class="form-control bg-transparent border-light border-opacity-25 text-light"
+                       id="log-search-by-int" name="limit" min="1" max="1000" value="<?php echo $default_log_limit; ?>">
+                <button type="submit" class="btn btn-sm btn-outline-light">Fetch</button>
+            </div>
+        </form>
         <div class="d-flex flex-wrap gap-2">
             <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Critical"
-                    aria-pressed="false">Critical (<?= $critical_count; ?>)
+                    aria-pressed="false">Critical (<span id="log-count-critical"><?php echo $critical_count; ?></span>)
             </button>
             <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Error"
-                    aria-pressed="false">Error (<?= $error_count; ?>)
+                    aria-pressed="false">Error (<span id="log-count-error"><?php echo $error_count; ?></span>)
             </button>
             <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Warning"
-                    aria-pressed="false">Warning (<?= $warning_count; ?>)
+                    aria-pressed="false">Warning (<span id="log-count-warning"><?php echo $warning_count; ?></span>)
             </button>
             <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Info"
-                    aria-pressed="false">Info (<?= $info_count ?>)</button>
+                    aria-pressed="false">Info (<span id="log-count-info"><?php echo $info_count; ?></span>)
+            </button>
             <button type="button" class="btn btn-sm btn-secondary rounded-pill" id="log-clear-filters">Clear Filters</button>
         </div>
+        <div class="alert alert-danger py-2 px-3 mb-0 d-none" id="log-fetch-error" role="alert"></div>
     </header>
 
     <div class="table-responsive" style="max-height: 640px;">
@@ -138,7 +148,7 @@ try {
                 <th class="pe-4">Message</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="log-table-body">
             <?php
             foreach ($logs as $log):
 
@@ -163,8 +173,7 @@ try {
     </div>
 
     <footer class="admin-log-footer">
-        <small>Showing latest 100 entries</small>
-        <button type="button" class="btn btn-link text-info text-decoration-none p-0">Fetch older entries</button>
+        <small id="log-footer-count">Showing latest <?php echo $count; ?> entries</small>
     </footer>
 </section>
 

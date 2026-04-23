@@ -2,6 +2,7 @@
 
 use App\Config;
 use App\includes\Assets;
+use App\includes\Security;
 use App\includes\Logging;
 
 $config = new Config();
@@ -96,9 +97,6 @@ function inboxInitials(string $name): string
     </button>
     <button type="button" class="inbox-tab btn btn-sm rounded-2 px-3 text-secondary" data-filter="replied"
             style="font-size: .82rem;" onclick="inboxSetTab(this, 'replied')">Replied
-    </button>
-    <button type="button" class="inbox-tab btn btn-sm rounded-2 px-3 text-secondary" data-filter="archived"
-            style="font-size: .82rem;" onclick="inboxSetTab(this, 'archived')">Archived
     </button>
     <button type="button" class="inbox-tab btn btn-sm rounded-2 px-3 text-secondary" data-filter="archived"
             style="font-size: .82rem;" onclick="inboxSetTab(this, 'archived')">Archived
@@ -216,11 +214,21 @@ function inboxInitials(string $name): string
                      style="white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: .95rem; line-height: 1.75; margin: 0;"></pre>
             </div>
 
-            <div class="modal-footer border-top border-secondary-subtle px-4 py-3 gap-2 justify-content-between">
-                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
-                        onclick="inboxArchive()">
-                    <i class="bi bi-archive me-2"></i>Archive
-                </button>
+            <div class="modal-footer border-top border-secondary-subtle px-4 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex gap-2">
+                    <form method="post">
+                        <input type="hidden" name="inbox_id" id="inboxModalId">
+                        <input type="hidden" name="inbox_status" id="inboxModalStatus">
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                onclick="inboxReplied()">
+                            <i class="bi bi-archive me-2"></i>Mark as replied
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                            onclick="inboxArchive()">
+                        <i class="bi bi-archive me-2"></i>Archive
+                    </button>
+                </div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3"
                             data-bs-dismiss="modal">
@@ -230,6 +238,7 @@ function inboxInitials(string $name): string
                         <i class="bi bi-reply me-2"></i>Reply via email
                     </a>
                 </div>
+
             </div>
         </div>
     </div>
