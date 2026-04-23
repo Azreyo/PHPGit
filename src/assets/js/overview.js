@@ -1,31 +1,27 @@
 let has_run = false;
 const recentSecurityLogLimit = 5;
-const recentSecurityLogList = (
-    document.getElementById("recent-security-log-list")
+const recentSecurityLogList = document.getElementById(
+    "recent-security-log-list"
 );
-const clearCacheButton = (
-    document.getElementById("overview-clear-cache-btn")
+const clearCacheButton = document.getElementById(
+    "overview-clear-cache-btn"
 );
-const restartServicesButton = (
-    document.getElementById("overview-restart-services-btn")
+const restartServicesButton = document.getElementById(
+    "overview-restart-services-btn"
 );
-const actionStatus = (
-    document.getElementById("overview-action-status")
+const actionStatus = document.getElementById(
+    "overview-action-status"
 );
-const serverLoadValue = (
-    document.getElementById("server-load")
-);
-const serverLatencyValue = (
-    document.getElementById("server-latency")
-);
+const serverLoadValue = document.getElementById("server-load");
+const serverLatencyValue = document.getElementById("server-latency");
 
 function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    let escaped = String(value).replace(/&/g, "&amp;");
+    escaped = escaped.replace(/</g, "&lt;");
+    escaped = escaped.replace(/>/g, "&gt;");
+    escaped = escaped.replace(/"/g, "&quot;");
+    escaped = escaped.replace(/'/g, "&#039;");
+    return escaped;
 }
 
 function resolveLogPresentation(level) {
@@ -69,13 +65,15 @@ function showActionStatus(message, type) {
         "alert-danger",
         "alert-info"
     );
-    actionStatus.classList.add(
-        type === "success"
-            ? "alert-success"
-            : type === "error"
-                ? "alert-danger"
-                : "alert-info"
-    );
+
+    let statusClass = "alert-info";
+    if (type === "success") {
+        statusClass = "alert-success";
+    } else if (type === "error") {
+        statusClass = "alert-danger";
+    }
+
+    actionStatus.classList.add(statusClass);
     actionStatus.textContent = message;
 }
 
@@ -99,23 +97,20 @@ function renderRecentSecurityLogs(logs) {
         const time = escapeHtml(log.time || "Just now");
         const message = escapeHtml(log.msg || "No message provided.");
 
-        return "<article class=\"admin-activity-item\">" +
-            "<div class=\"admin-activity-icon text-" +
-            style.color +
-            " bg-" +
-            style.color +
-            " bg-opacity-10\">" +
-            "<i class=\"bi " + style.icon + "\"></i>" +
-            "</div>" +
-            "<div class=\"flex-grow-1\">" +
-            "<div class=\"d-flex justify-content-between " +
-            "align-items-start mb-1 gap-2\">" +
-            "<h6 class=\"mb-0 fw-semibold\">" + level + "</h6>" +
-            "<small class=\"text-secondary\">" + time + "</small>" +
-            "</div>" +
-            "<p class=\"mb-0 text-secondary small\">" + message + "</p>" +
-            "</div>" +
-            "</article>";
+        return (`<article class="admin-activity-item">
+            <div class="admin-activity-icon text-${style.color}"
+              bg-${style.color} bg-opacity-10>
+              <i class="bi ${style.icon}"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-start"
+                mb-1 gap-2>
+                <h6 class="mb-0 fw-semibold">${level}</h6>
+                <small class="text-secondary">${time}</small>
+              </div>
+              <p class="mb-0 text-secondary small">${message}</p>
+            </div>
+          </article>`);
     });
 
     recentSecurityLogList.innerHTML = entries.join("");
@@ -123,8 +118,10 @@ function renderRecentSecurityLogs(logs) {
 
 async function getRecentSecurityLogs() {
     try {
-        const response = await fetch("/api/v1/getLogs.php?limit=" + (
-            recentSecurityLogLimit + "&security=1")
+        const response = await fetch(
+            "/api/v1/getLogs.php?limit=" +
+            recentSecurityLogLimit +
+            "&security=1"
         );
         const data = await response.json();
 
@@ -141,7 +138,9 @@ async function getRecentSecurityLogs() {
 }
 
 async function runMaintenanceAction(
-    endpoint, loadingMessage, successFallbackMessage
+    endpoint,
+    loadingMessage,
+    successFallbackMessage
 ) {
     if (clearCacheButton) {
         clearCacheButton.disabled = true;
@@ -201,9 +200,11 @@ function initMaintenanceButtons() {
 
     if (restartServicesButton) {
         restartServicesButton.addEventListener("click", function () {
-            runMaintenanceAction("/api/v1/restartServices.php",
+            runMaintenanceAction(
+                "/api/v1/restartServices.php",
                 "Restarting services...",
-                "Service restart request submitted");
+                "Service restart request submitted"
+            );
         });
     }
 }
