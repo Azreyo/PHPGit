@@ -387,9 +387,13 @@ try {
     <div class="admin-table-toolbar">
         <div class="input-group" style="max-width: 360px;">
             <span class="input-group-text bg-body border-end-0"><i class="bi bi-search"></i></span>
-            <label>
-                <input type="text" class="form-control border-start-0" placeholder="Search by name, email, role...">
-            </label>
+            <label for="usersSearch" class="visually-hidden">Search users</label>
+            <input type="search" id="usersSearch" class="form-control border-start-0"
+                   placeholder="Search by name, email, role..." autocomplete="off">
+            <button type="button" id="usersSearchClear" class="btn btn-outline-secondary border-start-0"
+                    aria-label="Clear search">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
         <button type="button" class="btn btn-outline-secondary rounded-3 px-3">
             <i class="bi bi-funnel me-2"></i>Filter
@@ -421,7 +425,12 @@ try {
                     default => 'warning'
                 };
                 ?>
-                <tr class="users-row">
+                <tr class="users-row"
+                    data-username="<?php echo htmlspecialchars($u['username'], ENT_QUOTES, 'UTF-8'); ?>"
+                    data-email="<?php echo htmlspecialchars($u['email'], ENT_QUOTES, 'UTF-8'); ?>"
+                    data-role="<?php echo htmlspecialchars($u['role'], ENT_QUOTES, 'UTF-8'); ?>"
+                    data-status="<?php echo htmlspecialchars($u['status'], ENT_QUOTES, 'UTF-8'); ?>"
+                    data-display-name="<?php echo htmlspecialchars($u['display_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                     <td class="ps-4">
                         <div class="d-flex align-items-center gap-3">
                             <span class="avatar-circle" style="width: 42px; height: 42px; font-size: 0.85rem;">

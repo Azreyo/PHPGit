@@ -2,6 +2,44 @@
     const pageSize = 10;
     let currentPage = 1;
     let lastPage = 1;
+    const searchInput = document.getElementById("usersSearch");
+    const searchClearButton = document.getElementById("usersSearchClear");
+
+    function getSearchQuery() {
+        if (!searchInput) {
+            return "";
+        }
+        const value = searchInput.value || "";
+        return value.toLowerCase().trim();
+    }
+
+    function getMatchedRows(rows) {
+        const query = getSearchQuery();
+        if (!query) {
+            return rows;
+        }
+
+        return rows.filter(function (row) {
+            const searchText = [
+                row.dataset.displayName || "",
+                row.dataset.username || "",
+                row.dataset.email || "",
+                row.dataset.role || "",
+                row.dataset.status || ""
+            ].join(" ").toLowerCase();
+
+            return searchText.indexOf(query) >= 0;
+        });
+    }
+
+    function updateSearchClearButton() {
+        if (!searchClearButton || !searchInput) {
+            return;
+        }
+        const value = searchInput.value || "";
+        const hasValue = value.trim().length > 0;
+        searchClearButton.disabled = !hasValue;
+    }
 
     function updatePagination(totalUsers) {
         const indicator = document.getElementById("usersPageIndicator");
@@ -41,12 +79,24 @@
         }
     }
 
-    function applyUsersPagination() {
-        const rows = Array.from(document.querySelectorAll("#usersList .users-row"));
-        const totalUsers = rows.length;
+    function applyUsersPagination(resetPage) {
+        let shouldResetPage = false;
+        if (typeof resetPage === "boolean") {
+            shouldResetPage = resetPage;
+        }
+
+        const rows = Array.from(
+            document.querySelectorAll("#usersList .users-row")
+        );
+        const matchedRows = getMatchedRows(rows);
+        const totalUsers = matchedRows.length;
         let maxPage = 1;
         if (totalUsers > 0) {
             maxPage = Math.ceil(totalUsers / pageSize);
+        }
+
+        if (shouldResetPage) {
+            currentPage = 1;
         }
 
         if (currentPage > maxPage) {
@@ -61,19 +111,25 @@
         const pageEnd = pageStart + pageSize;
         let visibleUsers = 0;
 
-        rows.forEach(function (row, index) {
-            const isVisible = index >= pageStart && index < pageEnd;
-            row.classList.toggle("d-none", !isVisible);
-            if (isVisible) {
+        rows.forEach(function (row) {
+            row.classList.add("d-none");
+        });
+
+        matchedRows.forEach(function (row, index) {
+            if (index >= pageStart && index < pageEnd) {
+                row.classList.remove("d-none");
                 visibleUsers += 1;
             }
         });
 
         const usersCount = document.getElementById("usersCount");
         if (usersCount) {
-            usersCount.textContent = "Showing " + visibleUsers + " of " + totalUsers + " users";
+            usersCount.textContent = (
+                "Showing " + visibleUsers + " of " + totalUsers + " users"
+            );
         }
 
+        updateSearchClearButton();
         updatePagination(totalUsers);
     }
 
@@ -85,7 +141,7 @@
                 return;
             }
             currentPage -= 1;
-            applyUsersPagination();
+            applyUsersPagination(false);
         });
     }
     if (nextButton) {
@@ -94,11 +150,27 @@
                 return;
             }
             currentPage += 1;
-            applyUsersPagination();
+            applyUsersPagination(false);
         });
     }
 
-    applyUsersPagination();
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            applyUsersPagination(true);
+        });
+    }
+
+    if (searchClearButton) {
+        searchClearButton.addEventListener("click", function () {
+            if (searchInput) {
+                searchInput.value = "";
+                searchInput.focus();
+            }
+            applyUsersPagination(true);
+        });
+    }
+
+    applyUsersPagination(true);
 
     const createModal = document.getElementById("createUserModal");
     if (createModal) {
