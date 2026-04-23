@@ -53,7 +53,7 @@ $programming_languages = [
 
 $search_query = trim($_GET['q'] ?? '');
 if (strlen($search_query) > 100) {
-    echo '<script>window.location.href="index.php?page=414";</script>';
+    echo '<script>window.location.href="/414";</script>';
     exit;
 }
 if ($search_query !== '') {
@@ -75,8 +75,7 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
 
         <div class="row justify-content-center mb-4">
             <div class="col-lg-8">
-                <form method="GET" action="index.php" class="d-flex gap-2">
-                    <input type="hidden" name="page" value="explore">
+                <form method="GET" action="/explore" class="d-flex gap-2">
                     <input type="search" name="q" class="form-control" placeholder="Search repositories..."
                            value="<?php echo htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8'); ?>">
                     <button type="submit" class="btn btn-primary px-4">Search</button>
@@ -85,10 +84,10 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
         </div>
 
         <ul class="nav nav-tabs mb-4">
-            <li class="nav-item"><a class="nav-link active" href="index.php?page=explore">All</a></li>
-            <li class="nav-item"><a class="nav-link" href="index.php?page=explore&lang=php">PHP</a></li>
-            <li class="nav-item"><a class="nav-link" href="index.php?page=explore&lang=js">JavaScript</a></li>
-            <li class="nav-item"><a class="nav-link" href="index.php?page=explore&lang=css">CSS</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/explore">All</a></li>
+            <li class="nav-item"><a class="nav-link" href="/explore?lang=php">PHP</a></li>
+            <li class="nav-item"><a class="nav-link" href="/explore?lang=js">JavaScript</a></li>
+            <li class="nav-item"><a class="nav-link" href="/explore?lang=css">CSS</a></li>
         </ul>
 
         <div class="row g-4 mb-5">
@@ -96,7 +95,7 @@ $programming_languages = array_change_key_case($programming_languages, CASE_UPPE
                 <div class="col-12 text-center py-5 text-secondary">
                     <p class="fs-5">No repositories found for
                         &ldquo;<?php echo htmlspecialchars($search_query, ENT_QUOTES, 'UTF-8'); ?>&rdquo;.</p>
-                    <a href="index.php?page=explore" class="btn btn-outline-secondary mt-2">Clear search</a>
+                    <a href="/explore" class="btn btn-outline-secondary mt-2">Clear search</a>
                 </div>
             <?php else: ?>
                 <?php foreach ($repos as $repo):

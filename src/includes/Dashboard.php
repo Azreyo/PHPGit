@@ -52,8 +52,8 @@ class Dashboard
                     <h1 class="fw-bold mb-2">Access Denied</h1>
                     <p class="text-secondary mb-4">You do not have administrative privileges to access this area.</p>
                     <div class="d-flex gap-3 justify-content-center">
-                        <a class="btn btn-primary" href="/index.php?page=home">Go Home</a>
-                        <a class="btn btn-outline-secondary" href="/index.php?page=settings">Settings</a>
+                        <a class="btn btn-primary" href="/home">Go Home</a>
+                        <a class="btn btn-outline-secondary" href="/settings">Settings</a>
                     </div>
                 </div>
             </div>
@@ -102,7 +102,7 @@ class Dashboard
                         $isActive = $this->current_tab === $tab;
                         ?>
                         <a class="admin-tab-link <?php echo $isActive ? 'is-active' : ''; ?>"
-                           href="/index.php?page=dashboard&tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
+                           href="/dashboard?tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
                             <span class="admin-tab-icon"><i
                                         class="bi <?php echo htmlspecialchars($tabMeta[$tab]['icon'], ENT_QUOTES, 'UTF-8'); ?>"></i></span>
                             <span class="flex-grow-1">

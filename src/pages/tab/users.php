@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)'
                         );
                         $stmt->execute([$username, $email, $hashedPassword, $role, $status]);
-                        echo '<script>window.location.href="index.php?page=dashboard&tab=users&success=created";</script>';
+                        echo '<script>window.location.href="/dashboard?tab=users&success=created";</script>';
                         exit;
                     } else {
                         $errors[] = 'Database connection is not available. Please try again later.';

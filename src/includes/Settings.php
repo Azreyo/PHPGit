@@ -48,10 +48,10 @@ class Settings
                             <h1 class="fw-bold mb-2 h4">Access Restricted</h1>
                             <p class="text-secondary mb-4">You need to be signed in to view your settings.</p>
                             <div class="d-flex gap-2 justify-content-center">
-                                <a class="btn btn-primary px-4" href="/index.php?page=login">
+                                <a class="btn btn-primary px-4" href="/login">
                                     <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
                                 </a>
-                                <a class="btn btn-outline-secondary px-4" href="/index.php?page=home">Go Home</a>
+                                <a class="btn btn-outline-secondary px-4" href="/home">Go Home</a>
                             </div>
                         </div>
                     </div>
@@ -133,7 +133,7 @@ class Settings
                     <?php endif; ?>
                     <a class="d-flex align-items-center gap-3 px-3 py-3 rounded-3 text-decoration-none mb-2
                        <?php echo $isActive ? 'bg-primary text-white shadow-sm' : 'text-body-emphasis'; ?>"
-                   href="/index.php?page=settings&tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
+                   href="/settings?tab=<?php echo htmlspecialchars($tab, ENT_QUOTES, 'UTF-8'); ?>">
                     <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0
                             <?php echo $isActive ? 'bg-white bg-opacity-25 text-white' : 'bg-primary-subtle text-primary'; ?>"
                          style="width: 34px; height: 34px; font-size: .95rem;">
@@ -155,7 +155,7 @@ class Settings
             </nav>
             <div class="p-3">
                 <div class="border-top border-secondary-subtle pt-3">
-                    <a href="/index.php?page=home"
+                    <a href="/home"
                        class="d-flex align-items-center gap-2 text-secondary text-decoration-none p-2 rounded-3"
                        style="font-size: .85rem;">
                         <i class="bi bi-house"></i>

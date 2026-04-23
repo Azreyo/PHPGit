@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmt = $pdo->prepare('DELETE FROM log');
             $stmt->execute();
             $pdo->commit();
-            echo '<script>window.location.href="index.php?page=dashboard&tab=logs";</script>';
+            echo '<script>window.location.href="/dashboard?tab=logs";</script>';
             exit;
         } catch (PDOException $e) {
             if ($pdo->inTransaction()) {
