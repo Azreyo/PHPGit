@@ -120,18 +120,15 @@
 
     window.inboxFilter = function (resetPage = true) {
         const qRaw = document.getElementById("inboxSearch").value || "";
-        const q = qRaw.toLowerCase();
+        const q = qRaw.toLowerCase().trim();
         const rows = Array.from(document.querySelectorAll("#inboxList .inbox-msg"));
         const matchedRows = [];
 
         rows.forEach(function (row) {
             const statusOk = row.dataset.status === activeFilter;
             const matchStatus = activeFilter === "all" || statusOk;
-            const inSubj = row.dataset.subject.toLowerCase().includes(q);
-            const inName = row.dataset.name.toLowerCase().includes(q);
-            const inEmail = row.dataset.email.toLowerCase().includes(q);
-            const inBody = row.dataset.body.toLowerCase().includes(q);
-            const matchSearch = !q || inSubj || inName || inEmail || inBody;
+            const subject = (row.dataset.subject || "").toLowerCase();
+            const matchSearch = !q || subject.includes(q);
 
             if (matchStatus && matchSearch) {
                 matchedRows.push(row);
