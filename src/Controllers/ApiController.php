@@ -173,7 +173,7 @@ class ApiController extends Controller
         if ($this->pdo === null) {
             $this->error('Database unavailable', 503);
         }
-
+        $logs = [];
         $defaultLimit = 100;
         $maxLimit = 1000;
         $requestedLimit = filter_input(
