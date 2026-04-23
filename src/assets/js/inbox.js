@@ -1,8 +1,20 @@
 (function () {
     const statusBadge = {
-        archived: {cls: "text-bg-secondary", label: "Archived", color: "secondary"},
-        new: {cls: "text-bg-primary", label: "New", color: "primary"},
-        replied: {cls: "text-bg-success", label: "Replied", color: "success"}
+        archived: {
+            cls: "text-bg-secondary",
+            color: "secondary",
+            label: "Archived"
+        },
+        new: {
+            cls: "text-bg-primary",
+            color: "primary",
+            label: "New"
+        },
+        replied: {
+            cls: "text-bg-success",
+            color: "success",
+            label: "Replied"
+        }
     };
 
     let currentArticle = null;
