@@ -1,3 +1,5 @@
+<?php use App\includes\Assets; ?>
+
 <div class="row g-4 mb-4">
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
@@ -20,10 +22,10 @@
     <div class="col-12 col-sm-6 col-xl-3">
         <article class="admin-metric-card h-100">
             <p class="admin-metric-label">Server Load</p>
-            <h2 class="admin-metric-value">14%</h2>
+            <h2 class="admin-metric-value" id="server-load">0%</h2>
             <div class="admin-metric-meta text-info-emphasis">
                 <i class="bi bi-speedometer2"></i>
-                <span>Avg. latency 45ms</span>
+                <span id="server-latency">Avg. latency --ms</span>
             </div>
         </article>
     </div>
@@ -36,10 +38,14 @@
             <h5 class="fw-bold mb-1">One-click Maintenance</h5>
             <p class="text-secondary small mb-0">Use these shortcuts to run common operational tasks.</p>
         </div>
-        <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-primary rounded-pill px-3">Scan Security</button>
-            <button type="button" class="btn btn-outline-secondary rounded-pill px-3">Clear Cache</button>
-            <button type="button" class="btn btn-outline-secondary rounded-pill px-3">Restart Services</button>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-3" id="overview-clear-cache-btn">
+                Clear Cache
+            </button>
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-3"
+                    id="overview-restart-services-btn">Restart Services
+            </button>
+            <div class="alert d-none mb-0 py-2 px-3" id="overview-action-status" role="status"></div>
         </div>
     </div>
 </section>
@@ -49,35 +55,15 @@
         <section class="admin-panel overflow-hidden h-100">
             <header class="admin-section-head">
                 <div>
-                    <h5 class="mb-1 fw-bold">Recent Activity</h5>
-                    <p class="text-secondary small mb-0">Latest changes across users and repositories</p>
+                    <h5 class="mb-1 fw-bold">Recent Security Log</h5>
+                    <p class="text-secondary small mb-0">Latest alerts and operational security events</p>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary rounded-3">All Events</button>
+                <a href="/dashboard?tab=logs" class="btn btn-sm btn-outline-secondary rounded-3">All Events</a>
             </header>
-            <div class="admin-activity-list">
-                <?php
-                $activities = [
-                        ['user' => 'admin', 'action' => 'Modified system settings', 'time' => '2 mins ago', 'icon' => 'bi-gear-fill', 'color' => 'primary', 'desc' => 'Updated security policies and firewall rules.'],
-                        ['user' => 'john_doe', 'action' => 'Created repository: <span class="text-primary fw-bold">web-app-v2</span>', 'time' => '15 mins ago', 'icon' => 'bi-plus-circle-fill', 'color' => 'success', 'desc' => 'New private repository initialized with MIT license.'],
-                        ['user' => 'security_bot', 'action' => 'Blocked IP: 192.168.1.1', 'time' => '1 hour ago', 'icon' => 'bi-shield-slash-fill', 'color' => 'danger', 'desc' => 'Detected multiple failed login attempts from this address.'],
-                        ['user' => 'alice', 'action' => 'Pushed to <span class="text-primary fw-bold">phpgit-core</span>', 'time' => '3 hours ago', 'icon' => 'bi-git', 'color' => 'info', 'desc' => 'Committed 12 new changes to the main branch.'],
-                ];
-                foreach ($activities as $act):
-                    ?>
-                    <article class="admin-activity-item">
-                        <div class="admin-activity-icon text-<?php echo $act['color']; ?> bg-<?php echo $act['color']; ?> bg-opacity-10">
-                            <i class="bi <?php echo $act['icon']; ?>"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-start mb-1 gap-2">
-                                <h6 class="mb-0 fw-semibold">@<?php echo $act['user']; ?></h6>
-                                <small class="text-secondary"><?php echo $act['time']; ?></small>
-                            </div>
-                            <p class="mb-1 text-body-emphasis"><?php echo $act['action']; ?></p>
-                            <p class="mb-0 text-secondary small"><?php echo $act['desc']; ?></p>
-                        </div>
-                    </article>
-                <?php endforeach; ?>
+            <div class="admin-activity-list" id="recent-security-log-list">
+                <p class="mb-0 text-secondary small px-4 py-4" id="recent-security-log-placeholder">
+                    Loading recent security logs...
+                </p>
             </div>
         </section>
     </div>
@@ -123,4 +109,4 @@
         </section>
     </div>
 </div>
-<script src="assets/js/overview.js"></script>
+<script src="<?= Assets::url('/assets/js/overview.js') ?>"></script>

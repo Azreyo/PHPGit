@@ -12,7 +12,6 @@ new ErrorHandler()->register();
 
 if (isset($_GET['raw'])) {
     (new RawController())->run();
-    exit;
 }
 
 (new PageController())->run();

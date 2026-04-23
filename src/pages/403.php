@@ -16,7 +16,7 @@ Logging::loggingToFile('Unauthorized attempt: ' . $_SERVER['REQUEST_URI'], 3, tr
             <div class="error-code text-danger mb-2">403</div>
             <h2 class="fw-bold mb-2">Access Forbidden</h2>
             <p class="text-secondary mb-4">You don't have permission to access this page.</p>
-            <a class="btn btn-primary" href="/index.php?page=home">Back to Home</a>
+            <a class="btn btn-primary" href="/home">Back to Home</a>
         </div>
         <?php if (easterEgg(1)): ?>
             <link rel="stylesheet" href="/assets/css/easter.css">

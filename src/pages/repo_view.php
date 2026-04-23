@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 use App\Controllers\RepoViewController;
 use App\includes\Assets;
+
 /** @var bool $is_logged_in */
 /** @var string $role */
 $rv = new RepoViewController();
-if (!$rv->handle($is_logged_in, $role)) {
+if (! $rv->handle($is_logged_in, $role)) {
     return;
 }
 $rawSlug = $rv->rawSlug;
@@ -43,13 +44,39 @@ $rForks = $rv->rForks;
 $httpUrl = $rv->httpUrl;
 $sshUrl = $rv->sshUrl;
 $httpBase = $rv->httpBase;
+$csrfToken = $rv->csrfToken;
+$issues = $rv->issues;
+$pullRequests = $rv->pullRequests;
+$openIssuesCount = $rv->openIssuesCount;
+$openPullRequestsCount = $rv->openPullRequestsCount;
+$tabErrors = $rv->tabErrors;
+$tabSuccess = $rv->tabSuccess;
+$detailType = $rv->detailType;
+$detailItem = $rv->detailItem;
+
+$repoDefaultBranch = (string)($rv->repo['default_branch'] ?? $currentBranch);
+$repoDescriptionRaw = (string)($rv->repo['repo_description'] ?? '');
+$repoVisibility = (string)($rv->repo['visibility'] ?? 'public');
+
+$isPrivileged = $isOwner || $isAdmin;
+$requestedTab = isset($_GET['tab']) ? strtolower(trim((string) $_GET['tab'])) : 'code';
+$allowedTabs = ['code', 'issues', 'pulls'];
+if ($isPrivileged) {
+    $allowedTabs[] = 'settings';
+}
+$activeTab = in_array($requestedTab, $allowedTabs, true) ? $requestedTab : 'code';
+
+$codeTabUrl = '/' . $rSlug;
+$issuesTabUrl = '/' . $rSlug . '?tab=issues';
+$pullsTabUrl = '/' . $rSlug . '?tab=pulls';
+$settingsTabUrl = '/' . $rSlug . '?tab=settings';
 ?>
 <link rel="stylesheet" href="<?= Assets::url('assets/css/repo_view.css') ?>">
 <main class="container-fluid px-4 px-xl-5 py-5" style="max-width:1600px;margin:0 auto;">
     <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
         <i class="bi bi-folder2 text-secondary" style="font-size:1.1rem;"></i>
         <h1 class="mb-0 fs-5 fw-normal">
-            <a href="/<?= $rSlug ?>" class="text-decoration-none"><?= $rOwner ?></a>
+            <a href="/<?= $rOwner ?>" class="text-decoration-none"><?= $rOwner ?></a>
             <span class="text-secondary mx-1">/</span>
             <a href="/<?= $rSlug ?>" class="fw-bold text-decoration-none"><?= $rName ?></a>
         </h1>
@@ -62,32 +89,384 @@ $httpBase = $rv->httpBase;
     <?php endif; ?>
     <ul class="nav rv-header-tabs mt-3 mb-0">
         <li class="nav-item">
-            <a class="nav-link active d-flex align-items-center gap-1" href="/<?= $rSlug ?>">
+            <a class="nav-link d-flex align-items-center gap-1 <?= $activeTab === 'code' ? 'active' : 'text-secondary' ?>"
+               href="<?= RepoViewController::e($codeTabUrl) ?>">
                 <i class="bi bi-code-square"></i> Code
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+            <a class="nav-link d-flex align-items-center gap-1 <?= $activeTab === 'issues' ? 'active' : 'text-secondary' ?>"
+               href="<?= RepoViewController::e($issuesTabUrl) ?>">
                 <i class="bi bi-exclamation-circle"></i> Issues
-                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:.7rem;">0</span>
+                <span class="badge <?= $activeTab === 'issues' ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-secondary' ?> ms-1"
+                      style="font-size:.7rem;"><?= number_format($openIssuesCount) ?></span>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+            <a class="nav-link d-flex align-items-center gap-1 <?= $activeTab === 'pulls' ? 'active' : 'text-secondary' ?>"
+               href="<?= RepoViewController::e($pullsTabUrl) ?>">
                 <i class="bi bi-git"></i> Pull Requests
-                <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:.7rem;">0</span>
+                <span class="badge <?= $activeTab === 'pulls' ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-secondary' ?> ms-1"
+                      style="font-size:.7rem;"><?= number_format($openPullRequestsCount) ?></span>
             </a>
         </li>
-        <?php if ($isOwner || $isAdmin): ?>
+        <?php if ($isPrivileged): ?>
             <li class="nav-item ms-auto">
-                <a class="nav-link d-flex align-items-center gap-1 text-secondary" href="#">
+                <a class="nav-link d-flex align-items-center gap-1 <?= $activeTab === 'settings' ? 'active' : 'text-secondary' ?>"
+                   href="<?= RepoViewController::e($settingsTabUrl) ?>">
                     <i class="bi bi-gear"></i> Settings
                 </a>
             </li>
         <?php endif; ?>
     </ul>
+    <?php if ($activeTab !== 'code'): ?>
+        <div class="pt-4 border-top" style="border-color:var(--bs-border-color)!important;">
+            <?php if (!empty($tabErrors)): ?>
+                <div class="alert alert-danger mb-3">
+                    <ul class="mb-0">
+                        <?php foreach ($tabErrors as $tabError): ?>
+                            <li><?= RepoViewController::e($tabError) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+            <?php if ($tabSuccess !== null): ?>
+                <div class="alert alert-success mb-3"><?= RepoViewController::e($tabSuccess) ?></div>
+            <?php endif; ?>
+            <?php if ($activeTab === 'issues'): ?>
+                <div class="border rounded-3 overflow-hidden">
+                    <div class="px-4 py-3 border-bottom bg-body-secondary d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="mb-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-exclamation-circle"></i>
+                                Issues
+                            </h5>
+                            <p class="text-secondary mb-0" style="font-size:.85rem;">Track bugs and discuss tasks
+                                for <?= RepoViewController::e($rName) ?>.</p>
+                        </div>
+                        <?php if ($is_logged_in): ?>
+                            <button class="btn btn-sm btn-success" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#newIssueForm" aria-expanded="false" aria-controls="newIssueForm">
+                                <i class="bi bi-plus-lg me-1"></i>New issue
+                            </button>
+                        <?php else: ?>
+                            <a class="btn btn-sm btn-outline-secondary" href="/login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Sign in to create
+                            </a>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ($is_logged_in): ?>
+                        <div id="newIssueForm" class="collapse border-bottom px-4 py-3 bg-body-tertiary">
+                            <form method="POST" class="row g-3">
+                                <input type="hidden" name="csrf_token" value="<?= RepoViewController::e($csrfToken) ?>">
+                                <input type="hidden" name="repo_action" value="create_issue">
+
+                                <div class="col-12">
+                                    <label for="issueTitle" class="form-label fw-semibold">Title</label>
+                                    <input id="issueTitle" type="text" name="issue_title" class="form-control"
+                                           maxlength="160" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="issueBody" class="form-label fw-semibold">Description</label>
+                                    <textarea id="issueBody" name="issue_body" class="form-control" rows="4"
+                                              maxlength="20000" placeholder="Describe the issue..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-send me-1"></i>Create issue
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (empty($issues)): ?>
+                        <div class="p-5 text-center">
+                            <i class="bi bi-chat-square-text text-secondary" style="font-size:2.4rem;"></i>
+                            <h5 class="fw-bold mt-3 mb-1">No issues yet</h5>
+                            <p class="text-secondary mb-0">Open the first issue to start discussing bugs and tasks.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="list-group list-group-flush">
+                            <?php foreach ($issues as $issue): ?>
+                                <?php
+                                $issueStatus = (string)($issue['status'] ?? 'open');
+                                $issueStatusClass = $issueStatus === 'open'
+                                        ? 'bg-success-subtle text-success border border-success-subtle'
+                                        : 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+                                $issueAuthorUsername = (string)($issue['author_username'] ?? 'unknown');
+                                $issueAuthorDisplay = trim((string)($issue['author_display_name'] ?? ''));
+                                $issueAuthorLabel = $issueAuthorDisplay !== '' ? $issueAuthorDisplay : $issueAuthorUsername;
+                                $issueCreatedAt = (string)($issue['created_at'] ?? '');
+                                $issueBody = trim((string)($issue['body'] ?? ''));
+                                $issueDetailUrl = '/' . $rSlug . '/issues/' . (int)($issue['id'] ?? 0);
+                                ?>
+                                <div class="list-group-item px-4 py-3">
+                                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold d-flex align-items-center gap-2">
+                                                <a href="<?= RepoViewController::e($issueDetailUrl) ?>"
+                                                   class="text-decoration-none"><?= RepoViewController::e((string)($issue['title'] ?? 'Untitled issue')) ?></a>
+                                                <span class="badge fw-normal <?= $issueStatusClass ?>"><?= RepoViewController::e(strtoupper($issueStatus)) ?></span>
+                                            </h6>
+                                            <div class="text-secondary" style="font-size:.82rem;">
+                                                #<?= (int)($issue['id'] ?? 0) ?> opened by
+                                                <strong class="text-body"><?= RepoViewController::e($issueAuthorLabel) ?></strong>
+                                                (@<?= RepoViewController::e($issueAuthorUsername) ?>)
+                                                <?php if ($issueCreatedAt !== ''): ?>
+                                                    &middot;
+                                                    <?= RepoViewController::e(date('d M Y H:i', (int)strtotime($issueCreatedAt))) ?>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php if ($issueBody !== ''): ?>
+                                        <p class="mb-0 mt-2 text-secondary" style="font-size:.88rem;">
+                                            <?= nl2br(RepoViewController::e($issueBody)) ?>
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+            <?php elseif ($activeTab === 'pulls'): ?>
+                <div class="border rounded-3 overflow-hidden">
+                    <div class="px-4 py-3 border-bottom bg-body-secondary d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                        <div>
+                            <h5 class="mb-1 d-flex align-items-center gap-2">
+                                <i class="bi bi-git"></i>
+                                Pull Requests
+                            </h5>
+                            <p class="text-secondary mb-0" style="font-size:.85rem;">Propose and review changes before
+                                merging into <?= RepoViewController::e($rBranch) ?>.</p>
+                        </div>
+                        <?php if ($is_logged_in): ?>
+                            <button class="btn btn-sm btn-success" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#newPullForm" aria-expanded="false" aria-controls="newPullForm">
+                                <i class="bi bi-diagram-3 me-1"></i>New pull request
+                            </button>
+                        <?php else: ?>
+                            <a class="btn btn-sm btn-outline-secondary" href="/login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Sign in to create
+                            </a>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if ($is_logged_in): ?>
+                        <div id="newPullForm" class="collapse border-bottom px-4 py-3 bg-body-tertiary">
+                            <?php $canCreatePull = !empty($branches); ?>
+                            <?php if (!$canCreatePull): ?>
+                                <div class="alert alert-warning mb-0" style="font-size:.86rem;">
+                                    Pull requests are available after the repository has at least one branch with
+                                    commits.
+                                </div>
+                            <?php else: ?>
+                                <?php
+                                $pullFromDefault = $branches[0];
+                                $pullToDefault = $repoDefaultBranch;
+                                ?>
+                                <form method="POST" class="row g-3">
+                                    <input type="hidden" name="csrf_token"
+                                           value="<?= RepoViewController::e($csrfToken) ?>">
+                                    <input type="hidden" name="repo_action" value="create_pull">
+
+                                    <div class="col-12">
+                                        <label for="pullTitle" class="form-label fw-semibold">Title</label>
+                                        <input id="pullTitle" type="text" name="pull_title" class="form-control"
+                                               maxlength="160" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="fromBranch" class="form-label fw-semibold">From branch</label>
+                                        <select id="fromBranch" name="from_branch" class="form-select" required>
+                                            <?php foreach ($branches as $branch): ?>
+                                                <option value="<?= RepoViewController::e($branch) ?>" <?= $branch === $pullFromDefault ? 'selected' : '' ?>>
+                                                    <?= RepoViewController::e($branch) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="toBranch" class="form-label fw-semibold">To branch</label>
+                                        <select id="toBranch" name="to_branch" class="form-select" required>
+                                            <?php foreach ($branches as $branch): ?>
+                                                <option value="<?= RepoViewController::e($branch) ?>" <?= $branch === $pullToDefault ? 'selected' : '' ?>>
+                                                    <?= RepoViewController::e($branch) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="pullBody" class="form-label fw-semibold">Description</label>
+                                        <textarea id="pullBody" name="pull_body" class="form-control" rows="4"
+                                                  maxlength="20000"
+                                                  placeholder="Describe what this pull request changes..."></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-send me-1"></i>Create pull request
+                                        </button>
+                                    </div>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (empty($pullRequests)): ?>
+                        <div class="p-5 text-center">
+                            <i class="bi bi-git text-secondary" style="font-size:2.4rem;"></i>
+                            <h5 class="fw-bold mt-3 mb-1">No pull requests yet</h5>
+                            <p class="text-secondary mb-0">Create a pull request to propose changes between
+                                branches.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="list-group list-group-flush">
+                            <?php foreach ($pullRequests as $pull): ?>
+                                <?php
+                                $pullStatus = (string)($pull['status'] ?? 'open');
+                                $pullStatusClass = match ($pullStatus) {
+                                    'merged' => 'bg-primary-subtle text-primary border border-primary-subtle',
+                                    'archived' => 'bg-secondary-subtle text-secondary border border-secondary-subtle',
+                                    default => 'bg-success-subtle text-success border border-success-subtle',
+                                };
+                                $pullAuthorUsername = (string)($pull['author_username'] ?? 'unknown');
+                                $pullAuthorDisplay = trim((string)($pull['author_display_name'] ?? ''));
+                                $pullAuthorLabel = $pullAuthorDisplay !== '' ? $pullAuthorDisplay : $pullAuthorUsername;
+                                $pullCreatedAt = (string)($pull['created_at'] ?? '');
+                                $pullBody = trim((string)($pull['body'] ?? ''));
+                                $pullDetailUrl = '/' . $rSlug . '/pulls/' . (int)($pull['id'] ?? 0);
+                                ?>
+                                <div class="list-group-item px-4 py-3">
+                                    <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+                                        <div>
+                                            <h6 class="mb-1 fw-semibold d-flex align-items-center gap-2">
+                                                <a href="<?= RepoViewController::e($pullDetailUrl) ?>"
+                                                   class="text-decoration-none"><?= RepoViewController::e((string)($pull['title'] ?? 'Untitled pull request')) ?></a>
+                                                <span class="badge fw-normal <?= $pullStatusClass ?>"><?= RepoViewController::e(strtoupper($pullStatus)) ?></span>
+                                            </h6>
+                                            <div class="text-secondary" style="font-size:.82rem;">
+                                                #<?= (int)($pull['id'] ?? 0) ?>
+                                                <span class="mx-1">·</span>
+                                                <?= RepoViewController::e((string)($pull['from_branch_name'] ?? '')) ?>
+                                                <i class="bi bi-arrow-right mx-1"></i>
+                                                <?= RepoViewController::e((string)($pull['to_branch_name'] ?? '')) ?>
+                                                <span class="mx-1">·</span>
+                                                by <strong
+                                                        class="text-body"><?= RepoViewController::e($pullAuthorLabel) ?></strong>
+                                                (@<?= RepoViewController::e($pullAuthorUsername) ?>)
+                                                <?php if ($pullCreatedAt !== ''): ?>
+                                                    <span class="mx-1">·</span>
+                                                    <?= RepoViewController::e(date('d M Y H:i', (int)strtotime($pullCreatedAt))) ?>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php if ($pullBody !== ''): ?>
+                                        <p class="mb-0 mt-2 text-secondary" style="font-size:.88rem;">
+                                            <?= nl2br(RepoViewController::e($pullBody)) ?>
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php elseif ($isPrivileged): ?>
+                <div class="border rounded-3 overflow-hidden mb-3">
+                    <div class="px-4 py-3 border-bottom bg-body-secondary">
+                        <h5 class="mb-1 d-flex align-items-center gap-2">
+                            <i class="bi bi-gear"></i>
+                            Repository settings
+                        </h5>
+                        <p class="text-secondary mb-0" style="font-size:.85rem;">Visual shell for repository
+                            configuration.</p>
+                    </div>
+                    <div class="p-4">
+                        <form method="POST" class="row g-3">
+                            <input type="hidden" name="csrf_token" value="<?= RepoViewController::e($csrfToken) ?>">
+                            <input type="hidden" name="repo_action" value="update_repo_settings">
+
+                            <div class="col-md-6">
+                                <label for="repoNamePreview" class="form-label small fw-semibold text-secondary">Repository
+                                    name</label>
+                                <input id="repoNamePreview" type="text" class="form-control"
+                                       value="<?= RepoViewController::e($rName) ?>"
+                                       disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="repoBranchPreview" class="form-label small fw-semibold text-secondary">Default
+                                    branch</label>
+                                <?php if (!empty($branches)): ?>
+                                    <select id="repoBranchPreview" name="default_branch" class="form-select">
+                                        <?php foreach ($branches as $branch): ?>
+                                            <option value="<?= RepoViewController::e($branch) ?>" <?= $branch === $repoDefaultBranch ? 'selected' : '' ?>>
+                                                <?= RepoViewController::e($branch) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php else: ?>
+                                    <input id="repoBranchPreview" type="text" name="default_branch" class="form-control"
+                                           value="<?= RepoViewController::e($repoDefaultBranch) ?>">
+                                <?php endif; ?>
+                            </div>
+                            <div class="col-12">
+                                <label for="repoDescriptionPreview" class="form-label small fw-semibold text-secondary">Description</label>
+                                <textarea id="repoDescriptionPreview" name="repo_description" class="form-control"
+                                          rows="3"><?= RepoViewController::e($repoDescriptionRaw) ?></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold text-secondary">Visibility</label>
+                                <div class="d-flex flex-column flex-sm-row gap-2">
+                                    <div class="form-check border rounded-3 p-2 flex-grow-1">
+                                        <input class="form-check-input" type="radio" name="visibility"
+                                               id="repoVisibilityPublic"
+                                               value="public" <?= $repoVisibility === 'public' ? 'checked' : '' ?>>
+                                        <label class="form-check-label" for="repoVisibilityPublic">
+                                            <i class="bi bi-globe me-1"></i>Public
+                                        </label>
+                                    </div>
+                                    <div class="form-check border rounded-3 p-2 flex-grow-1">
+                                        <input class="form-check-input" type="radio" name="visibility"
+                                               id="repoVisibilityPrivate"
+                                               value="private" <?= $repoVisibility === 'private' ? 'checked' : '' ?>>
+                                        <label class="form-check-label" for="repoVisibilityPrivate">
+                                            <i class="bi bi-lock-fill me-1"></i>Private
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-check2-circle me-1"></i>Save changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="border border-danger-subtle rounded-3 overflow-hidden">
+                    <div class="px-4 py-3 border-bottom border-danger-subtle bg-danger-subtle">
+                        <h6 class="mb-1 fw-bold text-danger d-flex align-items-center gap-2">
+                            <i class="bi bi-exclamation-triangle"></i>Danger zone
+                        </h6>
+                        <p class="mb-0 text-danger-emphasis" style="font-size:.82rem;">These actions are intentionally
+                            disabled for now.</p>
+                    </div>
+                    <div class="p-4 d-flex flex-column gap-2">
+                        <button class="btn btn-outline-danger text-start" type="button" disabled>Transfer ownership
+                        </button>
+                        <button class="btn btn-outline-danger text-start" type="button" disabled>Archive this
+                            repository
+                        </button>
+                        <button class="btn btn-danger text-start" type="button" disabled>Delete this repository</button>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php else: ?>
     <div class="row g-3 mt-0 pt-4 border-top" style="border-color:var(--bs-border-color)!important;">
-        <?php if (!$isEmpty && !empty($fullFileTree)): ?>
+        <?php if (! $isEmpty && ! empty($fullFileTree)): ?>
             <div class="col-lg-2 d-none d-lg-block">
                 <div class="rv-tree-panel">
                     <div class="rv-tree-panel-header">
@@ -100,7 +479,7 @@ $httpBase = $rv->httpBase;
                 </div>
             </div>
         <?php endif; ?>
-        <div class="<?= !$isEmpty && !empty($fullFileTree) ? 'col-lg-8' : 'col-lg-10' ?>">
+        <div class="<?= ! $isEmpty && ! empty($fullFileTree) ? 'col-lg-8' : 'col-lg-10' ?>">
             <?php if ($isEmpty): ?>
                 <div class="border rounded-3 overflow-hidden" style="border-color:var(--bs-border-color)!important;">
                     <div class="p-4 text-center border-bottom" style="background:var(--bs-secondary-bg);">
@@ -244,7 +623,7 @@ $httpBase = $rv->httpBase;
                     ?>
                     <?php if ($dispCommit !== null): ?>
                         <div class="border rounded-top-3 rv-latest-commit px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
-                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($dispCommit['author']))) ?>?s=24&d=identicon"
+                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($_SESSION['username']))) ?>?s=24&d=identicon"
                                  class="rounded-circle" width="20" height="20" alt="" loading="lazy">
                             <span class="fw-semibold"
                                   style="font-size:.85rem;"><?= RepoViewController::e($dispCommit['author']) ?></span>
@@ -262,7 +641,7 @@ $httpBase = $rv->httpBase;
                     <div class="border <?= $dispCommit !== null ? 'border-top-0 rounded-bottom-3' : 'rounded-3' ?> overflow-hidden">
                         <table class="table table-hover table-sm rv-file-table mb-0">
                             <tbody>
-                            <?php if ($viewMode === 'tree' && $parentUrl !== null): // @phpstan-ignore notIdentical.alwaysTrue ?>
+                            <?php if ($viewMode === 'tree' && $parentUrl !== null): // @phpstan-ignore notIdentical.alwaysTrue?>
                                 <tr class="rv-parent-row">
                                     <td style="width:2rem;"><i class="bi bi-folder-fill text-secondary opacity-50"></i>
                                     </td>
@@ -343,7 +722,7 @@ $httpBase = $rv->httpBase;
                             <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                                 <?= RepoViewController::fileIcon($fileName) ?>
                                 <span class="fw-semibold"><?= RepoViewController::e($fileName) ?></span>
-                                <?php if (!$isBinary && $fileContent !== null): ?>
+                                <?php if (! $isBinary && $fileContent !== null): ?>
                                     <span class="text-secondary"><?= number_format($fileLines) ?> line<?= $fileLines !== 1 ? 's' : '' ?></span>
                                     <span class="text-secondary">·</span>
                                 <?php endif; ?>
@@ -354,7 +733,7 @@ $httpBase = $rv->httpBase;
                                 <?php endif; ?>
                             </div>
                             <div class="d-flex gap-2 flex-shrink-0">
-                                <?php if (!$isBinary && $fileContent !== null): ?>
+                                <?php if (! $isBinary && $fileContent !== null): ?>
                                     <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
                                             onclick="rvCopyFile(this)" title="Copy file content">
                                         <i class="bi bi-clipboard" id="rv-copy-icon"></i>
@@ -386,10 +765,10 @@ $httpBase = $rv->httpBase;
                                     <tbody>
                                     <?php
                                     $codeLines = explode("\n", $fileContent);
-                                    if (end($codeLines) === '') {
-                                        array_pop($codeLines);
-                                    }
-                                    foreach ($codeLines as $ln => $codeLine): ?>
+                            if (end($codeLines) === '') {
+                                array_pop($codeLines);
+                            }
+                            foreach ($codeLines as $ln => $codeLine): ?>
                                         <tr id="L<?= $ln + 1 ?>" class="rv-line">
                                             <td class="rv-line-num"
                                                 onclick="rvToggleLine(<?= $ln + 1 ?>)"><?= $ln + 1 ?></td>
@@ -435,7 +814,7 @@ $httpBase = $rv->httpBase;
                     </div>
                 </div>
             </div>
-            <?php if (!empty($langBreakdown)): ?>
+            <?php if (! empty($langBreakdown)): ?>
                 <div class="rv-sidebar-section">
                     <h6 class="fw-bold mb-3">Languages</h6>
                     <div class="rv-lang-bar mb-3">
@@ -501,7 +880,7 @@ $httpBase = $rv->httpBase;
                     </div>
                     <div><i class="bi bi-calendar me-1"></i> Created <?= $rCreated ?></div>
                     <div><i class="bi bi-git me-1"></i> Default branch: <code><?= $rBranch ?></code></div>
-                    <?php if (!$isEmpty): ?>
+                    <?php if (! $isEmpty): ?>
                         <div><i class="bi bi-clock-history me-1"></i> <?= number_format($commitCount) ?>
                             commit<?= $commitCount !== 1 ? 's' : '' ?></div>
                     <?php endif; ?>
@@ -509,6 +888,7 @@ $httpBase = $rv->httpBase;
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </main>
 <script>
     const HTTP_URL = '<?= $httpUrl ?>';
@@ -633,7 +1013,7 @@ $httpBase = $rv->httpBase;
 
 
 </script>
-<?php if ($viewMode === 'blob' && $fileData !== null && !$fileData['binary'] && $fileData['content'] !== null): ?>
+<?php if ($viewMode === 'blob' && $fileData !== null && ! $fileData['binary'] && $fileData['content'] !== null): ?>
     <link rel="stylesheet" id="hljs-css"
           href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Config;
+use App\includes\Logging;
 use App\Services\GitReaderService;
 use App\Services\RepositoryService;
-use App\includes\Logging;
 
 /**
  * Serves raw file content from a git repository — no HTML, no styling,
@@ -27,7 +27,7 @@ final class RawController
         if (strlen($rawSlug) > 200) {
             $this->abort(414, '414 URI Too Long');
         }
-        if ($rawSlug === '' || !preg_match('#^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}/[a-zA-Z0-9][a-zA-Z0-9._-]{0,98}$#', $rawSlug)) {
+        if ($rawSlug === '' || ! preg_match('#^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}/[a-zA-Z0-9][a-zA-Z0-9._-]{0,98}$#', $rawSlug)) {
             $this->abort(404, '404 Not Found');
         }
 
@@ -37,7 +37,7 @@ final class RawController
             if ($seg === '' || $seg === '.' || $seg === '..') {
                 continue;
             }
-            if (!preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._\- ]*$/', $seg)) {
+            if (! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._\- ]*$/', $seg)) {
                 $this->abort(400, '400 Bad Request: invalid path');
             }
             $segments[] = $seg;
@@ -69,13 +69,13 @@ final class RawController
             $this->abort(404, '404 Not Found');
         }
 
-        $sessionUserId = (int)($_SESSION['user_id'] ?? 0);
-        $isLoggedIn = (bool)($_SESSION['is_logged_in'] ?? false);
-        $role = (string)($_SESSION['role'] ?? '');
-        $isOwner = $isLoggedIn && $sessionUserId === (int)$repo['owner_user_id'];
+        $sessionUserId = (int) ($_SESSION['user_id'] ?? 0);
+        $isLoggedIn = (bool) ($_SESSION['is_logged_in'] ?? false);
+        $role = (string) ($_SESSION['role'] ?? '');
+        $isOwner = $isLoggedIn && $sessionUserId === (int) $repo['owner_user_id'];
         $isAdmin = $isLoggedIn && $role === 'ADMIN';
 
-        if ($repo['visibility'] === 'private' && !$isOwner && !$isAdmin) {
+        if ($repo['visibility'] === 'private' && ! $isOwner && ! $isAdmin) {
             $this->abort(403, '403 Forbidden');
         }
 
@@ -93,9 +93,9 @@ final class RawController
 
         $safePath = escapeshellarg($repoPath);
         $safeRef = escapeshellarg($branch . ':' . $filePath);
-        $sizeStr = trim((string)shell_exec("git -C {$safePath} cat-file -s {$safeRef} 2>/dev/null"));
-        $size = is_numeric($sizeStr) ? (int)$sizeStr : 0;
-        $peek = (string)shell_exec("git -C {$safePath} show {$safeRef} 2>/dev/null | head -c 8192");
+        $sizeStr = trim((string) shell_exec("git -C {$safePath} cat-file -s {$safeRef} 2>/dev/null"));
+        $size = is_numeric($sizeStr) ? (int) $sizeStr : 0;
+        $peek = (string) shell_exec("git -C {$safePath} show {$safeRef} 2>/dev/null | head -c 8192");
         $isBinary = str_contains($peek, "\x00");
 
         header('Content-Type: ' . ($isBinary ? 'application/octet-stream' : 'text/plain; charset=UTF-8'));
@@ -117,5 +117,3 @@ final class RawController
         exit;
     }
 }
-
-

@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$contact_name, $contact_email, $contact_subject, $contact_message]);
                 $pdo->commit();
                 Logging::loggingToFile('Contact message sent from: ' . $contact_email); // default info level
-                echo '<script>window.location.href="index.php?page=contact&success=sent";</script>';
+                echo '<script>window.location.href="/contact?success=sent";</script>';
                 exit;
             } catch (PDOException $e) {
                 $pdo->rollBack();
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'contact_subject' => htmlspecialchars(trim($_POST['contact_subject'] ?? ''), ENT_QUOTES, 'UTF-8'),
             'contact_message' => htmlspecialchars(trim($_POST['contact_message'] ?? ''), ENT_QUOTES, 'UTF-8'),
     ];
-    echo '<script>window.location.href="index.php?page=contact";</script>';
+    echo '<script>window.location.href="/contact";</script>';
     exit;
 }
 

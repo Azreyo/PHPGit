@@ -2,6 +2,7 @@
 
 use App\Config;
 use App\includes\Assets;
+use App\includes\Security;
 use App\includes\Logging;
 
 $config = new Config();
@@ -67,22 +68,22 @@ function inboxInitials(string $name): string
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div class="d-flex gap-2 flex-wrap">
-        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3"
-                onclick="inboxMarkAllRead()">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" id="inboxMarkAllReadBtn"
+                data-mark-read-endpoint="/api/v1/markInboxRead.php">
             <i class="bi bi-check2-all me-2"></i>Mark all read
         </button>
         <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3">
             <i class="bi bi-archive me-2"></i>Archive read
         </button>
     </div>
-    <div class="input-group input-group-sm" style="max-width: 240px;">
+    <div class="input-group input-group-sm" style="max-width: 340px;">
         <span class="input-group-text border-secondary-subtle text-secondary rounded-start-3 bg-body-secondary">
             <i class="bi bi-search"></i>
         </span>
         <label for="inboxSearch">
         </label><input type="search" id="inboxSearch"
                                                 class="form-control border-secondary-subtle bg-body-secondary rounded-end-3"
-                                                placeholder="Search messages…" oninput="inboxFilter()">
+                                                placeholder="Search messages by subject…" oninput="inboxFilter()">
     </div>
 </div>
 
@@ -213,11 +214,21 @@ function inboxInitials(string $name): string
                      style="white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: .95rem; line-height: 1.75; margin: 0;"></pre>
             </div>
 
-            <div class="modal-footer border-top border-secondary-subtle px-4 py-3 gap-2 justify-content-between">
-                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
-                        onclick="inboxArchive()">
-                    <i class="bi bi-archive me-2"></i>Archive
-                </button>
+            <div class="modal-footer border-top border-secondary-subtle px-4 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex gap-2">
+                    <form method="post">
+                        <input type="hidden" name="inbox_id" id="inboxModalId">
+                        <input type="hidden" name="inbox_status" id="inboxModalStatus">
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                onclick="inboxReplied()">
+                            <i class="bi bi-archive me-2"></i>Mark as replied
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                            onclick="inboxArchive()">
+                        <i class="bi bi-archive me-2"></i>Archive
+                    </button>
+                </div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3"
                             data-bs-dismiss="modal">
@@ -227,6 +238,7 @@ function inboxInitials(string $name): string
                         <i class="bi bi-reply me-2"></i>Reply via email
                     </a>
                 </div>
+
             </div>
         </div>
     </div>
@@ -238,18 +250,22 @@ function inboxInitials(string $name): string
     </small>
     <nav aria-label="Inbox pagination">
         <ul class="pagination pagination-sm mb-0 gap-1">
-            <li class="page-item disabled">
-                <span class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary">
+            <li class="page-item disabled" id="inboxPagePrevItem">
+                <button type="button"
+                        class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary"
+                        id="inboxPagePrev" aria-label="Previous page" disabled>
                     <i class="bi bi-chevron-left"></i>
-                </span>
+                </button>
             </li>
-            <li class="page-item active">
-                <span class="page-link rounded-3 bg-primary border-primary">1</span>
+            <li class="page-item active" id="inboxPageIndicatorItem">
+                <span class="page-link rounded-3 bg-primary border-primary" id="inboxPageIndicator">Page 1 / 1</span>
             </li>
-            <li class="page-item">
-                <a class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary" href="#">
+            <li class="page-item" id="inboxPageNextItem">
+                <button type="button"
+                        class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary"
+                        id="inboxPageNext" aria-label="Next page">
                     <i class="bi bi-chevron-right"></i>
-                </a>
+                </button>
             </li>
         </ul>
     </nav>

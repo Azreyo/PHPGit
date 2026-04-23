@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($result['success']) {
                     $_SESSION['repo_flash'] = 'Repository <strong>' . htmlspecialchars($repoName, ENT_QUOTES, 'UTF-8') . '</strong> created successfully.';
-                    echo '<script>window.location.href="index.php?page=repos";</script>';
+                    echo '<script>window.location.href="/repos";</script>';
                     exit;
                 }
 
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'visibility' => $_POST['visibility'] ?? 'public',
         'default_branch' => htmlspecialchars(trim($_POST['default_branch'] ?? 'main'), ENT_QUOTES, 'UTF-8'),
     ];
-    echo '<script>window.location.href="index.php?page=new_repo";</script>';
+    echo '<script>window.location.href="/new_repo";</script>';
     exit;
 }
 
@@ -189,7 +189,7 @@ $f = [
         <button type="submit" class="btn btn-success px-4">
             <i class="bi bi-folder-plus me-1"></i> Create repository
         </button>
-        <a href="index.php?page=repos" class="btn btn-outline-secondary ms-2">Cancel</a>
+        <a href="/repos" class="btn btn-outline-secondary ms-2">Cancel</a>
     </form>
 </main>
 

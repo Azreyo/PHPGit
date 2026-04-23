@@ -1,17 +1,17 @@
-<?php /** @noinspection PhpNoReturnAttributeCanBeAddedInspection */
+<?php
+
+/** @noinspection PhpNoReturnAttributeCanBeAddedInspection */
 
 declare(strict_types=1);
 
 namespace App\Core;
 
-use http\Exception\InvalidArgumentException;
-
 class Controller
 {
     /**
-     * @param array<mixed> $data
-     * @param int $statusCode
-     * @param array<string, string> $headers
+     * @param  array<mixed>          $data
+     * @param  int                   $statusCode
+     * @param  array<string, string> $headers
      * @return void
      */
     protected function json(array $data, int $statusCode = 200, array $headers = []): void
@@ -28,8 +28,8 @@ class Controller
     }
 
     /**
-     * @param array<mixed> $data
-     * @param int $statusCode
+     * @param  array<mixed> $data
+     * @param  int          $statusCode
      * @return void
      */
     protected function success(array $data, int $statusCode = 200): void
@@ -38,8 +38,8 @@ class Controller
     }
 
     /**
-     * @param string $message
-     * @param int $statusCode
+     * @param  string $message
+     * @param  int    $statusCode
      * @return void
      */
     protected function error(string $message, int $statusCode = 500): void
@@ -48,7 +48,7 @@ class Controller
     }
 
     /**
-     * @param string $message
+     * @param  string $message
      * @return void
      */
     protected function badRequest(string $message = 'Bad request'): void
@@ -57,7 +57,7 @@ class Controller
     }
 
     /**
-     * @param string $message
+     * @param  string $message
      * @return void
      */
     protected function notFound(string $message = 'Not found'): void
@@ -66,7 +66,7 @@ class Controller
     }
 
     /**
-     * @param array<string> $allowedMethods
+     * @param  array<string> $allowedMethods
      * @return void
      */
     protected function methodNotAllowed(array $allowedMethods): void

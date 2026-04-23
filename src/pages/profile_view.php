@@ -1,0 +1,321 @@
+<?php
+
+declare(strict_types=1);
+
+use App\includes\Logging;
+
+/** @var PDO|null $pdo */
+/** @var bool $is_logged_in */
+
+$requestedUsername = trim((string) ($_GET['user'] ?? $_GET['username'] ?? ''));
+$requestedUsername = preg_replace('/[^a-zA-Z0-9._-]/', '', $requestedUsername) ?? '';
+
+$profile = null;
+$repositories = [];
+$error = '';
+$contributionsLastYear = 0;
+$contributionsByMonth = [];
+
+$currentMonth = new DateTimeImmutable('first day of this month 00:00:00');
+for ($i = 11; $i >= 0; $i--) {
+    $month = $currentMonth->modify("-{$i} months");
+    $monthKey = $month->format('Y-m');
+    $contributionsByMonth[$monthKey] = [
+            'label' => $month->format('M'),
+            'count' => 0,
+    ];
+}
+
+if ($requestedUsername === '') {
+    $error = 'Please provide a valid username.';
+} elseif ($pdo === null) {
+    $error = 'Database is currently unavailable. Please try again later.';
+} else {
+    try {
+        $stmt = $pdo->prepare(
+            'SELECT id, username, display_name, bio, website, role, created_at
+             FROM users
+             WHERE username = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$requestedUsername]);
+        $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($profile === false) {
+            $error = 'Profile not found.';
+            $profile = null;
+        } else {
+            $sessionUsername = (string) ($_SESSION['username'] ?? '');
+            $canSeePrivate = $is_logged_in && $sessionUsername !== '' && strcasecmp($sessionUsername, (string) $profile['username']) === 0;
+
+            $repoSql = 'SELECT repo_name, repo_description, visibility, lang, stars, forks, updated_at
+                        FROM repositories
+                        WHERE owner_user_id = ?';
+
+            if (! $canSeePrivate) {
+                $repoSql .= ' AND visibility = \'public\'';
+            }
+
+            $repoSql .= ' ORDER BY updated_at DESC LIMIT 30';
+
+            $repoStmt = $pdo->prepare($repoSql);
+            $repoStmt->execute([(int) $profile['id']]);
+            $repositories = $repoStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $contributionStmt = $pdo->prepare(
+                'SELECT activity_day, COUNT(*) AS total
+                     FROM (
+                       SELECT DATE(created_at) AS activity_day
+                       FROM issues
+                       WHERE author_user_id = ?
+                       UNION ALL
+                       SELECT DATE(created_at) AS activity_day
+                       FROM pull_requests
+                       WHERE author_user_id = ?
+                     ) AS activity
+                     WHERE activity_day >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+                     GROUP BY activity_day'
+            );
+            $contributionStmt->execute([(int) $profile['id'], (int) $profile['id']]);
+            $dailyContributions = $contributionStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($dailyContributions as $entry) {
+                $count = max(0, (int) ($entry['total'] ?? 0));
+                $contributionsLastYear += $count;
+
+                $activityDay = (string) ($entry['activity_day'] ?? '');
+                $activityTimestamp = strtotime($activityDay);
+                if ($activityTimestamp === false) {
+                    continue;
+                }
+
+                $activityMonth = date('Y-m', $activityTimestamp);
+                if (isset($contributionsByMonth[$activityMonth])) {
+                    $contributionsByMonth[$activityMonth]['count'] += $count;
+                }
+            }
+        }
+    } catch (PDOException $e) {
+        Logging::loggingToFile('Profile view query failed: ' . $e->getMessage(), 4);
+        $error = 'Unable to load profile right now. Please try again later.';
+        $profile = null;
+        $repositories = [];
+    }
+}
+
+$profileUsername = $profile !== null ? (string) $profile['username'] : '';
+$displayName = $profile !== null ? trim((string) ($profile['display_name'] ?? '')) : '';
+$headlineName = $displayName !== '' ? $displayName : $profileUsername;
+$bio = $profile !== null ? trim((string) ($profile['bio'] ?? '')) : '';
+$website = $profile !== null ? trim((string) ($profile['website'] ?? '')) : '';
+$websiteUrl = '';
+if ($website !== '' && filter_var($website, FILTER_VALIDATE_URL) && preg_match('/^https?:\/\//i', $website) === 1) {
+    $websiteUrl = $website;
+}
+
+$joinedAt = $profile !== null ? strtotime((string) ($profile['created_at'] ?? '')) : false;
+$joinedLabel = $joinedAt !== false ? date('M j, Y', $joinedAt) : (string) ($profile['created_at'] ?? '');
+
+$initialSeed = preg_replace('/\s+/', '', $headlineName) ?? '';
+$initials = strtoupper(substr($initialSeed, 0, 2));
+if ($initials === '') {
+    $initials = 'U';
+}
+
+$repoCount = count($repositories);
+
+$profilePathUsername = rawurlencode($profileUsername);
+
+?>
+
+<main class="container py-4 py-lg-5">
+    <?php if ($error !== ''): ?>
+        <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></span>
+        </div>
+    <?php elseif ($profile !== null): ?>
+        <div class="row g-4">
+            <aside class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm sticky-lg-top" style="top: 1rem;">
+                    <div class="card-body">
+                        <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($profile['username']))) ?>?s=88&d=identicon"
+                             class="rounded-circle" width="88" height="88" alt="" loading="lazy">
+
+                        <h1 class="h4 mb-0"><?php echo htmlspecialchars($headlineName, ENT_QUOTES, 'UTF-8'); ?></h1>
+                        <p class="text-secondary mb-3">
+                            @<?php echo htmlspecialchars($profileUsername, ENT_QUOTES, 'UTF-8'); ?></p>
+
+                        <?php if ($bio !== ''): ?>
+                            <p class="mb-3"><?php echo nl2br(htmlspecialchars($bio, ENT_QUOTES, 'UTF-8')); ?></p>
+                        <?php else: ?>
+                            <p class="mb-3 text-secondary">This user has not added a bio yet.</p>
+                        <?php endif; ?>
+
+                        <ul class="list-unstyled mb-0 small">
+                            <li class="mb-2 d-flex align-items-center gap-2 text-secondary">
+                                <i class="bi bi-calendar3"></i>
+                                <span>Joined <?php echo htmlspecialchars($joinedLabel, ENT_QUOTES, 'UTF-8'); ?></span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-center gap-2 text-secondary">
+                                <i class="bi bi-shield-check"></i>
+                                <span><?php echo htmlspecialchars((string) $profile['role'], ENT_QUOTES, 'UTF-8'); ?></span>
+                            </li>
+                            <?php if ($websiteUrl !== ''): ?>
+                                <li class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-link-45deg text-secondary"></i>
+                                    <a href="<?php echo htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="text-decoration-none text-truncate"><?php echo htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8'); ?></a>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="col-12 col-lg-8">
+                <nav class="nav nav-tabs mb-4" role="tablist" aria-label="Profile navigation">
+                    <button class="nav-link active"
+                            id="profile-overview-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#profile-overview-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="profile-overview-pane"
+                            aria-selected="true">
+                        <i class="bi bi-grid-3x3-gap me-1"></i>Overview
+                    </button>
+                    <button class="nav-link"
+                            id="profile-repositories-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#profile-repositories-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="profile-repositories-pane"
+                            aria-selected="false">
+                        <i class="bi bi-book me-1"></i>Repositories
+                        <span class="badge rounded-pill text-bg-secondary ms-1"><?php echo $repoCount; ?></span>
+                    </button>
+                </nav>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active"
+                         id="profile-overview-pane"
+                         role="tabpanel"
+                         aria-labelledby="profile-overview-tab"
+                         tabindex="0">
+                        <h2 class="h5 mb-3">Overview</h2>
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-body">
+                                <p class="text-secondary mb-1">
+                                    <?php echo $contributionsLastYear; ?> contributions in the last year
+                                </p>
+                                <div class="row g-2 row-cols-3 row-cols-md-6 row-cols-xl-12">
+                                    <?php foreach ($contributionsByMonth as $month): ?>
+                                        <?php
+                                        $monthCount = (int) ($month['count']);
+                                        $monthLabel = (string) ($month['label']);
+                                        $monthIntensityClass = 'bg-body-tertiary text-secondary';
+                                        if ($monthCount >= 15) {
+                                            $monthIntensityClass = 'bg-success text-white';
+                                        } elseif ($monthCount >= 8) {
+                                            $monthIntensityClass = 'bg-success-subtle text-success-emphasis';
+                                        } elseif ($monthCount >= 1) {
+                                            $monthIntensityClass = 'bg-success-subtle text-success';
+                                        }
+                                        ?>
+                                        <div class="col">
+                                            <div class="rounded border small text-center py-2 <?php echo $monthIntensityClass; ?>"
+                                                 title="<?php echo htmlspecialchars($monthLabel, ENT_QUOTES, 'UTF-8'); ?>: <?php echo $monthCount; ?>">
+                                                <div class="fw-semibold"><?php echo htmlspecialchars($monthLabel, ENT_QUOTES, 'UTF-8'); ?></div>
+                                                <div><?php echo $monthCount; ?></div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <p class="mb-2 text-secondary">Repositories</p>
+                                <h3 class="h2 mb-0"><?php echo $repoCount; ?></h3>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="tab-pane fade"
+                         id="profile-repositories-pane"
+                         role="tabpanel"
+                         aria-labelledby="profile-repositories-tab"
+                         tabindex="0">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pt-1">
+                            <h2 class="h5 mb-0">Repositories</h2>
+                            <div class="d-flex align-items-center gap-2">
+                                <a href="index.php?page=new_repo" class="btn btn-success btn-sm">
+                                    <i class="bi bi-folder-plus me-1"></i> New repository
+                                </a>
+                                <?php if ($repoCount > 0): ?>
+                                    <span class="text-secondary small"><?php echo $repoCount; ?> shown</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <?php if (empty($repositories)): ?>
+                            <div class="alert alert-secondary mb-0" role="alert">
+                                <i class="bi bi-info-circle me-1"></i>
+                                No repositories available.
+                            </div>
+                        <?php else: ?>
+                            <div class="list-group shadow-sm">
+                                <?php foreach ($repositories as $repo): ?>
+                                    <?php
+                                    $repoName = (string) ($repo['repo_name'] ?? '');
+                                    $repoDescription = trim((string) ($repo['repo_description'] ?? ''));
+                                    $repoLang = trim((string) ($repo['lang'] ?? ''));
+                                    $repoVisibility = (string) ($repo['visibility'] ?? 'public');
+                                    $repoUpdatedAt = strtotime((string) ($repo['updated_at'] ?? ''));
+                                    $repoUpdatedLabel = $repoUpdatedAt !== false
+                                            ? date('M j, Y', $repoUpdatedAt)
+                                            : (string) ($repo['updated_at'] ?? '');
+                                    $repoUrl = '/' . $profilePathUsername . '/' . rawurlencode($repoName);
+                                    ?>
+                                    <a href="<?php echo htmlspecialchars($repoUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                                       class="list-group-item list-group-item-action py-3">
+                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                            <div>
+                                                <div class="fw-semibold text-primary mb-1">
+                                                    <i class="bi bi-bookmark me-1 text-secondary"></i>
+                                                    <?php echo htmlspecialchars($repoName, ENT_QUOTES, 'UTF-8'); ?>
+                                                </div>
+                                                <?php if ($repoDescription !== ''): ?>
+                                                    <p class="mb-2 text-secondary small"><?php echo htmlspecialchars($repoDescription, ENT_QUOTES, 'UTF-8'); ?></p>
+                                                <?php endif; ?>
+                                                <div class="d-flex flex-wrap align-items-center gap-3 small text-secondary">
+                                                    <span>
+                                                        <i class="bi <?php echo $repoVisibility === 'private' ? 'bi-lock-fill' : 'bi-globe'; ?> me-1"></i>
+                                                        <?php echo htmlspecialchars(ucfirst($repoVisibility), ENT_QUOTES, 'UTF-8'); ?>
+                                                    </span>
+                                                    <?php if ($repoLang !== ''): ?>
+                                                        <span><i class="bi bi-circle-fill me-1"
+                                                                 style="font-size:.5rem;"></i><?php echo htmlspecialchars($repoLang, ENT_QUOTES, 'UTF-8'); ?></span>
+                                                    <?php endif; ?>
+                                                    <span><i class="bi bi-star me-1"></i><?php echo (int) ($repo['stars'] ?? 0); ?></span>
+                                                    <span><i class="bi bi-diagram-2 me-1"></i><?php echo (int) ($repo['forks'] ?? 0); ?></span>
+                                                </div>
+                                            </div>
+                                            <small class="text-secondary text-nowrap">Updated <?php echo htmlspecialchars($repoUpdatedLabel, ENT_QUOTES, 'UTF-8'); ?></small>
+                                        </div>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </section>
+        </div>
+    <?php endif; ?>
+</main>

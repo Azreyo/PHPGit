@@ -7,6 +7,14 @@
 
     let currentArticle = null;
     let activeFilter = "all";
+    const pageSize = 10;
+    let currentPage = 1;
+    let lastPage = 1;
+    const markAllReadButton = document.getElementById("inboxMarkAllReadBtn");
+    let markReadEndpoint = "/api/v1/markInboxRead.php";
+    if (markAllReadButton && markAllReadButton.dataset.markReadEndpoint) {
+        markReadEndpoint = markAllReadButton.dataset.markReadEndpoint;
+    }
 
     window.inboxOpen = function (article) {
         currentArticle = article;
@@ -81,7 +89,23 @@
         bootstrap.Modal.getInstance(
             document.getElementById("inboxModal")
         ).hide();
-        window.inboxFilter();
+        window.inboxFilter(false);
+    };
+    window.inboxReplied = function () {
+        if (!currentArticle) {
+            return;
+        }
+        currentArticle.dataset.status = "replied";
+        const badgeEl = currentArticle.querySelector(".badge");
+        if (badgeEl) {
+            badgeEl.textContent = "Replied";
+            badgeEl.className = "badge text-bg-success rounded-pill";
+            badgeEl.style.fontSize = ".72rem";
+        }
+        bootstrap.Modal.getInstance(
+            document.getElementById("inboxModal")
+        ).hide();
+        window.inboxFilter(false);
     };
 
     window.inboxSetTab = function (btn, filter) {
@@ -92,47 +116,121 @@
         });
         btn.classList.add("btn-primary", "active-tab");
         btn.classList.remove("text-secondary");
-        window.inboxFilter();
+        window.inboxFilter(true);
     };
 
-    window.inboxFilter = function () {
+    window.inboxFilter = function (resetPage = true) {
         const qRaw = document.getElementById("inboxSearch").value || "";
-        const q = qRaw.toLowerCase();
-        const rows = document.querySelectorAll("#inboxList .inbox-msg");
-        let visible = 0;
+        const q = qRaw.toLowerCase().trim();
+        const rows = Array.from(
+            document.querySelectorAll("#inboxList .inbox-msg")
+        );
+        const matchedRows = [];
 
         rows.forEach(function (row) {
             const statusOk = row.dataset.status === activeFilter;
             const matchStatus = activeFilter === "all" || statusOk;
-            const inSubj = row.dataset.subject.toLowerCase().includes(q);
-            const inName = row.dataset.name.toLowerCase().includes(q);
-            const inEmail = row.dataset.email.toLowerCase().includes(q);
-            const inBody = row.dataset.body.toLowerCase().includes(q);
-            const matchSearch = !q || inSubj || inName || inEmail || inBody;
+            const subjectRaw = row.dataset.subject || "";
+            const subject = String(subjectRaw).toLowerCase();
+            const matchSearch = !q || subject.indexOf(q) >= 0;
 
-            const show = matchStatus && matchSearch;
-            row.style.display = (
-                show
-                ? ""
-                : "none"
-            );
-            if (show) {
+            if (matchStatus && matchSearch) {
+                matchedRows.push(row);
+            }
+        });
+
+        const totalMatches = matchedRows.length;
+        let maxPage = 1;
+        if (totalMatches > 0) {
+            maxPage = Math.ceil(totalMatches / pageSize);
+        }
+
+        if (resetPage) {
+            currentPage = 1;
+        }
+
+        if (currentPage > maxPage) {
+            currentPage = maxPage;
+        }
+        if (currentPage < 1) {
+            currentPage = 1;
+        }
+        lastPage = maxPage;
+
+        const pageStart = (currentPage - 1) * pageSize;
+        const pageEnd = pageStart + pageSize;
+        let visible = 0;
+
+        rows.forEach(function (row) {
+            row.classList.add("d-none");
+        });
+
+        matchedRows.forEach(function (row, index) {
+            if (index >= pageStart && index < pageEnd) {
+                row.classList.remove("d-none");
                 visible += 1;
             }
         });
 
         document.getElementById("inboxEmpty").classList.toggle(
             "d-none",
-            visible > 0
+            totalMatches > 0
         );
-        const plural = (
-            visible !== 1
-            ? "s"
-            : ""
-        );
-        const countMsg = "Showing " + visible + " message" + plural;
+
+        let countMsg = "Showing 0 messages";
+        if (totalMatches > 0) {
+            if (visible === totalMatches) {
+                let plural = "";
+                if (totalMatches !== 1) {
+                    plural = "s";
+                }
+                countMsg = "Showing " + totalMatches + " message" + plural;
+            } else {
+                countMsg = "Showing " + visible;
+                countMsg += " of " + totalMatches + " messages";
+            }
+        }
+
         document.getElementById("inboxCount").textContent = countMsg;
+        _updatePagination(totalMatches);
     };
+
+    function _updatePagination(totalMatches) {
+        const indicator = document.getElementById("inboxPageIndicator");
+        const prevItem = document.getElementById("inboxPagePrevItem");
+        const nextItem = document.getElementById("inboxPageNextItem");
+        const prevButton = document.getElementById("inboxPagePrev");
+        const nextButton = document.getElementById("inboxPageNext");
+
+        const hasResults = totalMatches > 0;
+        let maxPage = 0;
+        if (hasResults) {
+            maxPage = lastPage;
+        }
+        const canGoPrev = hasResults && currentPage > 1;
+        const canGoNext = hasResults && currentPage < maxPage;
+
+        if (indicator) {
+            if (hasResults) {
+                indicator.textContent = "Page " + currentPage + " / " + maxPage;
+            } else {
+                indicator.textContent = "Page 0 / 0";
+            }
+        }
+
+        if (prevItem) {
+            prevItem.classList.toggle("disabled", !canGoPrev);
+        }
+        if (nextItem) {
+            nextItem.classList.toggle("disabled", !canGoNext);
+        }
+        if (prevButton) {
+            prevButton.disabled = !canGoPrev;
+        }
+        if (nextButton) {
+            nextButton.disabled = !canGoNext;
+        }
+    }
 
     window.inboxMarkAllRead = function () {
         const unreadRows = Array.from(document.querySelectorAll(
@@ -173,12 +271,26 @@
     };
 
     function _apiMarkRead(ids) {
-        fetch("/api/v1/markInboxRead.php", {
+        return fetch(markReadEndpoint, {
             body: JSON.stringify({ids}),
+            credentials: "same-origin",
             headers: {"Content-Type": "application/json"},
             method: "POST"
+        }).then(function (response) {
+            if (!response.ok) {
+                throw new Error(
+                    "markInboxRead failed with status " + response.status
+                );
+            }
+            return response.json();
+        }).then(function (data) {
+            if (data && typeof data.error === "string") {
+                throw new Error(data.error);
+            }
+            return data;
         }).catch(function (err) {
             console.error("markInboxRead failed:", err);
+            return null;
         });
     }
 
@@ -194,4 +306,35 @@
             badge.textContent = n + " unread";
         }
     }
+
+    const prevPageButton = document.getElementById("inboxPagePrev");
+    const nextPageButton = document.getElementById("inboxPageNext");
+
+    if (prevPageButton) {
+        prevPageButton.addEventListener("click", function () {
+            if (currentPage <= 1) {
+                return;
+            }
+            currentPage -= 1;
+            window.inboxFilter(false);
+        });
+    }
+
+    if (nextPageButton) {
+        nextPageButton.addEventListener("click", function () {
+            if (currentPage >= lastPage) {
+                return;
+            }
+            currentPage += 1;
+            window.inboxFilter(false);
+        });
+    }
+
+    if (markAllReadButton) {
+        markAllReadButton.addEventListener("click", function () {
+            window.inboxMarkAllRead();
+        });
+    }
+
+    window.inboxFilter(false);
 }());

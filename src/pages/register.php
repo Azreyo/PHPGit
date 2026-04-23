@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)');
 
             if ($stmt->execute([$username, $email, $hashed_password, $role])) {
-                echo '<script>window.location.href="index.php?page=login&success=registered";</script>';
+                echo '<script>window.location.href="/login?success=registered";</script>';
                 exit;
             }
             $post_errors[] = 'Registration failed. Please try again.';
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'username' => htmlspecialchars($username, ENT_QUOTES, 'UTF-8'),
             'email' => htmlspecialchars($email, ENT_QUOTES, 'UTF-8'),
     ];
-    echo '<script>window.location.href="index.php?page=register";</script>';
+    echo '<script>window.location.href="/register";</script>';
     exit;
 }
 
@@ -170,14 +170,14 @@ try {
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="agree-terms" name="agree-terms" required>
                     <label class="form-check-label" for="agree-terms">
-                        <a href="/index.php?page=terms">Terms &amp; Conditions</a>
+                        <a href="/terms">Terms &amp; Conditions</a>
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Submit</button>
             </form>
 
             <p class="mt-3 text-center">
-                Already have an account? <a href="/index.php?page=login">Login</a>
+                Already have an account? <a href="/login">Login</a>
             </p>
         </div>
     </div>

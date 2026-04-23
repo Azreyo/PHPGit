@@ -10,7 +10,7 @@ use App\includes\DevPanel;
 final class PageController
 {
     /** @var array<int|string, string> */
-    private const PAGE_TITLES = [
+    private const array PAGE_TITLES = [
         'home' => 'Home',
         'about' => 'About us',
         'contact' => 'Contact',
@@ -23,6 +23,9 @@ final class PageController
         '414' => 'URI too long',
         'terms' => 'Terms of Service',
         'repo_view' => 'Repository',
+        'profile_view' => 'Profile',
+        'issue_view' => 'Issue',
+        'pull_view' => 'Pull Request',
     ];
 
     /** @var array<string, string> */
@@ -35,7 +38,6 @@ final class PageController
     /** @var array<string, string> */
     private const AUTHENTICATED_USER_PAGES = [
         'settings' => 'Settings',
-        'repos' => 'Your Repositories',
         'new_repo' => 'New Repository',
     ];
 

@@ -27,10 +27,36 @@ DirectoryIndex index.php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^([a-zA-Z0-9][a-zA-Z0-9_-]{0,49})/([a-zA-Z0-9][a-zA-Z0-9._-]{0,98})\.git(/.*)?$ git.php?_git_user=$1&_git_repo=$2&_git_path=$3 [L,QSA]
 
+    # Issue detail: user/repo/issues/1 -> issue_view page (MUST be before repo rule)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-zA-Z0-9][a-zA-Z0-9_-]{0,49})/([a-zA-Z0-9][a-zA-Z0-9._-]{0,98})/issues/(\d+)/?$ index.php?page=issue_view&slug=$1/$2&item=$3 [L,QSA]
+
+    # Pull request detail: user/repo/pulls/1 -> pull_view page
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-zA-Z0-9][a-zA-Z0-9_-]{0,49})/([a-zA-Z0-9][a-zA-Z0-9._-]{0,98})/pulls/(\d+)/?$ index.php?page=pull_view&slug=$1/$2&item=$3 [L,QSA]
+
     # Pretty repo URLs: username/repo_name -> repo_view page
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^([a-zA-Z0-9][a-zA-Z0-9_-]{0,49})/([a-zA-Z0-9][a-zA-Z0-9._-]{0,98})/?$ index.php?page=repo_view&slug=$1/$2 [L,QSA]
+
+    # Pretty page URLs: somepage -> index.php?page=somepage
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/(?:api|assets|includes|pages|vendor|log|certs)(?:/|$) [NC]
+    RewriteCond %{REQUEST_URI} !^/(?:index\.php|git\.php)$ [NC]
+    RewriteRule ^(home|about|contact|explore|login|register|logout|terms|settings|repos|new_repo|dashboard|phpinfo|profile_view|404|403|414)/?$ index.php?page=$1 [L,QSA]
+
+    # Pretty profile URLs: username -> profile_view page
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php !-f
+    RewriteCond %{REQUEST_URI} !^/(?:api|assets|includes|pages|vendor|log|certs)(?:/|$) [NC]
+    RewriteCond %{REQUEST_URI} !^/(?:index\.php|git\.php)$ [NC]
+    RewriteCond %{REQUEST_URI} !^/(?:home|about|contact|explore|login|register|logout|terms|settings|repos|new_repo|dashboard|phpinfo|404|403|414)$ [NC]
+    RewriteRule ^([a-zA-Z0-9][a-zA-Z0-9_-]{0,49})/?$ index.php?page=profile_view&user=$1 [L,QSA]
 
     # Allow extensionless
     RewriteCond %{REQUEST_FILENAME} !-f
@@ -87,6 +113,6 @@ DirectoryIndex index.php
     </IfModule>
 </IfModule>
 
-ErrorDocument 404 /index.php?page=404
-ErrorDocument 403 /index.php?page=403
-ErrorDocument 414 /index.php?page=414
+ErrorDocument 404 /404
+ErrorDocument 403 /403
+ErrorDocument 414 /414

@@ -15,13 +15,13 @@
                     </p>
                     <div class="d-flex gap-3 justify-content-center flex-wrap">
                         <?php if (empty($username)): ?>
-                            <a href="index.php?page=register" class="btn btn-primary btn-lg px-4 m-2">Get Started
+                            <a href="/register" class="btn btn-primary btn-lg px-4 m-2">Get Started
                                 Free</a>
-                            <a href="index.php?page=explore" class="btn btn-outline-secondary btn-lg px-4 m-2">Explore
+                            <a href="/explore" class="btn btn-outline-secondary btn-lg px-4 m-2">Explore
                                 Repos</a>
                         <?php else: ?>
-                            <a href="index.php?page=explore" class="btn btn-primary btn-lg px-4 m-2">Explore Repos</a>
-                            <a href="index.php?page=about" class="btn btn-outline-secondary btn-lg px-4 m-2">About
+                            <a href="/explore" class="btn btn-primary btn-lg px-4 m-2">Explore Repos</a>
+                            <a href="/about" class="btn btn-outline-secondary btn-lg px-4 m-2">About
                                 Us</a>
                         <?php endif; ?>
                     </div>
@@ -113,7 +113,7 @@
             <div class="cta-box">
                 <h2 class="fw-bold mb-2">Ready to get started?</h2>
                 <p class="text-secondary mb-4">Join thousands of developers already using PHPGit.</p>
-                <a href="index.php?page=register" class="btn btn-primary btn-lg px-5">Create Free Account</a>
+                <a href="/register" class="btn btn-primary btn-lg px-5">Create Free Account</a>
             </div>
         </div>
     </section>

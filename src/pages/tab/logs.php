@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Config;
+use App\includes\Assets;
 use App\includes\Logging;
 use App\includes\Security;
 use Random\RandomException;
@@ -11,17 +12,22 @@ $config = new Config();
 $pdo = $config->getPDO();
 $logs = [];
 $csrf_token = null;
+$default_log_limit = 100;
+$logs_api_endpoint = '/api/v1/getLogs.php';
 
 try {
     if ($pdo === null) {
         throw new PDOException('Database connection is not available. Please try again later.');
     }
-    $stmt = $pdo->prepare('SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT 100');
-    $stmt->execute();
+    $stmt = $pdo->prepare('SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT ?');
+    $stmt->execute([$default_log_limit]);
     $logs = $stmt->fetchAll();
 } catch (PDOException $e) {
     Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
 }
+
+$count = count($logs);
+
 $critical_count = 0;
 $error_count = 0;
 $warning_count = 0;
@@ -45,7 +51,7 @@ foreach ($logs as $l) {
     }
 }
 $errors = [];
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'wipe_logs') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (! $security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } else {
@@ -54,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmt = $pdo->prepare('DELETE FROM log');
             $stmt->execute();
             $pdo->commit();
-            echo '<script>window.location.href="index.php?page=dashboard&tab=logs";</script>';
+            echo '<script>window.location.href="/dashboard?tab=logs";</script>';
             exit;
         } catch (PDOException $e) {
             if ($pdo->inTransaction()) {
@@ -96,31 +102,41 @@ try {
                    value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="d-flex flex-wrap gap-2">
                 <button type="submit" class="btn btn-outline-danger rounded-3"
-                        onclick="return confirm('Are you sure? This action cannot be undone.')">Wipe Logs
+                        onclick="return confirm('Are you sure? This action cannot be undone.')">Wipe All Logs
                 </button>
             </div>
         </form>
     </div>
 </section>
 
-<section class="admin-log-shell">
+<section class="admin-log-shell"
+         data-logs-endpoint="<?php echo htmlspecialchars($logs_api_endpoint, ENT_QUOTES, 'UTF-8'); ?>">
     <header class="admin-log-toolbar">
+        <form id="log-limit-form" class="d-flex align-items-center gap-2" method="get"
+              action="<?php echo htmlspecialchars($logs_api_endpoint, ENT_QUOTES, 'UTF-8'); ?>">
+            <label for="log-search-by-int" class="visually-hidden">Log limit</label>
+            <div class="input-group input-group-sm" style="max-width: 185px;">
+                <input type="number" class="form-control bg-transparent border-light border-opacity-25 text-light"
+                       id="log-search-by-int" name="limit" min="1" max="1000" value="<?php echo $default_log_limit; ?>">
+                <button type="submit" class="btn btn-sm btn-outline-light">Fetch</button>
+            </div>
+        </form>
         <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Critical (<?= $critical_count; ?>)
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Critical"
+                    aria-pressed="false">Critical (<span id="log-count-critical"><?php echo $critical_count; ?></span>)
             </button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Error (<?= $error_count; ?>)
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Error"
+                    aria-pressed="false">Error (<span id="log-count-error"><?php echo $error_count; ?></span>)
             </button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Warning (<?= $warning_count; ?>)
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Warning"
+                    aria-pressed="false">Warning (<span id="log-count-warning"><?php echo $warning_count; ?></span>)
             </button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Info (<?= $info_count ?>)</button>
-            <button type="button" class="btn btn-sm btn-secondary rounded-pill">Clear Filters</button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Info"
+                    aria-pressed="false">Info (<span id="log-count-info"><?php echo $info_count; ?></span>)
+            </button>
+            <button type="button" class="btn btn-sm btn-secondary rounded-pill" id="log-clear-filters">Clear Filters</button>
         </div>
-        <div class="input-group input-group-sm" style="max-width: 340px;">
-            <span class="input-group-text bg-transparent border-light border-opacity-25 text-light"><i
-                        class="bi bi-search"></i></span>
-            <input type="text" class="form-control bg-transparent border-light border-opacity-25 text-light"
-                   placeholder="Search logs...">
-        </div>
+        <div class="alert alert-danger py-2 px-3 mb-0 d-none" id="log-fetch-error" role="alert"></div>
     </header>
 
     <div class="table-responsive" style="max-height: 640px;">
@@ -132,7 +148,7 @@ try {
                 <th class="pe-4">Message</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="log-table-body">
             <?php
             foreach ($logs as $log):
 
@@ -142,9 +158,9 @@ try {
                     'Success' => 'text-success',
                     'Debug' => 'text-secondary',
                     default => 'text-info',
-                }
+                };
                 ?>
-                <tr>
+                <tr data-log-level="<?php echo strtolower($log['level']); ?>">
                     <td class="ps-4 text-secondary"><?php echo $log['time']; ?></td>
                     <td>
                         <span class="admin-log-badge <?php echo $color; ?>"><?php echo $log['level']; ?></span>
@@ -157,7 +173,8 @@ try {
     </div>
 
     <footer class="admin-log-footer">
-        <small>Showing latest 100 entries</small>
-        <button type="button" class="btn btn-link text-info text-decoration-none p-0">Fetch older entries</button>
+        <small id="log-footer-count">Showing latest <?php echo $count; ?> entries</small>
     </footer>
 </section>
+
+<script src="<?= Assets::url("/assets/js/log.js"); ?>"></script>

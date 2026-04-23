@@ -17,10 +17,11 @@ $prefill_email = $_SESSION['login_prefill_email'] ?? '';
 unset($_SESSION['login_errors'], $_SESSION['login_prefill_email']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $pdo = $config->getPDO();
     if ($is_dev && isset($_POST['action']) && $_POST['action'] === 'reset_rate_limit') {
         session_destroy();
         $_SESSION = [];
-        echo '<script>window.location.href="index.php?page=login";</script>';
+        echo '<script>window.location.href="/login";</script>';
         exit;
     }
 
@@ -45,9 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($password)) {
             $post_errors[] = 'Password is required.';
         }
+        if ($pdo !== null) {
+            $stmt = $pdo->prepare('SELECT status FROM users where email = ?');
+            $stmt->execute([$email]);
+            $userStatus = $stmt->fetch();
+            if ($userStatus['status'] === 'SUSPENDED') {
+                $post_errors[] = 'Your account has been suspended.';
+                Logging::loggingToFile('User suspended', 2, true);
+            }
+        }
 
         if (empty($post_errors)) {
-            $pdo = $config->getPDO();
             if ($pdo !== null) {
                 $stmt = $pdo->prepare(
                     'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
@@ -67,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['role'] = $user['role'];
 
                     unset($_SESSION['csrf_token']);
-                    echo '<script>window.location.href="index.php?page=home";</script>';
+                    echo '<script>window.location.href="/home";</script>';
                     exit;
                 }
             } else {
@@ -79,8 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $_SESSION['login_errors'] = $post_errors;
     $_SESSION['login_prefill_email'] = htmlspecialchars(trim($_POST['email'] ?? ''), ENT_QUOTES, 'UTF-8');
-    $qs = isset($_GET['success']) ? '?page=login&success=registered' : '?page=login';
-    echo '<script>window.location.href="index.php' . $qs . '";</script>';
+    $redirect = isset($_GET['success']) ? '/login?success=registered' : '/login';
+    echo '<script>window.location.href="' . $redirect . '";</script>';
     exit;
 }
 
@@ -166,7 +175,7 @@ try {
             </form>
 
             <p class="mt-3 text-center">
-                Don't have an account? <a href="index.php?page=register">Register</a>
+                Don't have an account? <a href="/register">Register</a>
             </p>
 
             <?php if ($is_dev): ?>

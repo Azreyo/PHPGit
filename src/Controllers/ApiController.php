@@ -165,6 +165,116 @@ class ApiController extends Controller
         }
     }
 
+    private function getLogs(): void
+    {
+        $this->requireMethod('GET');
+        $this->requireAdminSession();
+
+        if ($this->pdo === null) {
+            $this->error('Database unavailable', 503);
+        }
+        $logs = [];
+        $defaultLimit = 100;
+        $maxLimit = 1000;
+        $requestedLimit = filter_input(
+            INPUT_GET,
+            'limit',
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1, 'max_range' => $maxLimit]]
+        );
+        $limit = $requestedLimit === false || $requestedLimit === null
+            ? $defaultLimit
+            : $requestedLimit;
+
+        $requestedSecurityFilter = filter_input(
+            INPUT_GET,
+            'security',
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 0, 'max_range' => 1]]
+        );
+        $securityFilter = $requestedSecurityFilter === false || $requestedSecurityFilter === null
+            ? 0
+            : $requestedSecurityFilter;
+
+        try {
+            $query = 'SELECT log_time AS time, level, message AS msg FROM log';
+            if ($securityFilter === 1) {
+                $query .= ' WHERE security = 1';
+            }
+            $query .= ' ORDER BY log_time DESC LIMIT ?';
+
+            $stmt = $this->pdo->prepare($query);
+            $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            Logging::loggingToFile('Logs fetch error: ' . $e->getMessage(), 4, true, true);
+            $this->error('Could not fetch logs');
+        }
+
+        $counters = [
+            'critical' => 0,
+            'error' => 0,
+            'warning' => 0,
+            'info' => 0,
+        ];
+
+        foreach ($logs as $log) {
+            $level = strtolower((string)($log['level'] ?? ''));
+            if (array_key_exists($level, $counters)) {
+                $counters[$level]++;
+            }
+        }
+
+        $this->success([
+            'logs' => $logs,
+            'limit' => $limit,
+            'security_filter' => $securityFilter,
+            'count' => count($logs),
+            'counters' => $counters,
+        ]);
+    }
+
+    private function clearCache(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireAdminSession();
+
+        clearstatcache(true);
+        $opcacheCleared = null;
+        $apcuCleared = null;
+
+        if (function_exists('opcache_reset')) {
+            $opcacheCleared = (bool)@opcache_reset();
+        }
+
+        if (function_exists('apcu_clear_cache')) {
+            $apcuCleared = (bool)@apcu_clear_cache();
+        }
+
+        Logging::loggingToFile('Dashboard maintenance: cache clear requested by admin', 2, true, true);
+
+        $this->success([
+            'message' => 'Cache clear completed',
+            'opcache_cleared' => $opcacheCleared,
+            'apcu_cleared' => $apcuCleared,
+            'processed_at' => date(DATE_ATOM),
+        ]);
+    }
+
+    private function restartServices(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireAdminSession();
+
+        Logging::loggingToFile('Dashboard maintenance: service restart requested by admin', 3, true, true);
+
+        $this->success([
+            'message' => 'Restart request logged. Restart services from your host supervisor to apply it.',
+            'processed_at' => date(DATE_ATOM),
+        ]);
+    }
+
     private function markInboxRead(): void
     {
         $this->requireMethod('POST');
@@ -209,20 +319,20 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
-        $body = json_decode((string)file_get_contents('php://input'), true);
-        $title = trim((string)($body['title'] ?? ''));
-        $publicKey = trim((string)($body['public_key'] ?? ''));
+        $body = json_decode((string) file_get_contents('php://input'), true);
+        $title = trim((string) ($body['title'] ?? ''));
+        $publicKey = trim((string) ($body['public_key'] ?? ''));
 
         if ($title === '' || $publicKey === '') {
             $this->error('Title and public_key are required', 400);
         }
 
-        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
         $service = $this->buildSshKeyService();
 
         $result = $service->addKey($userId, $title, $publicKey);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             $this->error($result['error'] ?? 'Failed to add key', 400);
         }
 
@@ -238,17 +348,17 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
-        $body = json_decode((string)file_get_contents('php://input'), true);
-        $keyId = (int)($body['id'] ?? 0);
+        $body = json_decode((string) file_get_contents('php://input'), true);
+        $keyId = (int) ($body['id'] ?? 0);
 
         if ($keyId <= 0) {
             $this->error('Invalid key ID', 400);
         }
 
-        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
         $service = $this->buildSshKeyService();
 
-        if (!$service->deleteKey($keyId, $userId)) {
+        if (! $service->deleteKey($keyId, $userId)) {
             $this->error('Key not found or not owned by you', 404);
         }
 
@@ -264,7 +374,7 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
-        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
         $service = $this->buildSshKeyService();
 
         $this->success(['keys' => $service->listKeys($userId)]);
@@ -290,7 +400,6 @@ class ApiController extends Controller
         return new SshKeyService($pdo, $authorizedKeys, $gitShellWrapper);
     }
 
-
     public function api(string $endpoint): void
     {
         $cleanEndpoint = preg_replace('/[^a-z_]/', '', strtolower($endpoint)) ?: '';
@@ -298,6 +407,9 @@ class ApiController extends Controller
         match ($cleanEndpoint) {
             'getdashboardinfo' => $this->getDashboardInfo(),
             'getdatabaseuptime' => $this->getDatabaseInfo(),
+            'getlogs' => $this->getLogs(),
+            'clearcache' => $this->clearCache(),
+            'restartservices' => $this->restartServices(),
             'markinboxread' => $this->markInboxRead(),
             'addsshkey' => $this->addSshKey(),
             'deletesshkey' => $this->deleteSshKey(),

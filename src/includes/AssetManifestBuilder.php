@@ -107,12 +107,16 @@ final class AssetManifestBuilder
 
         $content = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
         $tmp = tempnam($dir, '.manifest_tmp_');
+
         if ($tmp === false) {
             $msg = "Failed to create temporary file in {$dir}";
             Logging::loggingToFile($msg);
 
             throw new \RuntimeException($msg);
         }
+
+        $perms = file_exists($path) ? fileperms($path) : 0664;
+        chmod($tmp, $perms & 0777);
 
         try {
             if (file_put_contents($tmp, $content) === false) {
@@ -121,6 +125,7 @@ final class AssetManifestBuilder
             if (! rename($tmp, $path)) {
                 throw new \RuntimeException("Failed to move asset manifest into place at {$path}");
             }
+            chmod($path, $perms & 0777);
         } catch (\RuntimeException $e) {
             @unlink($tmp);
             Logging::loggingToFile($e->getMessage());

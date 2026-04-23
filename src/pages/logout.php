@@ -51,8 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1 class="fw-bold mb-2">See you soon!</h1>
             <p class="text-secondary mb-4">You've been successfully logged out.</p>
             <div class="d-flex gap-3 justify-content-center">
-                <a class="btn btn-primary" href="/index.php?page=home">Go Home</a>
-                <a class="btn btn-outline-secondary" href="/index.php?page=login">Login Again</a>
+                <a class="btn btn-primary" href="/home">Go Home</a>
+                <a class="btn btn-outline-secondary" href="/login">Login Again</a>
             </div>
             <?php elseif ($csrf_error): ?>
                 <div class="mb-4 d-flex align-items-center justify-content-center bg-danger-subtle border border-danger-subtle rounded-circle text-danger mx-auto"
@@ -62,12 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h1 class="fw-bold mb-2">Invalid Session</h1>
                 <p class="text-secondary mb-4">Your logout request could not be verified. Please try again.</p>
                 <div class="d-flex gap-3 justify-content-center">
-                    <form method="POST" action="/index.php?page=logout">
+                    <form method="POST" action="/logout">
                         <input type="hidden" name="csrf_token"
                                value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
                         <button type="submit" class="btn btn-primary">Retry Logout</button>
                     </form>
-                    <a class="btn btn-outline-secondary" href="/index.php?page=home">Cancel</a>
+                    <a class="btn btn-outline-secondary" href="/home">Cancel</a>
                 </div>
             <?php else: ?>
                 <div class="mb-4 d-flex align-items-center justify-content-center bg-primary-subtle border border-primary-subtle rounded-circle text-primary mx-auto"
@@ -77,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1 class="fw-bold mb-2">Warning!</h1>
             <p class="text-secondary mb-4">You're not logged in.</p>
             <div class="d-flex gap-3 justify-content-center">
-                <a class="btn btn-primary" href="/index.php?page=home">Go Home</a>
-                <a class="btn btn-outline-secondary" href="/index.php?page=login">Login</a>
+                <a class="btn btn-primary" href="/home">Go Home</a>
+                <a class="btn btn-outline-secondary" href="/login">Login</a>
             </div>
             <?php endif; ?>
         </div>

@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $pdo->commit();
                         Logging::loggingToFile("Account deleted for user ID: {$userId}", 3);
                         session_destroy();
-                        echo '<script>window.location.href="index.php?page=home";</script>';
+                        echo '<script>window.location.href="/home";</script>';
                         exit;
                     } catch (PDOException $e) {
                         if ($pdo->inTransaction()) {
@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $_SESSION['security_errors'] = $post_errors;
     $_SESSION['security_success'] = $post_success;
-    echo '<script>window.location.href="index.php?page=settings&tab=security";</script>';
+    echo '<script>window.location.href="/settings?tab=security";</script>';
     exit;
 }
 

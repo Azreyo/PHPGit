@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use App\includes\Assets;
 
-
 /** @var string $page_title */
 /** @var string $page */
 /** @var string $is_dev */
@@ -15,8 +14,16 @@ use App\includes\Assets;
 <html lang="en" data-bs-theme="dark">
 <head>
     <script>(function () {
-            let t = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-bs-theme', t);
+            var storedTheme = localStorage.getItem('theme') || 'dark';
+            function resolveTheme(theme) {
+                if (theme === 'system') {
+                    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? 'dark'
+                        : 'light';
+                }
+                return theme;
+            }
+            document.documentElement.setAttribute('data-bs-theme', resolveTheme(storedTheme));
         })();</script>
     <meta charset="UTF-8">
     <title><?= $page_title ?></title>
@@ -45,9 +52,10 @@ use App\includes\Assets;
 
 <?php
 $allowedPages = [
-    'home', 'about', 'contact', 'explore', 'login', 'register', 'logout',
-    '404', '403', '414', 'terms', 'settings', 'repos', 'new_repo',
-        'dashboard', 'phpinfo', 'repo_view',
+        'home', 'about', 'contact', 'explore', 'login', 'register', 'logout',
+        '404', '403', '414', 'terms', 'settings', 'new_repo',
+        'dashboard', 'phpinfo', 'repo_view', 'profile_view',
+        'issue_view', 'pull_view',
 ];
 $safePage = in_array($page, $allowedPages, true) ? $page : '404';
 include __DIR__ . '/../includes/header.php';
