@@ -1,18 +1,30 @@
 let has_run = false;
 const recentSecurityLogLimit = 5;
-const recentSecurityLogList = document.getElementById("recent-security-log-list");
-const clearCacheButton = document.getElementById("overview-clear-cache-btn");
-const restartServicesButton = document.getElementById("overview-restart-services-btn");
-const actionStatus = document.getElementById("overview-action-status");
-const serverLoadValue = document.getElementById("server-load");
-const serverLatencyValue = document.getElementById("server-latency");
+const recentSecurityLogList = (
+    document.getElementById("recent-security-log-list")
+);
+const clearCacheButton = (
+    document.getElementById("overview-clear-cache-btn")
+);
+const restartServicesButton = (
+    document.getElementById("overview-restart-services-btn")
+);
+const actionStatus = (
+    document.getElementById("overview-action-status")
+);
+const serverLoadValue = (
+    document.getElementById("server-load")
+);
+const serverLatencyValue = (
+    document.getElementById("server-latency")
+);
 
 function escapeHtml(value) {
     return String(value)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
+        .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
 
@@ -51,8 +63,19 @@ function showActionStatus(message, type) {
         return;
     }
 
-    actionStatus.classList.remove("d-none", "alert-success", "alert-danger", "alert-info");
-    actionStatus.classList.add(type === "success" ? "alert-success" : type === "error" ? "alert-danger" : "alert-info");
+    actionStatus.classList.remove(
+        "d-none",
+        "alert-success",
+        "alert-danger",
+        "alert-info"
+    );
+    actionStatus.classList.add(
+        type === "success"
+            ? "alert-success"
+            : type === "error"
+                ? "alert-danger"
+                : "alert-info"
+    );
     actionStatus.textContent = message;
 }
 
@@ -62,7 +85,11 @@ function renderRecentSecurityLogs(logs) {
     }
 
     if (!Array.isArray(logs) || logs.length === 0) {
-        recentSecurityLogList.innerHTML = "<p class=\"mb-0 text-secondary small px-4 py-4\">No recent security events found.</p>";
+        recentSecurityLogList.innerHTML = `
+          <p class="mb-0 text-secondary small px-4 py-4">
+            No recent security events were found.
+          </p>
+        `;
         return;
     }
 
@@ -73,11 +100,16 @@ function renderRecentSecurityLogs(logs) {
         const message = escapeHtml(log.msg || "No message provided.");
 
         return "<article class=\"admin-activity-item\">" +
-            "<div class=\"admin-activity-icon text-" + style.color + " bg-" + style.color + " bg-opacity-10\">" +
+            "<div class=\"admin-activity-icon text-" +
+            style.color +
+            " bg-" +
+            style.color +
+            " bg-opacity-10\">" +
             "<i class=\"bi " + style.icon + "\"></i>" +
             "</div>" +
             "<div class=\"flex-grow-1\">" +
-            "<div class=\"d-flex justify-content-between align-items-start mb-1 gap-2\">" +
+            "<div class=\"d-flex justify-content-between " +
+            "align-items-start mb-1 gap-2\">" +
             "<h6 class=\"mb-0 fw-semibold\">" + level + "</h6>" +
             "<small class=\"text-secondary\">" + time + "</small>" +
             "</div>" +
@@ -91,11 +123,14 @@ function renderRecentSecurityLogs(logs) {
 
 async function getRecentSecurityLogs() {
     try {
-        const response = await fetch("/api/v1/getLogs.php?limit=" + recentSecurityLogLimit + "&security=1");
+        const response = await fetch("/api/v1/getLogs.php?limit=" + (
+            recentSecurityLogLimit + "&security=1")
+        );
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || "Could not fetch security logs");
+            const message = data?.error || "Could not fetch security logs";
+            return Promise.reject(new Error(message));
         }
 
         renderRecentSecurityLogs(data.logs || []);
@@ -105,7 +140,9 @@ async function getRecentSecurityLogs() {
     }
 }
 
-async function runMaintenanceAction(endpoint, loadingMessage, successFallbackMessage) {
+async function runMaintenanceAction(
+    endpoint, loadingMessage, successFallbackMessage
+) {
     if (clearCacheButton) {
         clearCacheButton.disabled = true;
     }
@@ -117,16 +154,18 @@ async function runMaintenanceAction(endpoint, loadingMessage, successFallbackMes
 
     try {
         const response = await fetch(endpoint, {
-            method: "POST",
+            body: "{}",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: "{}"
+            method: "POST"
         });
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || "Maintenance action failed");
+            const message = "Could not perform maintenance action";
+            const errorMessage = data?.error || message;
+            return Promise.reject(new Error(errorMessage));
         }
 
         showActionStatus(data.message || successFallbackMessage, "success");
@@ -136,7 +175,9 @@ async function runMaintenanceAction(endpoint, loadingMessage, successFallbackMes
         ]);
     } catch (error) {
         console.error("Maintenance action error:", error);
-        showActionStatus(error instanceof Error ? error.message : "Maintenance action failed", "error");
+        const messageAct = error?.message ?? "Maintenance action failed";
+
+        showActionStatus(messageAct, "error");
     } finally {
         if (clearCacheButton) {
             clearCacheButton.disabled = false;
@@ -150,13 +191,19 @@ async function runMaintenanceAction(endpoint, loadingMessage, successFallbackMes
 function initMaintenanceButtons() {
     if (clearCacheButton) {
         clearCacheButton.addEventListener("click", function () {
-            runMaintenanceAction("/api/v1/clearCache.php", "Clearing application caches...", "Cache cleared successfully");
+            runMaintenanceAction(
+                "/api/v1/clearCache.php",
+                "Clearing application caches...",
+                "Cache cleared successfully"
+            );
         });
     }
 
     if (restartServicesButton) {
         restartServicesButton.addEventListener("click", function () {
-            runMaintenanceAction("/api/v1/restartServices.php", "Restarting services...", "Service restart request submitted");
+            runMaintenanceAction("/api/v1/restartServices.php",
+                "Restarting services...",
+                "Service restart request submitted");
         });
     }
 }
@@ -170,8 +217,10 @@ async function updateCPUUsage() {
         if (response.ok) {
             const data = await response.json();
             const pct = Math.round(data.cpu_usage_percent) + "%";
-            const latencyMs = Math.max(0, Math.round(performance.now() - startedAt));
-
+            const latencyMs = Math.max(
+                0,
+                Math.round(performance.now() - startedAt)
+            );
             document.getElementById("cpu-usage").textContent = pct;
             document.getElementById("cpu-progress-bar").style.width = pct;
 
@@ -180,7 +229,7 @@ async function updateCPUUsage() {
             }
 
             if (serverLatencyValue) {
-                serverLatencyValue.textContent = "Avg. latency " + latencyMs + "ms";
+                serverLatencyValue.textContent = `Avg. latency ${latencyMs}ms`;
             }
         }
     } catch (error) {

@@ -9,7 +9,7 @@ class Settings
     private string $username;
     private string $current_tab;
 
-    private const array ALLOWED_TABS = ['profile', 'security', 'appearance', 'notifications', 'privacy', 'ssh-keys'];
+    private const array ALLOWED_TABS = ['profile', 'security', 'appearance', 'privacy', 'ssh-keys'];
     private const  string TAB_DIR = __DIR__ . '/../pages/tab/';
 
     /**
@@ -80,12 +80,6 @@ class Settings
                         'label' => 'Appearance',
                         'description' => 'Theme & display options',
                         'icon' => 'bi-palette',
-                        'group' => 'Preferences',
-                ],
-                'notifications' => [
-                        'label' => 'Notifications',
-                        'description' => 'Alerts & email digests',
-                        'icon' => 'bi-bell',
                         'group' => 'Preferences',
                 ],
                 'privacy' => [
