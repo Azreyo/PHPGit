@@ -11,9 +11,10 @@
     let currentPage = 1;
     let lastPage = 1;
     const markAllReadButton = document.getElementById("inboxMarkAllReadBtn");
-    const markReadEndpoint = markAllReadButton && markAllReadButton.dataset.markReadEndpoint
-        ? markAllReadButton.dataset.markReadEndpoint
-        : "/api/v1/markInboxRead.php";
+    let markReadEndpoint = "/api/v1/markInboxRead.php";
+    if (markAllReadButton && markAllReadButton.dataset.markReadEndpoint) {
+        markReadEndpoint = markAllReadButton.dataset.markReadEndpoint;
+    }
 
     window.inboxOpen = function (article) {
         currentArticle = article;
@@ -105,7 +106,7 @@
             document.getElementById("inboxModal")
         ).hide();
         window.inboxFilter(false);
-    }
+    };
 
     window.inboxSetTab = function (btn, filter) {
         activeFilter = filter;
@@ -121,14 +122,17 @@
     window.inboxFilter = function (resetPage = true) {
         const qRaw = document.getElementById("inboxSearch").value || "";
         const q = qRaw.toLowerCase().trim();
-        const rows = Array.from(document.querySelectorAll("#inboxList .inbox-msg"));
+        const rows = Array.from(
+            document.querySelectorAll("#inboxList .inbox-msg")
+        );
         const matchedRows = [];
 
         rows.forEach(function (row) {
             const statusOk = row.dataset.status === activeFilter;
             const matchStatus = activeFilter === "all" || statusOk;
-            const subject = (row.dataset.subject || "").toLowerCase();
-            const matchSearch = !q || subject.includes(q);
+            const subjectRaw = row.dataset.subject || "";
+            const subject = String(subjectRaw).toLowerCase();
+            const matchSearch = !q || subject.indexOf(q) >= 0;
 
             if (matchStatus && matchSearch) {
                 matchedRows.push(row);
@@ -136,9 +140,10 @@
         });
 
         const totalMatches = matchedRows.length;
-        const maxPage = totalMatches > 0
-            ? Math.ceil(totalMatches / pageSize)
-            : 1;
+        let maxPage = 1;
+        if (totalMatches > 0) {
+            maxPage = Math.ceil(totalMatches / pageSize);
+        }
 
         if (resetPage) {
             currentPage = 1;
@@ -175,10 +180,14 @@
         let countMsg = "Showing 0 messages";
         if (totalMatches > 0) {
             if (visible === totalMatches) {
-                const plural = totalMatches !== 1 ? "s" : "";
+                let plural = "";
+                if (totalMatches !== 1) {
+                    plural = "s";
+                }
                 countMsg = "Showing " + totalMatches + " message" + plural;
             } else {
-                countMsg = "Showing " + visible + " of " + totalMatches + " messages";
+                countMsg = "Showing " + visible;
+                countMsg += " of " + totalMatches + " messages";
             }
         }
 
@@ -194,14 +203,19 @@
         const nextButton = document.getElementById("inboxPageNext");
 
         const hasResults = totalMatches > 0;
-        const maxPage = hasResults ? lastPage : 0;
+        let maxPage = 0;
+        if (hasResults) {
+            maxPage = lastPage;
+        }
         const canGoPrev = hasResults && currentPage > 1;
         const canGoNext = hasResults && currentPage < maxPage;
 
         if (indicator) {
-            indicator.textContent = hasResults
-                ? "Page " + currentPage + " / " + maxPage
-                : "Page 0 / 0";
+            if (hasResults) {
+                indicator.textContent = "Page " + currentPage + " / " + maxPage;
+            } else {
+                indicator.textContent = "Page 0 / 0";
+            }
         }
 
         if (prevItem) {
@@ -259,12 +273,14 @@
     function _apiMarkRead(ids) {
         return fetch(markReadEndpoint, {
             body: JSON.stringify({ids}),
+            credentials: "same-origin",
             headers: {"Content-Type": "application/json"},
-            method: "POST",
-            credentials: "same-origin"
+            method: "POST"
         }).then(function (response) {
             if (!response.ok) {
-                throw new Error("markInboxRead failed with status " + response.status);
+                throw new Error(
+                    "markInboxRead failed with status " + response.status
+                );
             }
             return response.json();
         }).then(function (data) {
