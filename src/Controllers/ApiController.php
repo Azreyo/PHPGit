@@ -186,10 +186,24 @@ class ApiController extends Controller
             ? $defaultLimit
             : $requestedLimit;
 
+        $requestedSecurityFilter = filter_input(
+            INPUT_GET,
+            'security',
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 0, 'max_range' => 1]]
+        );
+        $securityFilter = $requestedSecurityFilter === false || $requestedSecurityFilter === null
+            ? 0
+            : $requestedSecurityFilter;
+
         try {
-            $stmt = $this->pdo->prepare(
-                'SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT ?'
-            );
+            $query = 'SELECT log_time AS time, level, message AS msg FROM log';
+            if ($securityFilter === 1) {
+                $query .= ' WHERE security = 1';
+            }
+            $query .= ' ORDER BY log_time DESC LIMIT ?';
+
+            $stmt = $this->pdo->prepare($query);
             $stmt->bindValue(1, $limit, PDO::PARAM_INT);
             $stmt->execute();
             $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -215,8 +229,49 @@ class ApiController extends Controller
         $this->success([
             'logs' => $logs,
             'limit' => $limit,
+            'security_filter' => $securityFilter,
             'count' => count($logs),
             'counters' => $counters,
+        ]);
+    }
+
+    private function clearCache(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireAdminSession();
+
+        clearstatcache(true);
+        $opcacheCleared = null;
+        $apcuCleared = null;
+
+        if (function_exists('opcache_reset')) {
+            $opcacheCleared = (bool)@opcache_reset();
+        }
+
+        if (function_exists('apcu_clear_cache')) {
+            $apcuCleared = (bool)@apcu_clear_cache();
+        }
+
+        Logging::loggingToFile('Dashboard maintenance: cache clear requested by admin', 2, true, true);
+
+        $this->success([
+            'message' => 'Cache clear completed',
+            'opcache_cleared' => $opcacheCleared,
+            'apcu_cleared' => $apcuCleared,
+            'processed_at' => date(DATE_ATOM),
+        ]);
+    }
+
+    private function restartServices(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireAdminSession();
+
+        Logging::loggingToFile('Dashboard maintenance: service restart requested by admin', 3, true, true);
+
+        $this->success([
+            'message' => 'Restart request logged. Restart services from your host supervisor to apply it.',
+            'processed_at' => date(DATE_ATOM),
         ]);
     }
 
@@ -353,6 +408,8 @@ class ApiController extends Controller
             'getdashboardinfo' => $this->getDashboardInfo(),
             'getdatabaseuptime' => $this->getDatabaseInfo(),
             'getlogs' => $this->getLogs(),
+            'clearcache' => $this->clearCache(),
+            'restartservices' => $this->restartServices(),
             'markinboxread' => $this->markInboxRead(),
             'addsshkey' => $this->addSshKey(),
             'deletesshkey' => $this->deleteSshKey(),
