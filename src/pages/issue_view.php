@@ -45,7 +45,7 @@ if ($repo === null) {
 }
 
 $issueStmt = $pdo->prepare(
-    'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
+    'SELECT i.id, i.author_user_id, i.title, i.body, i.status, i.created_at, i.closed_at,
             u.username AS author_username, u.email AS author_email,
             COALESCE(u.display_name, \'\') AS author_display_name,
             a.username AS assignee_username,
@@ -57,7 +57,6 @@ $issueStmt = $pdo->prepare(
 );
 $issueStmt->execute([$itemId, (int) $repo['id']]);
 $issue = $issueStmt->fetch(\PDO::FETCH_ASSOC);
-
 if ($issue === false) {
     http_response_code(404);
     echo '<main class="container py-5"><div class="alert alert-warning">Issue not found.</div></main>';
