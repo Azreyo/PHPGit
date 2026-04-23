@@ -159,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 try {
     if ($pdo !== null) {
-        $stmt = $pdo->prepare('SELECT id, username, email, display_name, role, status, bio, created_at AS joined FROM users ORDER BY created_at DESC LIMIT 10');
+        $stmt = $pdo->prepare('SELECT id, username, email, display_name, role, status, bio, created_at AS joined FROM users ORDER BY created_at DESC');
         $stmt->execute();
         $users = $stmt->fetchAll();
         $stmt = $pdo->prepare('SELECT COUNT(*) as all_count FROM users');
@@ -407,7 +407,7 @@ try {
                 <th class="pe-4 text-end">Actions</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="usersList">
             <?php
             foreach ($users as $u):
                 $roleClass = match ($u['role']) {
@@ -421,7 +421,7 @@ try {
                     default => 'warning'
                 };
                 ?>
-                <tr>
+                <tr class="users-row">
                     <td class="ps-4">
                         <div class="d-flex align-items-center gap-3">
                             <span class="avatar-circle" style="width: 42px; height: 42px; font-size: 0.85rem;">
@@ -478,13 +478,31 @@ try {
     </div>
 
     <div class="admin-table-foot">
-        <small class="text-secondary">Showing <?php echo count($users); ?> of <?php echo $all_count; ?> users</small>
-        <div class="btn-group btn-group-sm" role="group" aria-label="Pagination">
-            <button type="button" class="btn btn-outline-secondary">Prev</button>
-            <button type="button" class="btn btn-primary">1</button>
-            <button type="button" class="btn btn-outline-secondary">2</button>
-            <button type="button" class="btn btn-outline-secondary">Next</button>
-        </div>
+        <small class="text-secondary" id="usersCount">
+            Showing <?php echo min(10, count($users)); ?> of <?php echo $all_count; ?> users
+        </small>
+        <nav aria-label="Users pagination">
+            <ul class="pagination pagination-sm mb-0 gap-1">
+                <li class="page-item disabled" id="usersPagePrevItem">
+                    <button type="button"
+                            class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary"
+                            id="usersPagePrev" aria-label="Previous page" disabled>
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </li>
+                <li class="page-item active" id="usersPageIndicatorItem">
+                    <span class="page-link rounded-3 bg-primary border-primary"
+                          id="usersPageIndicator">Page 1 / 1</span>
+                </li>
+                <li class="page-item" id="usersPageNextItem">
+                    <button type="button"
+                            class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary"
+                            id="usersPageNext" aria-label="Next page">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </li>
+            </ul>
+        </nav>
     </div>
 </div>
 

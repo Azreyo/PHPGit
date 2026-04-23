@@ -51,10 +51,37 @@ function genLogData(int $user) : void {
         echo "Fake data generation completed.\n";
     }
 }
+
+function genUserData(int $user): void
+{
+    global $pdo;
+    global $faker;
+    try {
+        for ($i = 0; $i < $user; $i++) {
+            $username = $faker->userName();
+            $email = $faker->email();
+            $password = $faker->password();
+            $role = $faker->randomElement(['user', 'admin']);
+            $status = $faker->randomElement(['active', 'inactive', 'suspended']);
+            $password = password_hash($password, PASSWORD_DEFAULT);
+            if ($pdo !== null) {
+                $stmt = $pdo->prepare('INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
+                $stmt->execute([$username, $email, $password, $role, $status]);
+            }
+        }
+    } catch (PDOException $e) {
+        echo "Database error: " . $e->getMessage() . "\n";
+        exit(1);
+    } finally {
+        echo "Fake data generation completed.\n";
+    }
+}
+
 echo "Welcome to the Fake Data Generator!\n" .
      "0. Exit\n" .
      "1. Generate fake inbox data\n" .
      "2. Generate fake log data\n".
+    "3. Generate fake user data\n" .
      "Enter the menu number: ";
 $input = strtolower(trim((string)fgets(STDIN)));
 
@@ -73,7 +100,10 @@ switch ($input) {
         break;
     case '2':
         genLogData($user);
-    break;
+        break;
+    case '3':
+        genUserData($user);
+        break;
     case '0':
         exit(0);
     default:
