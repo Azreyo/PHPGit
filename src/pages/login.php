@@ -17,6 +17,7 @@ $prefill_email = $_SESSION['login_prefill_email'] ?? '';
 unset($_SESSION['login_errors'], $_SESSION['login_prefill_email']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $pdo = $config->getPDO();
     if ($is_dev && isset($_POST['action']) && $_POST['action'] === 'reset_rate_limit') {
         session_destroy();
         $_SESSION = [];
@@ -45,9 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($password)) {
             $post_errors[] = 'Password is required.';
         }
+        if ($pdo !== null) {
+            $stmt = $pdo->prepare('SELECT status FROM users where email = ?');
+            $stmt->execute([$email]);
+            $userStatus = $stmt->fetch();
+            if ($userStatus['status'] === 'SUSPENDED') {
+                $post_errors[] = 'Your account has been suspended.';
+                Logging::loggingToFile('User suspended', 2, true);
+            }
+        }
 
         if (empty($post_errors)) {
-            $pdo = $config->getPDO();
             if ($pdo !== null) {
                 $stmt = $pdo->prepare(
                     'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
