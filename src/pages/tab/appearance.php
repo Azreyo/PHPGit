@@ -9,7 +9,7 @@
     </div>
 </div>
 
-<form action="#" method="post">
+<form id="appearance-settings-form" action="#" method="post">
 
     <div class="mb-5">
         <div class="d-flex align-items-center gap-3 mb-4">
@@ -135,70 +135,11 @@
         </div>
     </div>
 
-    <hr class="border-secondary-subtle my-5">
-
-    <div class="mb-2">
-        <div class="d-flex align-items-center gap-3 mb-4">
-            <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"
-                 style="width: 30px; height: 30px; font-size: .85rem;">
-                <i class="bi bi-toggles"></i>
-            </div>
-            <div>
-                <h6 class="fw-bold mb-0">Interface Options</h6>
-                <small class="text-secondary">Fine-tune specific UI behaviours.</small>
-            </div>
-        </div>
-
-        <div class="d-flex flex-column gap-2">
-            <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border border-secondary-subtle bg-body-secondary">
-                <div>
-                    <div class="fw-semibold" style="font-size: .9rem;">
-                        <i class="bi bi-lightning-charge text-warning me-2"></i>Animated transitions
-                    </div>
-                    <small class="text-secondary">Smooth page and component animations.</small>
-                </div>
-                <div class="form-check form-switch m-0 flex-shrink-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="opt-animations"
-                           style="width: 2.4em; height: 1.25em; cursor: pointer;" checked>
-                    <label class="visually-hidden" for="opt-animations">Animated transitions</label>
-                </div>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border border-secondary-subtle bg-body-secondary">
-                <div>
-                    <div class="fw-semibold" style="font-size: .9rem;">
-                        <i class="bi bi-terminal text-success me-2"></i>Terminal animation
-                    </div>
-                    <small class="text-secondary">Typewriter effect on the home terminal.</small>
-                </div>
-                <div class="form-check form-switch m-0 flex-shrink-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="opt-terminal-anim"
-                           style="width: 2.4em; height: 1.25em; cursor: pointer;" checked>
-                    <label class="visually-hidden" for="opt-terminal-anim">Terminal animation</label>
-                </div>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between p-3 rounded-3 border border-secondary-subtle bg-body-secondary">
-                <div>
-                    <div class="fw-semibold" style="font-size: .9rem;">
-                        <i class="bi bi-bar-chart-line text-primary me-2"></i>Show activity graph
-                    </div>
-                    <small class="text-secondary">Commit activity heatmap on your profile.</small>
-                </div>
-                <div class="form-check form-switch m-0 flex-shrink-0">
-                    <input class="form-check-input" type="checkbox" role="switch" id="opt-activity-graph"
-                           style="width: 2.4em; height: 1.25em; cursor: pointer;" checked>
-                    <label class="visually-hidden" for="opt-activity-graph">Show activity graph</label>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="d-flex align-items-center justify-content-end gap-3 mt-5 pt-4 border-top border-secondary-subtle">
-        <button type="reset" class="btn btn-outline-secondary px-4">
+        <button type="reset" id="appearance-reset" class="btn btn-outline-secondary px-4">
             <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
         </button>
-        <button type="button" class="btn btn-primary px-4 d-flex align-items-center gap-2">
+        <button type="button" id="appearance-save" class="btn btn-primary px-4 d-flex align-items-center gap-2">
             <i class="bi bi-check2-circle"></i> Save Appearance
         </button>
     </div>

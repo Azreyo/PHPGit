@@ -5,6 +5,37 @@
     --radius-card: 14px;
     --radius-icon: 12px;
     --ease:        0.2s ease;
+    --app-code-font-family: var(--bs-font-monospace);
+    --app-code-font-size: 0.82rem;
+}
+
+html[data-ui-density="compact"] {
+    font-size: 0.95rem;
+}
+
+html[data-ui-density="comfortable"] {
+    font-size: 1.05rem;
+}
+
+html[data-ui-animations="false"],
+html[data-ui-animations="false"] *,
+html[data-ui-animations="false"] *::before,
+html[data-ui-animations="false"] *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+}
+
+code,
+pre,
+.rv-file-viewer code,
+.rv-file-viewer pre,
+.rv-empty-code code,
+.rv-clone-url,
+.rv-line-table,
+.rv-line-num,
+.rv-line-code {
+    font-family: var(--app-code-font-family), monospace;
+    font-size: var(--app-code-font-size);
 }
 
 :root,

@@ -14,8 +14,16 @@ use App\includes\Assets;
 <html lang="en" data-bs-theme="dark">
 <head>
     <script>(function () {
-            let t = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-bs-theme', t);
+            var storedTheme = localStorage.getItem('theme') || 'dark';
+            function resolveTheme(theme) {
+                if (theme === 'system') {
+                    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? 'dark'
+                        : 'light';
+                }
+                return theme;
+            }
+            document.documentElement.setAttribute('data-bs-theme', resolveTheme(storedTheme));
         })();</script>
     <meta charset="UTF-8">
     <title><?= $page_title ?></title>
