@@ -2,7 +2,6 @@
 
 use App\Config;
 use App\includes\Assets;
-use App\includes\Security;
 use App\includes\Logging;
 
 $config = new Config();

@@ -220,7 +220,7 @@ class ApiController extends Controller
         ];
 
         foreach ($logs as $log) {
-            $level = strtolower((string)($log['level'] ?? ''));
+            $level = strtolower((string) ($log['level'] ?? ''));
             if (array_key_exists($level, $counters)) {
                 $counters[$level]++;
             }
@@ -245,11 +245,11 @@ class ApiController extends Controller
         $apcuCleared = null;
 
         if (function_exists('opcache_reset')) {
-            $opcacheCleared = (bool)@opcache_reset();
+            $opcacheCleared = (bool) @opcache_reset();
         }
 
         if (function_exists('apcu_clear_cache')) {
-            $apcuCleared = (bool)@apcu_clear_cache();
+            $apcuCleared = (bool) @apcu_clear_cache();
         }
 
         Logging::loggingToFile('Dashboard maintenance: cache clear requested by admin', 2, true, true);
@@ -321,15 +321,15 @@ class ApiController extends Controller
         }
 
         $body = json_decode(file_get_contents('php://input'), true);
-        $id = isset($body['id']) ? (int)$body['id'] : 0;
-        $status = isset($body['status']) ? (string)$body['status'] : '';
+        $id = isset($body['id']) ? (int) $body['id'] : 0;
+        $status = isset($body['status']) ? (string) $body['status'] : '';
 
         if ($id <= 0) {
             $this->error('Invalid ID', 400);
         }
 
         $validStatuses = ['new', 'replied', 'archived'];
-        if (!in_array($status, $validStatuses, true)) {
+        if (! in_array($status, $validStatuses, true)) {
             $this->error('Invalid status', 400);
         }
 

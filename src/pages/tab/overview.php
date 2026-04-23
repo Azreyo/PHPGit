@@ -1,4 +1,6 @@
-<?php use App\includes\Assets; ?>
+<?php use App\includes\Assets;
+
+?>
 
 <div class="row g-4 mb-4">
     <div class="col-12 col-sm-6 col-xl-3">
