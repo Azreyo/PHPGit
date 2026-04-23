@@ -395,9 +395,6 @@ try {
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
-        <button type="button" class="btn btn-outline-secondary rounded-3 px-3">
-            <i class="bi bi-funnel me-2"></i>Filter
-        </button>
     </div>
 
     <div class="table-responsive">
