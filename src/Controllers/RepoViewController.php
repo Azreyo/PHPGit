@@ -6,8 +6,10 @@ namespace App\Controllers;
 
 use App\Config;
 use App\includes\Logging;
+use App\includes\Security;
 use App\Services\GitReaderService;
 use App\Services\RepositoryService;
+use Random\RandomException;
 
 final class RepoViewController
 {
@@ -65,6 +67,18 @@ final class RepoViewController
     public string $httpBase = '';
     public bool $isOwner = false;
     public bool $isAdmin = false;
+    public string $csrfToken = '';
+
+    /** @var list<array<string, mixed>> */
+    public array $issues = [];
+    /** @var list<array<string, mixed>> */
+    public array $pullRequests = [];
+    public int $openIssuesCount = 0;
+    public int $openPullRequestsCount = 0;
+
+    /** @var list<string> */
+    public array $tabErrors = [];
+    public ?string $tabSuccess = null;
 
     public function handle(bool $isLoggedIn, string $role): bool
     {
@@ -111,9 +125,167 @@ final class RepoViewController
             return false;
         }
 
+        $security = new Security();
+        $isPrivileged = $isOwner || $isAdmin;
+        $requestedTab = isset($_GET['tab']) ? strtolower(trim((string)$_GET['tab'])) : 'code';
+        $allowedTabs = ['code', 'issues', 'pulls'];
+        if ($isPrivileged) {
+            $allowedTabs[] = 'settings';
+        }
+        $activeTab = in_array($requestedTab, $allowedTabs, true) ? $requestedTab : 'code';
+
+        $tabErrors = $_SESSION['repo_view_errors'] ?? [];
+        $tabSuccess = $_SESSION['repo_view_success'] ?? null;
+        unset($_SESSION['repo_view_errors'], $_SESSION['repo_view_success']);
+
         $repoPath = $config->getDataRoot() . '/' . $repo['owner_username'] . '/' . $repo['repo_name'];
         $git = new GitReaderService($repoPath);
         $isEmpty = $git->isEmpty();
+        $availableBranches = !$isEmpty ? $git->getBranches((string)$repo['default_branch']) : [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $postErrors = [];
+            $postSuccess = null;
+            $action = strtolower(trim((string)($_POST['repo_action'] ?? '')));
+            $csrfToken = (string)($_POST['csrf_token'] ?? '');
+
+            if (!$security->validateCsrfToken($csrfToken)) {
+                $postErrors[] = 'Invalid or expired form submission. Please try again.';
+            } elseif ($pdo === null) {
+                $postErrors[] = 'Database is currently unavailable. Please try again later.';
+            } else {
+                try {
+                    if ($action === 'create_issue') {
+                        if (!$isLoggedIn || $sessionUserId <= 0) {
+                            $postErrors[] = 'You must be logged in to create an issue.';
+                        } else {
+                            $title = trim((string)($_POST['issue_title'] ?? ''));
+                            $body = trim((string)($_POST['issue_body'] ?? ''));
+
+                            if ($title === '') {
+                                $postErrors[] = 'Issue title is required.';
+                            } elseif (mb_strlen($title) > 160) {
+                                $postErrors[] = 'Issue title must be 160 characters or fewer.';
+                            }
+
+                            if (mb_strlen($body) > 20000) {
+                                $postErrors[] = 'Issue description must be 20000 characters or fewer.';
+                            }
+
+                            if ($postErrors === []) {
+                                $stmt = $pdo->prepare(
+                                    'INSERT INTO issues (repository_id, author_user_id, title, body)
+                                     VALUES (?, ?, ?, ?)'
+                                );
+                                $stmt->execute([(int)$repo['id'], $sessionUserId, $title, $body !== '' ? $body : null]);
+                                $postSuccess = 'Issue created successfully.';
+                            }
+                        }
+                    } elseif ($action === 'create_pull') {
+                        if (!$isLoggedIn || $sessionUserId <= 0) {
+                            $postErrors[] = 'You must be logged in to create a pull request.';
+                        } elseif ($isEmpty || $availableBranches === []) {
+                            $postErrors[] = 'Pull requests require at least one branch with commits.';
+                        } else {
+                            $title = trim((string)($_POST['pull_title'] ?? ''));
+                            $body = trim((string)($_POST['pull_body'] ?? ''));
+                            $fromBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', (string)($_POST['from_branch'] ?? '')) ?? '';
+                            $toBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', (string)($_POST['to_branch'] ?? '')) ?? '';
+
+                            if ($title === '') {
+                                $postErrors[] = 'Pull request title is required.';
+                            } elseif (mb_strlen($title) > 160) {
+                                $postErrors[] = 'Pull request title must be 160 characters or fewer.';
+                            }
+
+                            if ($fromBranch === '' || $toBranch === '') {
+                                $postErrors[] = 'Both source and target branches are required.';
+                            } elseif ($fromBranch === $toBranch) {
+                                $postErrors[] = 'Source and target branches must be different.';
+                            }
+
+                            if (!in_array($fromBranch, $availableBranches, true) || !in_array($toBranch, $availableBranches, true)) {
+                                $postErrors[] = 'Selected branches are invalid for this repository.';
+                            }
+
+                            if (mb_strlen($body) > 20000) {
+                                $postErrors[] = 'Pull request description must be 20000 characters or fewer.';
+                            }
+
+                            if ($postErrors === []) {
+                                $stmt = $pdo->prepare(
+                                    'INSERT INTO pull_requests (repository_id, author_user_id, from_branch_name, to_branch_name, title, body)
+                                     VALUES (?, ?, ?, ?, ?, ?)'
+                                );
+                                $stmt->execute([
+                                    (int)$repo['id'],
+                                    $sessionUserId,
+                                    $fromBranch,
+                                    $toBranch,
+                                    $title,
+                                    $body !== '' ? $body : null,
+                                ]);
+                                $postSuccess = 'Pull request created successfully.';
+                            }
+                        }
+                    } elseif ($action === 'update_repo_settings') {
+                        if (!$isPrivileged) {
+                            $postErrors[] = 'You do not have permission to update repository settings.';
+                        } else {
+                            $description = trim((string)($_POST['repo_description'] ?? ''));
+                            $visibility = (string)($_POST['visibility'] ?? 'public');
+                            $defaultBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', (string)($_POST['default_branch'] ?? '')) ?? '';
+
+                            if ($defaultBranch === '') {
+                                $defaultBranch = (string)$repo['default_branch'];
+                            }
+
+                            if (mb_strlen($description) > 500) {
+                                $postErrors[] = 'Description must be 500 characters or fewer.';
+                            }
+
+                            if (!in_array($visibility, ['public', 'private'], true)) {
+                                $postErrors[] = 'Invalid repository visibility selected.';
+                            }
+
+                            if (!$isEmpty && $availableBranches !== [] && !in_array($defaultBranch, $availableBranches, true)) {
+                                $postErrors[] = 'Default branch must be one of the existing repository branches.';
+                            }
+
+                            if ($postErrors === []) {
+                                $stmt = $pdo->prepare(
+                                    'UPDATE repositories
+                                     SET repo_description = ?, visibility = ?, default_branch = ?
+                                     WHERE id = ?'
+                                );
+                                $stmt->execute([
+                                    $description !== '' ? $description : null,
+                                    $visibility,
+                                    $defaultBranch,
+                                    (int)$repo['id'],
+                                ]);
+                                $postSuccess = 'Repository settings updated successfully.';
+                            }
+                        }
+                    }
+                } catch (\PDOException $e) {
+                    Logging::loggingToFile('Repo view tab action failed: ' . $e->getMessage(), 4);
+                    $postErrors[] = 'Unable to save changes right now. Please try again later.';
+                }
+            }
+
+            $_SESSION['repo_view_errors'] = $postErrors;
+            if ($postSuccess !== null) {
+                $_SESSION['repo_view_success'] = $postSuccess;
+            }
+
+            $redir = '/' . $rawSlug;
+            if ($activeTab !== 'code') {
+                $redir .= '?tab=' . urlencode($activeTab);
+            }
+            echo '<script>window.location.href="' . $redir . '";</script>';
+            exit;
+        }
 
         $currentBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', $_GET['branch'] ?? $repo['default_branch']);
         if ($currentBranch === '') {
@@ -147,9 +319,14 @@ final class RepoViewController
         $langBreakdown = [];
         $readmeContent = null;
         $fullFileTree = [];
+        $issues = [];
+        $pullRequests = [];
+        $openIssuesCount = 0;
+        $openPullRequestsCount = 0;
+        $csrfToken = '';
 
         if (! $isEmpty) {
-            $branches = $git->getBranches((string) $repo['default_branch']);
+            $branches = $availableBranches;
             $commitCount = $git->getCommitCount($currentBranch);
             $fullFileTree = $git->getFullFileTree($currentBranch);
 
@@ -186,6 +363,56 @@ final class RepoViewController
                     }
                 }
             }
+        }
+
+        if ($pdo !== null) {
+            try {
+                $issueCountStmt = $pdo->prepare('SELECT COUNT(*) FROM issues WHERE repository_id = ? AND status = ?');
+                $issueCountStmt->execute([(int)$repo['id'], 'open']);
+                $openIssuesCount = (int)$issueCountStmt->fetchColumn();
+
+                $pullCountStmt = $pdo->prepare('SELECT COUNT(*) FROM pull_requests WHERE repository_id = ? AND status = ?');
+                $pullCountStmt->execute([(int)$repo['id'], 'open']);
+                $openPullRequestsCount = (int)$pullCountStmt->fetchColumn();
+
+                $issuesStmt = $pdo->prepare(
+                    'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
+                            u.username AS author_username,
+                            COALESCE(u.display_name, \'\') AS author_display_name,
+                            a.username AS assignee_username,
+                            COALESCE(a.display_name, \'\') AS assignee_display_name
+                     FROM issues i
+                     JOIN users u ON u.id = i.author_user_id
+                     LEFT JOIN users a ON a.id = i.assignee_user_id
+                     WHERE i.repository_id = ?
+                     ORDER BY (i.status = \'open\') DESC, i.created_at DESC
+                     LIMIT 100'
+                );
+                $issuesStmt->execute([(int)$repo['id']]);
+                $issues = $issuesStmt->fetchAll() ?: [];
+
+                $pullStmt = $pdo->prepare(
+                    'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
+                            p.from_branch_name, p.to_branch_name,
+                            u.username AS author_username,
+                            COALESCE(u.display_name, \'\') AS author_display_name
+                     FROM pull_requests p
+                     JOIN users u ON u.id = p.author_user_id
+                     WHERE p.repository_id = ?
+                     ORDER BY (p.status = \'open\') DESC, p.created_at DESC
+                     LIMIT 100'
+                );
+                $pullStmt->execute([(int)$repo['id']]);
+                $pullRequests = $pullStmt->fetchAll() ?: [];
+            } catch (\PDOException $e) {
+                Logging::loggingToFile('Repo view list query failed: ' . $e->getMessage(), 4);
+            }
+        }
+
+        try {
+            $csrfToken = $security->generateCsrfToken();
+        } catch (RandomException $e) {
+            Logging::loggingToFile('Cannot generate repo view csrf token: ' . $e->getMessage(), 4);
         }
 
         $breadcrumbs = [
@@ -244,6 +471,13 @@ final class RepoViewController
         $this->rForks = (int) $repo['forks'];
         $this->httpUrl = self::e("{$httpBase}/{$rawSlug}.git");
         $this->sshUrl = self::e("{$gitUser}@{$sshHost}:{$rawSlug}.git");
+        $this->csrfToken = $csrfToken;
+        $this->issues = $issues;
+        $this->pullRequests = $pullRequests;
+        $this->openIssuesCount = $openIssuesCount;
+        $this->openPullRequestsCount = $openPullRequestsCount;
+        $this->tabErrors = is_array($tabErrors) ? array_values(array_filter($tabErrors, 'is_string')) : [];
+        $this->tabSuccess = is_string($tabSuccess) && $tabSuccess !== '' ? $tabSuccess : null;
 
         return true;
     }
