@@ -16,7 +16,7 @@ managing Git repositories, users, and access controls.
 ## Requirements
 
 - PHP ^8.4 (see `composer.json`)
-- PHP extensions: pdo (ext-pdo), http (ext-http)
+- PHP extensions: pdo (ext-pdo), curl (ext-curl), mbstring (ext-mbstring)
 - Linux 6.17.*
 - Composer
 - Web server (Apache, Nginx, etc.)

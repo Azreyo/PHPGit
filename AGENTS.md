@@ -9,7 +9,7 @@
   `health.php`) live directly under `src/api/v1/` and route through `ApiController::api()`.
 - Runtime config is loaded from `src/.env` via `vlucas/phpdotenv` (`src/Config.php`).
 - Web server document root is expected to be `src` (README installation notes).
-- composer.json requires PHP ^8.4 and the extensions `ext-pdo` and `ext-http` (see `composer.json`).
+- composer.json requires PHP ^8.4 and extensions `ext-pdo`, `ext-curl`, `ext-mbstring` (see `composer.json`).
 - Application writes runtime logs to `src/log/`; helper logging is implemented in `App\includes\Logging` (
   `src/includes/Logging.php`).
 
@@ -80,7 +80,17 @@
 - Dev-only diagnostics panel (`src/includes/DevPanel.php`) is injected from `PageController::renderDevPanel()` when
   `APP_ENV=dev` and includes DB/session/request timing popovers.
 
-## Agent Guardrails for This Repo
+## Verification Commands
+
+- `composer validate --strict` — validate composer.json
+- `find src -type f -name '*.php' -print0 | xargs -0 -n 1 php -l` — syntax check all PHP files
+- `vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff` — style check (CS Fixer)
+- `vendor/bin/phpstan analyse` — static analysis
+- `vendor/bin/psalm` — Psalm type checking
+- `php bin/jslint.php src/assets/js` — JS linting
+- `php bin/build-assets.php` — rebuild asset manifest.json
+
+## Agent Guardrails
 
 - Prefer adding new pages as `src/pages/<name>.php` and registering title/route in the appropriate constant in
   `PageController` (`PAGE_TITLES`, `AUTHENTICATED_USER_PAGES`, or `ADMIN_PAGES`).
