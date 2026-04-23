@@ -72,7 +72,7 @@ function inboxInitials(string $name): string
                 data-mark-read-endpoint="/api/v1/markInboxRead.php">
             <i class="bi bi-check2-all me-2"></i>Mark all read
         </button>
-        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" id="inboxArchiveReadBtn">
             <i class="bi bi-archive me-2"></i>Archive read
         </button>
     </div>
@@ -216,15 +216,11 @@ function inboxInitials(string $name): string
 
             <div class="modal-footer border-top border-secondary-subtle px-4 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="d-flex gap-2">
-                    <form method="post">
-                        <input type="hidden" name="inbox_id" id="inboxModalId">
-                        <input type="hidden" name="inbox_status" id="inboxModalStatus">
-                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3"
-                                onclick="inboxReplied()">
-                            <i class="bi bi-archive me-2"></i>Mark as replied
-                        </button>
-                    </form>
-                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                    <button type="button" class="btn btn-outline-success btn-sm rounded-pill px-3"
+                            onclick="inboxReplied()">
+                        <i class="bi bi-check2-all me-2"></i>Mark as replied
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3"
                             onclick="inboxArchive()">
                         <i class="bi bi-archive me-2"></i>Archive
                     </button>

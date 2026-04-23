@@ -96,6 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isPrivileged && $prStatus !== 'mer
             $toBranch = $prToBranch;
             $output = [];
             $returnCode = 0;
+            exec('cd ' . escapeshellarg($repoPath) . ' && git fetch origin 2>&1', $output, $returnCode);
+            if ($returnCode !== 0) {
+                error_log('Fetch failed: ' . implode("\n", $output));
+            }
             exec('cd ' . escapeshellarg($repoPath) . ' && git checkout ' . escapeshellarg($toBranch) . ' 2>&1', $output, $returnCode);
             if ($returnCode !== 0) {
                 error_log('Checkout failed: ' . implode("\n", $output));
@@ -106,6 +110,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isPrivileged && $prStatus !== 'mer
                 error_log('Merge failed: ' . implode("\n", $output));
             } else {
                 exec('cd ' . escapeshellarg($repoPath) . ' && git commit -m "Merge pull request #' . $prId . ': ' . escapeshellarg($prTitle) . '" 2>&1', $output, $returnCode);
+                if ($returnCode === 0) {
+                    exec('cd ' . escapeshellarg($repoPath) . ' && git push origin ' . escapeshellarg($toBranch) . ' 2>&1', $output, $returnCode);
+                    if ($returnCode !== 0) {
+                        error_log('Push failed: ' . implode("\n", $output));
+                    }
+                }
             }
         } catch (\Exception $e) {
             error_log('Merge exception: ' . $e->getMessage());

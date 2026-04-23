@@ -1,8 +1,8 @@
 (function () {
     const statusBadge = {
-        archived: {cls: "text-bg-secondary", label: "Archived"},
-        new: {cls: "text-bg-primary", label: "New"},
-        replied: {cls: "text-bg-success", label: "Replied"}
+        archived: {cls: "text-bg-secondary", label: "Archived", color: "secondary"},
+        new: {cls: "text-bg-primary", label: "New", color: "primary"},
+        replied: {cls: "text-bg-success", label: "Replied", color: "success"}
     };
 
     let currentArticle = null;
@@ -15,6 +15,7 @@
     if (markAllReadButton && markAllReadButton.dataset.markReadEndpoint) {
         markReadEndpoint = markAllReadButton.dataset.markReadEndpoint;
     }
+    const updateStatusEndpoint = "/api/v1/updateInboxStatus.php";
 
     window.inboxOpen = function (article) {
         currentArticle = article;
@@ -79,6 +80,8 @@
         if (!currentArticle) {
             return;
         }
+        const id = parseInt(currentArticle.dataset.id, 10);
+        _apiUpdateStatus(id, "archived");
         currentArticle.dataset.status = "archived";
         const badgeEl = currentArticle.querySelector(".badge");
         if (badgeEl) {
@@ -95,6 +98,8 @@
         if (!currentArticle) {
             return;
         }
+        const id = parseInt(currentArticle.dataset.id, 10);
+        _apiUpdateStatus(id, "replied");
         currentArticle.dataset.status = "replied";
         const badgeEl = currentArticle.querySelector(".badge");
         if (badgeEl) {
@@ -294,6 +299,30 @@
         });
     }
 
+    function _apiUpdateStatus(id, status) {
+        return fetch(updateStatusEndpoint, {
+            body: JSON.stringify({id, status}),
+            credentials: "same-origin",
+            headers: {"Content-Type": "application/json"},
+            method: "POST"
+        }).then(function (response) {
+            if (!response.ok) {
+                throw new Error(
+                    "updateInboxStatus failed with status " + response.status
+                );
+            }
+            return response.json();
+        }).then(function (data) {
+            if (data && typeof data.error === "string") {
+                throw new Error(data.error);
+            }
+            return data;
+        }).catch(function (err) {
+            console.error("updateInboxStatus failed:", err);
+            return null;
+        });
+    }
+
     function _updateBadge(delta) {
         const badge = document.querySelector(".badge.bg-primary.rounded-pill");
         if (!badge) {
@@ -335,6 +364,35 @@
             window.inboxMarkAllRead();
         });
     }
+
+    const archiveReadButton = document.getElementById("inboxArchiveReadBtn");
+    if (archiveReadButton) {
+        archiveReadButton.addEventListener("click", function () {
+            window.inboxArchiveRead();
+        });
+    }
+
+    window.inboxArchiveRead = function () {
+        const readRows = Array.from(document.querySelectorAll(
+            "#inboxList .inbox-msg[data-unread='0']"
+        ));
+        if (readRows.length === 0) {
+            return;
+        }
+
+        readRows.forEach(function (row) {
+            const id = parseInt(row.dataset.id, 10);
+            _apiUpdateStatus(id, "archived");
+            row.dataset.status = "archived";
+            const badgeEl = row.querySelector(".badge");
+            if (badgeEl) {
+                badgeEl.textContent = "Archived";
+                badgeEl.className = "badge text-bg-secondary rounded-pill";
+                badgeEl.style.fontSize = ".72rem";
+            }
+        });
+        window.inboxFilter(false);
+    };
 
     window.inboxFilter(false);
 }());
