@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 use App\Config;
 use App\Services\RepositoryService;
+use App\includes\Security;
 
+$security = new Security();
 $_GET['detail'] = 'pr_' . ($_GET['item'] ?? '');
 $is_logged_in = $_SESSION['is_logged_in'] ?? false;
 $role = $_SESSION['role'] ?? '';
@@ -80,6 +82,41 @@ $isOwner = $is_logged_in && $sessionUserId === (int)$repo['owner_user_id'];
 $isAdmin = $is_logged_in && $role === 'ADMIN';
 $isPrivileged = $isOwner || $isAdmin;
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isPrivileged && $prStatus !== 'merged') {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!$security->validateCsrfToken($token)) {
+        echo '<main class="container py-5"><div class="alert alert-danger">Invalid token. Please try again.</div></main>';
+        return;
+    }
+    $action = $_POST['repo_action'] ?? '';
+    if ($action === 'merge_pull') {
+        try {
+            $repoPath = $config->getDataRoot() . '/' . $repo['owner_username'] . '/' . $repo['repo_name'];
+            $fromBranch = $prFromBranch;
+            $toBranch = $prToBranch;
+            $output = [];
+            $returnCode = 0;
+            exec('cd ' . escapeshellarg($repoPath) . ' && git checkout ' . escapeshellarg($toBranch) . ' 2>&1', $output, $returnCode);
+            if ($returnCode !== 0) {
+                error_log('Checkout failed: ' . implode("\n", $output));
+            }
+            exec('cd ' . escapeshellarg($repoPath) . ' && git merge --no-ff --no-commit ' . escapeshellarg('origin/' . $fromBranch) . ' 2>&1', $output, $returnCode);
+            if ($returnCode !== 0) {
+                exec('cd ' . escapeshellarg($repoPath) . ' && git merge --abort 2>&1', $output, $returnCode);
+                error_log('Merge failed: ' . implode("\n", $output));
+            } else {
+                exec('cd ' . escapeshellarg($repoPath) . ' && git commit -m "Merge pull request #' . $prId . ': ' . escapeshellarg($prTitle) . '" 2>&1', $output, $returnCode);
+            }
+        } catch (\Exception $e) {
+            error_log('Merge exception: ' . $e->getMessage());
+        }
+        $stmt = $pdo->prepare('UPDATE pull_requests SET status = ?, merged_at = NOW() WHERE id = ? AND repository_id = ?');
+        $stmt->execute(['merged', $prId, (int)$repo['id']]);
+        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/pulls/' . $prId . '";</script>';
+        exit;
+    }
+}
+
 $page_title = 'Pull Request #' . $prId . ' - ' . $prTitle;
 ?>
 <main class="container-fluid px-4 px-xl-5 py-5" style="max-width:900px;margin:0 auto;">
@@ -98,13 +135,21 @@ $page_title = 'Pull Request #' . $prId . ' - ' . $prTitle;
                     <?= htmlspecialchars($prTitle) ?>
                 </h4>
             </div>
-            <?php if ($isPrivileged && $prStatus === 'open'): ?>
+            <?php if ($isPrivileged): ?>
+                <?php try {
+                    $csrfToken = $security->generateCsrfToken();
+                } catch (\Exception $e) {
+                    $csrfToken = '';
+                } ?>
                 <form method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="item_id" value="<?= $prId ?>">
+                    <?php if ($prStatus !== 'merged'): ?>
                     <button type="submit" name="repo_action" value="merge_pull" class="btn btn-sm btn-success"
                             onclick="return confirm('Are you sure you want to merge this pull request?')">
                         <i class="bi bi-git me-1"></i>Merge pull request
                     </button>
+                    <?php endif; ?>
                 </form>
             <?php endif; ?>
         </div>

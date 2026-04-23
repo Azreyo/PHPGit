@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 use App\Config;
 use App\Services\RepositoryService;
+use App\includes\Security;
 
+$security = new Security();
 $_GET['detail'] = 'issue_' . ($_GET['item'] ?? '');
 $is_logged_in = $_SESSION['is_logged_in'] ?? false;
 $role = $_SESSION['role'] ?? '';
@@ -59,6 +61,28 @@ if ($issue === false) {
     return;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $token = $_POST['csrf_token'] ?? '';
+    if (!$security->validateCsrfToken($token)) {
+        echo '<main class="container py-5"><div class="alert alert-danger">Invalid token. Please try again.</div></main>';
+        return;
+    }
+    $action = $_POST['repo_action'] ?? '';
+    if ($action === 'close_issue') {
+        $stmt = $pdo->prepare('UPDATE issues SET status = ?, closed_at = NOW() WHERE id = ? AND repository_id = ?');
+        $stmt->execute(['closed', $issue['id'], (int)$repo['id']]);
+        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/issues/' . $issue['id'] . '";</script>';
+        exit;
+    }
+    if ($action === 'reopen_issue') {
+        $stmt = $pdo->prepare('UPDATE issues SET status = ?, closed_at = NULL WHERE id = ? AND repository_id = ?');
+        $stmt->execute(['open', $issue['id'], (int)$repo['id']]);
+        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/issues/' . $issue['id'] . '";</script>';
+        exit;
+    }
+}
+
+
 $issueId = (int)$issue['id'];
 $issueTitle = (string)$issue['title'];
 $issueBody = trim((string)$issue['body']);
@@ -100,7 +124,13 @@ $page_title = 'Issue #' . $issueId . ' - ' . $issueTitle;
                 </h4>
             </div>
             <?php if ($canModifyIssue): ?>
+                <?php try {
+                    $csrfToken = $security->generateCsrfToken();
+                } catch (\Exception $e) {
+                    $csrfToken = '';
+                } ?>
                 <form method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="item_id" value="<?= $issueId ?>">
                     <?php if ($issueStatus === 'open'): ?>
                         <button type="submit" name="repo_action" value="close_issue"

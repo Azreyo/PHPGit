@@ -546,7 +546,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                             <?php foreach ($branches as $b): /** @var string $b */ ?>
                                 <li>
                                     <a class="dropdown-item d-flex align-items-center gap-2 <?= $b === $currentBranch ? 'fw-bold' : '' ?>"
-                                       href="/<?= $rSlug ?>?branch=<?= RepoViewController::e($b) ?>">
+                                       href="/<?= $rSlug ?>/tree/<?= RepoViewController::e(urlencode($b)) ?>">
                                         <?php if ($b === $currentBranch): ?>
                                             <i class="bi bi-check2 text-success"></i>
                                         <?php else: ?>
@@ -618,7 +618,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                         $parentPathStr = implode('/', $parentParts);
                         $parentUrl = $parentPathStr !== ''
                                 ? RepoViewController::pathUrl($rawSlug, $currentBranch, $parentPathStr)
-                                : '/' . $rawSlug . '?branch=' . urlencode($currentBranch);
+                                : '/' . $rawSlug . '/tree/' . urlencode($currentBranch);
                     }
                     ?>
                     <?php if ($dispCommit !== null): ?>
