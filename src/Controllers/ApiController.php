@@ -209,20 +209,20 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
-        $body = json_decode((string)file_get_contents('php://input'), true);
-        $title = trim((string)($body['title'] ?? ''));
-        $publicKey = trim((string)($body['public_key'] ?? ''));
+        $body = json_decode((string) file_get_contents('php://input'), true);
+        $title = trim((string) ($body['title'] ?? ''));
+        $publicKey = trim((string) ($body['public_key'] ?? ''));
 
         if ($title === '' || $publicKey === '') {
             $this->error('Title and public_key are required', 400);
         }
 
-        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
         $service = $this->buildSshKeyService();
 
         $result = $service->addKey($userId, $title, $publicKey);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             $this->error($result['error'] ?? 'Failed to add key', 400);
         }
 
@@ -238,17 +238,17 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
-        $body = json_decode((string)file_get_contents('php://input'), true);
-        $keyId = (int)($body['id'] ?? 0);
+        $body = json_decode((string) file_get_contents('php://input'), true);
+        $keyId = (int) ($body['id'] ?? 0);
 
         if ($keyId <= 0) {
             $this->error('Invalid key ID', 400);
         }
 
-        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
         $service = $this->buildSshKeyService();
 
-        if (!$service->deleteKey($keyId, $userId)) {
+        if (! $service->deleteKey($keyId, $userId)) {
             $this->error('Key not found or not owned by you', 404);
         }
 
@@ -264,7 +264,7 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
-        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
         $service = $this->buildSshKeyService();
 
         $this->success(['keys' => $service->listKeys($userId)]);
@@ -289,7 +289,6 @@ class ApiController extends Controller
 
         return new SshKeyService($pdo, $authorizedKeys, $gitShellWrapper);
     }
-
 
     public function api(string $endpoint): void
     {

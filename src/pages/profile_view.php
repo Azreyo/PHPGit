@@ -7,7 +7,7 @@ use App\includes\Logging;
 /** @var PDO|null $pdo */
 /** @var bool $is_logged_in */
 
-$requestedUsername = trim((string)($_GET['user'] ?? $_GET['username'] ?? ''));
+$requestedUsername = trim((string) ($_GET['user'] ?? $_GET['username'] ?? ''));
 $requestedUsername = preg_replace('/[^a-zA-Z0-9._-]/', '', $requestedUsername) ?? '';
 
 $profile = null;
@@ -33,7 +33,7 @@ if ($requestedUsername === '') {
 } else {
     try {
         $stmt = $pdo->prepare(
-                'SELECT id, username, display_name, bio, website, role, created_at
+            'SELECT id, username, display_name, bio, website, role, created_at
              FROM users
              WHERE username = ?
              LIMIT 1'
@@ -45,25 +45,25 @@ if ($requestedUsername === '') {
             $error = 'Profile not found.';
             $profile = null;
         } else {
-            $sessionUsername = (string)($_SESSION['username'] ?? '');
-            $canSeePrivate = $is_logged_in && $sessionUsername !== '' && strcasecmp($sessionUsername, (string)$profile['username']) === 0;
+            $sessionUsername = (string) ($_SESSION['username'] ?? '');
+            $canSeePrivate = $is_logged_in && $sessionUsername !== '' && strcasecmp($sessionUsername, (string) $profile['username']) === 0;
 
             $repoSql = 'SELECT repo_name, repo_description, visibility, lang, stars, forks, updated_at
                         FROM repositories
                         WHERE owner_user_id = ?';
 
-            if (!$canSeePrivate) {
+            if (! $canSeePrivate) {
                 $repoSql .= ' AND visibility = \'public\'';
             }
 
             $repoSql .= ' ORDER BY updated_at DESC LIMIT 30';
 
             $repoStmt = $pdo->prepare($repoSql);
-            $repoStmt->execute([(int)$profile['id']]);
+            $repoStmt->execute([(int) $profile['id']]);
             $repositories = $repoStmt->fetchAll(PDO::FETCH_ASSOC);
 
             $contributionStmt = $pdo->prepare(
-                    'SELECT activity_day, COUNT(*) AS total
+                'SELECT activity_day, COUNT(*) AS total
                      FROM (
                        SELECT DATE(created_at) AS activity_day
                        FROM issues
@@ -76,14 +76,14 @@ if ($requestedUsername === '') {
                      WHERE activity_day >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
                      GROUP BY activity_day'
             );
-            $contributionStmt->execute([(int)$profile['id'], (int)$profile['id']]);
+            $contributionStmt->execute([(int) $profile['id'], (int) $profile['id']]);
             $dailyContributions = $contributionStmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($dailyContributions as $entry) {
-                $count = max(0, (int)($entry['total'] ?? 0));
+                $count = max(0, (int) ($entry['total'] ?? 0));
                 $contributionsLastYear += $count;
 
-                $activityDay = (string)($entry['activity_day'] ?? '');
+                $activityDay = (string) ($entry['activity_day'] ?? '');
                 $activityTimestamp = strtotime($activityDay);
                 if ($activityTimestamp === false) {
                     continue;
@@ -103,18 +103,18 @@ if ($requestedUsername === '') {
     }
 }
 
-$profileUsername = $profile !== null ? (string)$profile['username'] : '';
-$displayName = $profile !== null ? trim((string)($profile['display_name'] ?? '')) : '';
+$profileUsername = $profile !== null ? (string) $profile['username'] : '';
+$displayName = $profile !== null ? trim((string) ($profile['display_name'] ?? '')) : '';
 $headlineName = $displayName !== '' ? $displayName : $profileUsername;
-$bio = $profile !== null ? trim((string)($profile['bio'] ?? '')) : '';
-$website = $profile !== null ? trim((string)($profile['website'] ?? '')) : '';
+$bio = $profile !== null ? trim((string) ($profile['bio'] ?? '')) : '';
+$website = $profile !== null ? trim((string) ($profile['website'] ?? '')) : '';
 $websiteUrl = '';
 if ($website !== '' && filter_var($website, FILTER_VALIDATE_URL) && preg_match('/^https?:\/\//i', $website) === 1) {
     $websiteUrl = $website;
 }
 
-$joinedAt = $profile !== null ? strtotime((string)($profile['created_at'] ?? '')) : false;
-$joinedLabel = $joinedAt !== false ? date('M j, Y', $joinedAt) : (string)($profile['created_at'] ?? '');
+$joinedAt = $profile !== null ? strtotime((string) ($profile['created_at'] ?? '')) : false;
+$joinedLabel = $joinedAt !== false ? date('M j, Y', $joinedAt) : (string) ($profile['created_at'] ?? '');
 
 $initialSeed = preg_replace('/\s+/', '', $headlineName) ?? '';
 $initials = strtoupper(substr($initialSeed, 0, 2));
@@ -161,7 +161,7 @@ $profilePathUsername = rawurlencode($profileUsername);
                             </li>
                             <li class="mb-2 d-flex align-items-center gap-2 text-secondary">
                                 <i class="bi bi-shield-check"></i>
-                                <span><?php echo htmlspecialchars((string)$profile['role'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                <span><?php echo htmlspecialchars((string) $profile['role'], ENT_QUOTES, 'UTF-8'); ?></span>
                             </li>
                             <?php if ($websiteUrl !== ''): ?>
                                 <li class="d-flex align-items-center gap-2">
@@ -217,8 +217,8 @@ $profilePathUsername = rawurlencode($profileUsername);
                                 <div class="row g-2 row-cols-3 row-cols-md-6 row-cols-xl-12">
                                     <?php foreach ($contributionsByMonth as $month): ?>
                                         <?php
-                                        $monthCount = (int)($month['count']);
-                                        $monthLabel = (string)($month['label']);
+                                        $monthCount = (int) ($month['count']);
+                                        $monthLabel = (string) ($month['label']);
                                         $monthIntensityClass = 'bg-body-tertiary text-secondary';
                                         if ($monthCount >= 15) {
                                             $monthIntensityClass = 'bg-success text-white';
@@ -275,14 +275,14 @@ $profilePathUsername = rawurlencode($profileUsername);
                             <div class="list-group shadow-sm">
                                 <?php foreach ($repositories as $repo): ?>
                                     <?php
-                                    $repoName = (string)($repo['repo_name'] ?? '');
-                                    $repoDescription = trim((string)($repo['repo_description'] ?? ''));
-                                    $repoLang = trim((string)($repo['lang'] ?? ''));
-                                    $repoVisibility = (string)($repo['visibility'] ?? 'public');
-                                    $repoUpdatedAt = strtotime((string)($repo['updated_at'] ?? ''));
+                                    $repoName = (string) ($repo['repo_name'] ?? '');
+                                    $repoDescription = trim((string) ($repo['repo_description'] ?? ''));
+                                    $repoLang = trim((string) ($repo['lang'] ?? ''));
+                                    $repoVisibility = (string) ($repo['visibility'] ?? 'public');
+                                    $repoUpdatedAt = strtotime((string) ($repo['updated_at'] ?? ''));
                                     $repoUpdatedLabel = $repoUpdatedAt !== false
                                             ? date('M j, Y', $repoUpdatedAt)
-                                            : (string)($repo['updated_at'] ?? '');
+                                            : (string) ($repo['updated_at'] ?? '');
                                     $repoUrl = '/' . $profilePathUsername . '/' . rawurlencode($repoName);
                                     ?>
                                     <a href="<?php echo htmlspecialchars($repoUrl, ENT_QUOTES, 'UTF-8'); ?>"
@@ -305,8 +305,8 @@ $profilePathUsername = rawurlencode($profileUsername);
                                                         <span><i class="bi bi-circle-fill me-1"
                                                                  style="font-size:.5rem;"></i><?php echo htmlspecialchars($repoLang, ENT_QUOTES, 'UTF-8'); ?></span>
                                                     <?php endif; ?>
-                                                    <span><i class="bi bi-star me-1"></i><?php echo (int)($repo['stars'] ?? 0); ?></span>
-                                                    <span><i class="bi bi-diagram-2 me-1"></i><?php echo (int)($repo['forks'] ?? 0); ?></span>
+                                                    <span><i class="bi bi-star me-1"></i><?php echo (int) ($repo['stars'] ?? 0); ?></span>
+                                                    <span><i class="bi bi-diagram-2 me-1"></i><?php echo (int) ($repo['forks'] ?? 0); ?></span>
                                                 </div>
                                             </div>
                                             <small class="text-secondary text-nowrap">Updated <?php echo htmlspecialchars($repoUpdatedLabel, ENT_QUOTES, 'UTF-8'); ?></small>

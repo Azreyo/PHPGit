@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 use App\Controllers\RepoViewController;
 use App\includes\Assets;
+
 /** @var bool $is_logged_in */
 /** @var string $role */
 $rv = new RepoViewController();
-if (!$rv->handle($is_logged_in, $role)) {
+if (! $rv->handle($is_logged_in, $role)) {
     return;
 }
 $rawSlug = $rv->rawSlug;
@@ -45,7 +46,7 @@ $sshUrl = $rv->sshUrl;
 $httpBase = $rv->httpBase;
 
 $isPrivileged = $isOwner || $isAdmin;
-$requestedTab = isset($_GET['tab']) ? strtolower(trim((string)$_GET['tab'])) : 'code';
+$requestedTab = isset($_GET['tab']) ? strtolower(trim((string) $_GET['tab'])) : 'code';
 $allowedTabs = ['code', 'issues', 'pulls'];
 if ($isPrivileged) {
     $allowedTabs[] = 'settings';
@@ -206,7 +207,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
         </div>
     <?php else: ?>
     <div class="row g-3 mt-0 pt-4 border-top" style="border-color:var(--bs-border-color)!important;">
-        <?php if (!$isEmpty && !empty($fullFileTree)): ?>
+        <?php if (! $isEmpty && ! empty($fullFileTree)): ?>
             <div class="col-lg-2 d-none d-lg-block">
                 <div class="rv-tree-panel">
                     <div class="rv-tree-panel-header">
@@ -219,7 +220,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                 </div>
             </div>
         <?php endif; ?>
-        <div class="<?= !$isEmpty && !empty($fullFileTree) ? 'col-lg-8' : 'col-lg-10' ?>">
+        <div class="<?= ! $isEmpty && ! empty($fullFileTree) ? 'col-lg-8' : 'col-lg-10' ?>">
             <?php if ($isEmpty): ?>
                 <div class="border rounded-3 overflow-hidden" style="border-color:var(--bs-border-color)!important;">
                     <div class="p-4 text-center border-bottom" style="background:var(--bs-secondary-bg);">
@@ -381,7 +382,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                     <div class="border <?= $dispCommit !== null ? 'border-top-0 rounded-bottom-3' : 'rounded-3' ?> overflow-hidden">
                         <table class="table table-hover table-sm rv-file-table mb-0">
                             <tbody>
-                            <?php if ($viewMode === 'tree' && $parentUrl !== null): // @phpstan-ignore notIdentical.alwaysTrue ?>
+                            <?php if ($viewMode === 'tree' && $parentUrl !== null): // @phpstan-ignore notIdentical.alwaysTrue?>
                                 <tr class="rv-parent-row">
                                     <td style="width:2rem;"><i class="bi bi-folder-fill text-secondary opacity-50"></i>
                                     </td>
@@ -462,7 +463,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                             <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                                 <?= RepoViewController::fileIcon($fileName) ?>
                                 <span class="fw-semibold"><?= RepoViewController::e($fileName) ?></span>
-                                <?php if (!$isBinary && $fileContent !== null): ?>
+                                <?php if (! $isBinary && $fileContent !== null): ?>
                                     <span class="text-secondary"><?= number_format($fileLines) ?> line<?= $fileLines !== 1 ? 's' : '' ?></span>
                                     <span class="text-secondary">·</span>
                                 <?php endif; ?>
@@ -473,7 +474,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                                 <?php endif; ?>
                             </div>
                             <div class="d-flex gap-2 flex-shrink-0">
-                                <?php if (!$isBinary && $fileContent !== null): ?>
+                                <?php if (! $isBinary && $fileContent !== null): ?>
                                     <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
                                             onclick="rvCopyFile(this)" title="Copy file content">
                                         <i class="bi bi-clipboard" id="rv-copy-icon"></i>
@@ -505,10 +506,10 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                                     <tbody>
                                     <?php
                                     $codeLines = explode("\n", $fileContent);
-                                    if (end($codeLines) === '') {
-                                        array_pop($codeLines);
-                                    }
-                                    foreach ($codeLines as $ln => $codeLine): ?>
+                            if (end($codeLines) === '') {
+                                array_pop($codeLines);
+                            }
+                            foreach ($codeLines as $ln => $codeLine): ?>
                                         <tr id="L<?= $ln + 1 ?>" class="rv-line">
                                             <td class="rv-line-num"
                                                 onclick="rvToggleLine(<?= $ln + 1 ?>)"><?= $ln + 1 ?></td>
@@ -554,7 +555,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                     </div>
                 </div>
             </div>
-            <?php if (!empty($langBreakdown)): ?>
+            <?php if (! empty($langBreakdown)): ?>
                 <div class="rv-sidebar-section">
                     <h6 class="fw-bold mb-3">Languages</h6>
                     <div class="rv-lang-bar mb-3">
@@ -620,7 +621,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                     </div>
                     <div><i class="bi bi-calendar me-1"></i> Created <?= $rCreated ?></div>
                     <div><i class="bi bi-git me-1"></i> Default branch: <code><?= $rBranch ?></code></div>
-                    <?php if (!$isEmpty): ?>
+                    <?php if (! $isEmpty): ?>
                         <div><i class="bi bi-clock-history me-1"></i> <?= number_format($commitCount) ?>
                             commit<?= $commitCount !== 1 ? 's' : '' ?></div>
                     <?php endif; ?>
@@ -753,7 +754,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
 
 
 </script>
-<?php if ($viewMode === 'blob' && $fileData !== null && !$fileData['binary'] && $fileData['content'] !== null): ?>
+<?php if ($viewMode === 'blob' && $fileData !== null && ! $fileData['binary'] && $fileData['content'] !== null): ?>
     <link rel="stylesheet" id="hljs-css"
           href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>

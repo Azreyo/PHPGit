@@ -8,7 +8,7 @@ use App\Services\SshKeyService;
 
 $config = Config::getInstance();
 $pdo = $config->getPDO();
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = (int) ($_SESSION['user_id'] ?? 0);
 
 $sshKeys = [];
 $sshError = null;
@@ -117,7 +117,7 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
         <?php else: ?>
             <?php foreach ($sshKeys as $key): ?>
                 <div class="ssh-key-row d-flex align-items-start justify-content-between gap-3 p-3 mb-2 rounded-3 border border-secondary-subtle"
-                     data-key-id="<?= (int)$key['id'] ?>">
+                     data-key-id="<?= (int) $key['id'] ?>">
                     <div>
                         <div class="fw-semibold"><?= htmlspecialchars($key['title'], ENT_QUOTES, 'UTF-8') ?></div>
                         <small class="text-secondary font-monospace"><?= htmlspecialchars($key['fingerprint'], ENT_QUOTES, 'UTF-8') ?></small>
@@ -130,7 +130,7 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
                         </div>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-danger ssh-delete-btn flex-shrink-0"
-                            data-key-id="<?= (int)$key['id'] ?>"
+                            data-key-id="<?= (int) $key['id'] ?>"
                             data-key-title="<?= htmlspecialchars($key['title'], ENT_QUOTES, 'UTF-8') ?>">
                         <i class="bi bi-trash"></i>
                     </button>

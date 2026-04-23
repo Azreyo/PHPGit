@@ -11,7 +11,7 @@ $repos = [];
 if ($pdo !== null) {
     try {
         $stmt = $pdo->prepare(
-                'SELECT CONCAT(u.username, \'/\', r.repo_name) AS name,
+            'SELECT CONCAT(u.username, \'/\', r.repo_name) AS name,
                     r.repo_description AS descr, r.stars, r.forks, r.lang,
                     r.updated_at AS updated
              FROM repositories r

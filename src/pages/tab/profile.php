@@ -12,6 +12,7 @@ $csrf_token = '';
 $errors = [];
 $user = [];
 $user_id = $_SESSION['user_id'];
+
 try {
     $pdo = $config->getPDO();
     if ($pdo !== null) {
@@ -26,11 +27,10 @@ try {
     $errors[] = 'An error occurred while processing your request. Please try again later.';
 }
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrfToken = $_POST['csrf_token'] ?? '';
 
-    if (!$security->validateCsrfToken($csrfToken)) {
+    if (! $security->validateCsrfToken($csrfToken)) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } elseif ($security->isRateLimited()) {
         $errors[] = 'Too many login attempts. Please wait 15 minutes and try again.';
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($username)) {
             $errors[] = 'Username is required.';
-        } elseif (!preg_match('/^[a-zA-Z0-9._-]{3,20}$/', $username)) {
+        } elseif (! preg_match('/^[a-zA-Z0-9._-]{3,20}$/', $username)) {
             $errors[] = 'Username must be 3-20 characters and can only contain letters, numbers, dots, underscores, or hyphens.';
         }
         if (empty($display_name)) {
@@ -89,7 +89,7 @@ try {
         <h6 class="fw-bold mb-0" style="letter-spacing: -0.01em;">Public account information</h6>
     </div>
 </div>
-<?php if (!empty($errors)) : ?>
+<?php if (! empty($errors)) : ?>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <?php foreach ($errors as $error) : ?>
             <p class="mb-0"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></p>

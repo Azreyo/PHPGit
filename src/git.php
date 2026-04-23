@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PHPGit – Git HTTP Smart Protocol handler
  *
@@ -98,25 +99,25 @@ if ($requiresAuth) {
     $credStmt->execute([$authLogin]);
     $authRow = $credStmt->fetch();
 
-    if ($authRow === false || !password_verify($authPass, $authRow['password'])) {
+    if ($authRow === false || ! password_verify($authPass, $authRow['password'])) {
         Logging::loggingToFile("Git HTTP auth failure for user: {$authLogin}", 2, true);
         requireAuth();
     }
 
-    $authedUserId = (int)$authRow['id'];
+    $authedUserId = (int) $authRow['id'];
     $authedUser = $authLogin;
 
     if ($isWriteOp) {
         $permStmt = $pdo->prepare(
-            "SELECT permission
+            'SELECT permission
                FROM repository_members
               WHERE repository_id = ? AND user_id = ?
-              LIMIT 1"
+              LIMIT 1'
         );
         $permStmt->execute([$repo['id'], $authedUserId]);
         $member = $permStmt->fetch();
 
-        if ($member === false || !in_array($member['permission'], ['owner', 'maintainer', 'write'], true)) {
+        if ($member === false || ! in_array($member['permission'], ['owner', 'maintainer', 'write'], true)) {
             http_response_code(403);
             exit("Write access denied\n");
         }
@@ -141,12 +142,12 @@ if ($authedUser !== null) {
     $env['REMOTE_USER'] = $authedUser;
 }
 
-if (!empty($_SERVER['HTTP_CONTENT_ENCODING'])) {
+if (! empty($_SERVER['HTTP_CONTENT_ENCODING'])) {
     $env['HTTP_CONTENT_ENCODING'] = $_SERVER['HTTP_CONTENT_ENCODING'];
 }
 
-if (!empty($_SERVER['CONTENT_LENGTH'])) {
-    $env['CONTENT_LENGTH'] = (string)(int)$_SERVER['CONTENT_LENGTH'];
+if (! empty($_SERVER['CONTENT_LENGTH'])) {
+    $env['CONTENT_LENGTH'] = (string) (int) $_SERVER['CONTENT_LENGTH'];
 }
 
 $descriptors = [
@@ -157,7 +158,7 @@ $descriptors = [
 
 $process = proc_open('git http-backend', $descriptors, $pipes, null, $env);
 
-if (!is_resource($process)) {
+if (! is_resource($process)) {
     http_response_code(500);
     exit("Failed to start git http-backend\n");
 }
@@ -201,7 +202,7 @@ if ($crlfPos !== false && ($lfPos === false || $crlfPos <= $lfPos)) {
 
 foreach (explode($lineSep, $headerBlock) as $line) {
     if (preg_match('/^Status:\s*(\d+)/i', $line, $m)) {
-        http_response_code((int)$m[1]);
+        http_response_code((int) $m[1]);
     } elseif (trim($line) !== '') {
         header($line);
     }

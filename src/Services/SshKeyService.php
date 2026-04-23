@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services;
@@ -48,7 +49,7 @@ class SshKeyService
     private function ensureTableExists(): void
     {
         $this->pdo->exec(
-            "CREATE TABLE IF NOT EXISTS ssh_keys (
+            'CREATE TABLE IF NOT EXISTS ssh_keys (
                 id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
                 user_id     INT UNSIGNED NOT NULL,
                 title       VARCHAR(100) NOT NULL,
@@ -61,7 +62,7 @@ class SshKeyService
                 INDEX ix_ssh_keys_user (user_id),
                 CONSTRAINT fk_ssh_keys_user FOREIGN KEY (user_id)
                     REFERENCES users (id) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
     }
 
@@ -101,7 +102,7 @@ class SshKeyService
              VALUES (?, ?, ?, ?, ?)'
         );
         $stmt->execute([$userId, $title, $parsed['type'], $parsed['normalized'], $fingerprint]);
-        $keyId = (int)$this->pdo->lastInsertId();
+        $keyId = (int) $this->pdo->lastInsertId();
 
         Logging::loggingToFile("SSH key added: key_id={$keyId} user_id={$userId} fingerprint={$fingerprint}", 1);
 
@@ -165,8 +166,9 @@ class SshKeyService
     public function rebuildAuthorizedKeys(): void
     {
         $dir = dirname($this->authorizedKeysPath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             Logging::loggingToFile("authorized_keys directory missing: {$dir}", 3);
+
             return;
         }
 
@@ -190,8 +192,8 @@ class SshKeyService
         $lines[] = '';
 
         foreach ($rows as $row) {
-            $userId = (int)$row['user_id'];
-            $publicKey = trim((string)$row['public_key']);
+            $userId = (int) $row['user_id'];
+            $publicKey = trim((string) $row['public_key']);
             // Use a shell entry script so PHP startup warnings (OPcache) can be
             // suppressed without losing real git progress output on stderr.
             $entryScript = dirname($this->gitShellWrapperPath) . '/git-ssh-entry.sh';
@@ -213,6 +215,7 @@ class SshKeyService
         $tmp = sys_get_temp_dir() . '/phpgit_authkeys_' . getmypid() . '.tmp';
         if (file_put_contents($tmp, $content, LOCK_EX) === false) {
             Logging::loggingToFile("Failed to write temporary authorized_keys: {$tmp}", 4);
+
             return;
         }
         chmod($tmp, 0600);
@@ -250,6 +253,7 @@ class SshKeyService
                 if ($decoded === false || strlen($decoded) < 16) {
                     return null;
                 }
+
                 return [
                     'type' => $type,
                     'normalized' => implode(' ', $parts), // keep comment if present
@@ -294,7 +298,7 @@ class SshKeyService
             return null;
         }
         $hash = hash('sha256', $blob, true);
+
         return 'SHA256:' . rtrim(base64_encode($hash), '=');
     }
 }
-

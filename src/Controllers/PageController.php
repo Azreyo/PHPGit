@@ -82,7 +82,6 @@ final class PageController
         $this->page = $this->resolvePage();
     }
 
-
     private function startSession(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {

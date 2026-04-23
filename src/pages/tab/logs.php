@@ -11,17 +11,19 @@ $config = new Config();
 $pdo = $config->getPDO();
 $logs = [];
 $csrf_token = null;
+$default_log_limit = 100;
 
 try {
     if ($pdo === null) {
         throw new PDOException('Database connection is not available. Please try again later.');
     }
-    $stmt = $pdo->prepare('SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT 100');
-    $stmt->execute();
+    $stmt = $pdo->prepare('SELECT log_time AS time, level, message AS msg FROM log ORDER BY log_time DESC LIMIT ?');
+    $stmt->execute([$default_log_limit]);
     $logs = $stmt->fetchAll();
 } catch (PDOException $e) {
     Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
 }
+
 $critical_count = 0;
 $error_count = 0;
 $warning_count = 0;
@@ -45,7 +47,7 @@ foreach ($logs as $l) {
     }
 }
 $errors = [];
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'wipe_logs') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (! $security->validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } else {
@@ -96,7 +98,7 @@ try {
                    value="<?php echo htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="d-flex flex-wrap gap-2">
                 <button type="submit" class="btn btn-outline-danger rounded-3"
-                        onclick="return confirm('Are you sure? This action cannot be undone.')">Wipe Logs
+                        onclick="return confirm('Are you sure? This action cannot be undone.')">Wipe All Logs
                 </button>
             </div>
         </form>
@@ -105,21 +107,24 @@ try {
 
 <section class="admin-log-shell">
     <header class="admin-log-toolbar">
-        <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Critical (<?= $critical_count; ?>)
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Error (<?= $error_count; ?>)
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Warning (<?= $warning_count; ?>)
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-light rounded-pill">Info (<?= $info_count ?>)</button>
-            <button type="button" class="btn btn-sm btn-secondary rounded-pill">Clear Filters</button>
+        <div class="input-group input-group-sm" style="max-width: 75px;">
+            <label for="log-search-by-int" class="visually-hidden">Search logs</label>
+            <input type="number" class="form-control bg-transparent border-light border-opacity-25 text-light"
+                   id="log-search-by-int" value="100">
         </div>
-        <div class="input-group input-group-sm" style="max-width: 340px;">
-            <span class="input-group-text bg-transparent border-light border-opacity-25 text-light"><i
-                        class="bi bi-search"></i></span>
-            <input type="text" class="form-control bg-transparent border-light border-opacity-25 text-light"
-                   placeholder="Search logs...">
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Critical"
+                    aria-pressed="false">Critical (<?= $critical_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Error"
+                    aria-pressed="false">Error (<?= $error_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Warning"
+                    aria-pressed="false">Warning (<?= $warning_count; ?>)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill log-level-filter" data-level="Info"
+                    aria-pressed="false">Info (<?= $info_count ?>)</button>
+            <button type="button" class="btn btn-sm btn-secondary rounded-pill" id="log-clear-filters">Clear Filters</button>
         </div>
     </header>
 
@@ -144,7 +149,7 @@ try {
                     default => 'text-info',
                 }
                 ?>
-                <tr>
+                <tr data-log-level="<?php echo strtolower($log['level']); ?>">
                     <td class="ps-4 text-secondary"><?php echo $log['time']; ?></td>
                     <td>
                         <span class="admin-log-badge <?php echo $color; ?>"><?php echo $log['level']; ?></span>
@@ -161,3 +166,47 @@ try {
         <button type="button" class="btn btn-link text-info text-decoration-none p-0">Fetch older entries</button>
     </footer>
 </section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const filterButtons = document.querySelectorAll('.log-level-filter');
+        const clearFiltersButton = document.getElementById('log-clear-filters');
+        const logRows = document.querySelectorAll('.admin-log-table tbody tr');
+
+        if (filterButtons.length === 0 || logRows.length === 0) {
+            return;
+        }
+
+        let activeLevel = '';
+
+        const applyFilter = function (level) {
+            logRows.forEach(function (row) {
+                const rowLevel = row.dataset.logLevel || '';
+                row.style.display = level === '' || rowLevel === level ? '' : 'none';
+            });
+
+            filterButtons.forEach(function (button) {
+                const isActive = (button.dataset.level || '').toLowerCase() === level;
+                button.classList.toggle('btn-outline-light', !isActive);
+                button.classList.toggle('btn-light', isActive);
+                button.classList.toggle('text-dark', isActive);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        };
+
+        filterButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const selectedLevel = (button.dataset.level || '').toLowerCase();
+                activeLevel = activeLevel === selectedLevel ? '' : selectedLevel;
+                applyFilter(activeLevel);
+            });
+        });
+
+        if (clearFiltersButton) {
+            clearFiltersButton.addEventListener('click', function () {
+                activeLevel = '';
+                applyFilter(activeLevel);
+            });
+        }
+    });
+</script>

@@ -75,14 +75,14 @@ function inboxInitials(string $name): string
             <i class="bi bi-archive me-2"></i>Archive read
         </button>
     </div>
-    <div class="input-group input-group-sm" style="max-width: 240px;">
+    <div class="input-group input-group-sm" style="max-width: 340px;">
         <span class="input-group-text border-secondary-subtle text-secondary rounded-start-3 bg-body-secondary">
             <i class="bi bi-search"></i>
         </span>
         <label for="inboxSearch">
         </label><input type="search" id="inboxSearch"
                                                 class="form-control border-secondary-subtle bg-body-secondary rounded-end-3"
-                                                placeholder="Search messages…" oninput="inboxFilter()">
+                                                placeholder="Search messages by subject…" oninput="inboxFilter()">
     </div>
 </div>
 
@@ -96,6 +96,9 @@ function inboxInitials(string $name): string
     </button>
     <button type="button" class="inbox-tab btn btn-sm rounded-2 px-3 text-secondary" data-filter="replied"
             style="font-size: .82rem;" onclick="inboxSetTab(this, 'replied')">Replied
+    </button>
+    <button type="button" class="inbox-tab btn btn-sm rounded-2 px-3 text-secondary" data-filter="archived"
+            style="font-size: .82rem;" onclick="inboxSetTab(this, 'archived')">Archived
     </button>
     <button type="button" class="inbox-tab btn btn-sm rounded-2 px-3 text-secondary" data-filter="archived"
             style="font-size: .82rem;" onclick="inboxSetTab(this, 'archived')">Archived

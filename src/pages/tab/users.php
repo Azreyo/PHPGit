@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if (empty($email)) {
                 $errors[] = 'Email is required.';
-            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $errors[] = 'Invalid email format.';
             }
             if (empty($password)) {
@@ -41,12 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (strlen($password) < 8) {
                 $errors[] = 'Password must be at least 8 characters long.';
             }
-            if (!in_array($role, ['USER', 'ADMIN'], true)) {
+            if (! in_array($role, ['USER', 'ADMIN'], true)) {
                 $errors[] = 'Invalid role selected.';
             }
-            if (!in_array($status, ['ACTIVE', 'INACTIVE', 'SUSPENDED'], true)) {
+            if (! in_array($status, ['ACTIVE', 'INACTIVE', 'SUSPENDED'], true)) {
                 $errors[] = 'Invalid status selected.';
             }
+
             try {
                 if ($pdo !== null) {
                     $stmt = $pdo->prepare('SELECT COUNT(*) as count FROM users WHERE email = ?');
@@ -74,14 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($pdo !== null) {
                         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                         $stmt = $pdo->prepare(
-                                'INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)'
+                            'INSERT INTO users (username, email, password, role, status) VALUES (?, ?, ?, ?, ?)'
                         );
                         $stmt->execute([$username, $email, $hashedPassword, $role, $status]);
                         echo '<script>window.location.href="/dashboard?tab=users&success=created";</script>';
                         exit;
-                    } else {
-                        $errors[] = 'Database connection is not available. Please try again later.';
                     }
+                    $errors[] = 'Database connection is not available. Please try again later.';
                 } catch (PDOException $e) {
                     Logging::loggingToFile('Error creating user: ' . $e->getMessage(), 4);
                     $errors[] = 'An error occurred while creating the user. Please try again.';
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             break;
         case 'update_user':
-            $user_id = (int)($_POST['user_id'] ?? 0);
+            $user_id = (int) ($_POST['user_id'] ?? 0);
             $username = trim($_POST['username'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $display_name = trim($_POST['display_name'] ?? '');
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if (empty($email)) {
                 $errors[] = 'Email is required.';
-            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $errors[] = 'Invalid email format.';
             }
 
@@ -133,11 +133,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             break;
         case 'delete_user':
-            $user_id = (int)($_POST['user_id'] ?? 0);
+            $user_id = (int) ($_POST['user_id'] ?? 0);
             if ($user_id <= 0) {
                 $errors[] = 'Invalid user ID.';
             }
-            
+
             if (empty($errors)) {
                 try {
                     if ($pdo !== null) {

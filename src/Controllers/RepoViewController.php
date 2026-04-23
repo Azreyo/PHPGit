@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Config;
+use App\includes\Logging;
 use App\Services\GitReaderService;
 use App\Services\RepositoryService;
-use App\includes\Logging;
 
 final class RepoViewController
 {
@@ -75,11 +75,13 @@ final class RepoViewController
         if (strlen($rawSlug) > 200) {
             http_response_code(414);
             include __DIR__ . '/../pages/414.php';
+
             return false;
         }
-        if ($rawSlug === '' || !preg_match('#^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}/[a-zA-Z0-9][a-zA-Z0-9._-]{0,98}$#', $rawSlug)) {
+        if ($rawSlug === '' || ! preg_match('#^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}/[a-zA-Z0-9][a-zA-Z0-9._-]{0,98}$#', $rawSlug)) {
             http_response_code(404);
             include __DIR__ . '/../pages/404.php';
+
             return false;
         }
 
@@ -94,16 +96,18 @@ final class RepoViewController
         if ($repo === null) {
             http_response_code(404);
             include __DIR__ . '/../pages/404.php';
+
             return false;
         }
 
-        $sessionUserId = (int)($_SESSION['user_id'] ?? 0);
-        $isOwner = $isLoggedIn && $sessionUserId === (int)$repo['owner_user_id'];
+        $sessionUserId = (int) ($_SESSION['user_id'] ?? 0);
+        $isOwner = $isLoggedIn && $sessionUserId === (int) $repo['owner_user_id'];
         $isAdmin = $isLoggedIn && $role === 'ADMIN';
 
-        if ($repo['visibility'] === 'private' && !$isOwner && !$isAdmin) {
+        if ($repo['visibility'] === 'private' && ! $isOwner && ! $isAdmin) {
             http_response_code(403);
             include __DIR__ . '/../pages/403.php';
+
             return false;
         }
 
@@ -113,7 +117,7 @@ final class RepoViewController
 
         $currentBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', $_GET['branch'] ?? $repo['default_branch']);
         if ($currentBranch === '') {
-            $currentBranch = (string)$repo['default_branch'];
+            $currentBranch = (string) $repo['default_branch'];
         }
 
         $rawPath = trim($_GET['path'] ?? '', '/');
@@ -122,7 +126,7 @@ final class RepoViewController
             if ($seg === '' || $seg === '.' || $seg === '..') {
                 continue;
             }
-            if (!preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._\- ]*$/', $seg)) {
+            if (! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._\- ]*$/', $seg)) {
                 $cleanSegments = [];
                 break;
             }
@@ -144,8 +148,8 @@ final class RepoViewController
         $readmeContent = null;
         $fullFileTree = [];
 
-        if (!$isEmpty) {
-            $branches = $git->getBranches((string)$repo['default_branch']);
+        if (! $isEmpty) {
+            $branches = $git->getBranches((string) $repo['default_branch']);
             $commitCount = $git->getCommitCount($currentBranch);
             $fullFileTree = $git->getFullFileTree($currentBranch);
 
@@ -154,6 +158,7 @@ final class RepoViewController
                 if ($objType === null) {
                     http_response_code(404);
                     include __DIR__ . '/../pages/404.php';
+
                     return false;
                 }
                 if ($objType === 'blob') {
@@ -184,8 +189,8 @@ final class RepoViewController
         }
 
         $breadcrumbs = [
-            ['label' => (string)$repo['owner_username'], 'url' => '/'],
-            ['label' => (string)$repo['repo_name'], 'url' => '/' . $rawSlug],
+            ['label' => (string) $repo['owner_username'], 'url' => '/'],
+            ['label' => (string) $repo['repo_name'], 'url' => '/' . $rawSlug],
         ];
         if ($currentPath !== '') {
             $acc = '';
@@ -226,17 +231,17 @@ final class RepoViewController
         $this->fullFileTree = $fullFileTree;
         $this->breadcrumbs = $breadcrumbs;
         $this->httpBase = $httpBase;
-        $this->rName = self::e((string)$repo['repo_name']);
-        $this->rDesc = self::e((string)($repo['repo_description'] ?? ''));
-        $this->rVis = (string)$repo['visibility'];
+        $this->rName = self::e((string) $repo['repo_name']);
+        $this->rDesc = self::e((string) ($repo['repo_description'] ?? ''));
+        $this->rVis = (string) $repo['visibility'];
         $this->rBranch = self::e($currentBranch);
-        $this->rOwner = self::e((string)$repo['owner_username']);
-        $this->rDisp = self::e((string)($repo['owner_display_name'] ?? $repo['owner_username']));
+        $this->rOwner = self::e((string) $repo['owner_username']);
+        $this->rDisp = self::e((string) ($repo['owner_display_name'] ?? $repo['owner_username']));
         $this->rSlug = self::e($rawSlug);
-        $this->rCreated = date('d M Y', (int)strtotime((string)$repo['created_at']));
-        $this->rUpdated = date('d M Y', (int)strtotime((string)$repo['updated_at']));
-        $this->rStars = (int)$repo['stars'];
-        $this->rForks = (int)$repo['forks'];
+        $this->rCreated = date('d M Y', (int) strtotime((string) $repo['created_at']));
+        $this->rUpdated = date('d M Y', (int) strtotime((string) $repo['updated_at']));
+        $this->rStars = (int) $repo['stars'];
+        $this->rForks = (int) $repo['forks'];
         $this->httpUrl = self::e("{$httpBase}/{$rawSlug}.git");
         $this->sshUrl = self::e("{$gitUser}@{$sshHost}:{$rawSlug}.git");
 
@@ -252,13 +257,19 @@ final class RepoViewController
     {
         $safe = self::e($iso);
         $safeRel = self::e($rel);
+
         return "<time datetime=\"{$safe}\" title=\"{$safe}\">{$safeRel}</time>";
     }
 
     public static function size(int $bytes): string
     {
-        if ($bytes < 1024) return "{$bytes} B";
-        if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
+        if ($bytes < 1024) {
+            return "{$bytes} B";
+        }
+        if ($bytes < 1048576) {
+            return round($bytes / 1024, 1) . ' KB';
+        }
+
         return round($bytes / 1048576, 1) . ' MB';
     }
 
@@ -289,12 +300,14 @@ final class RepoViewController
             in_array($ext, ['zip', 'tar', 'gz'], true) => 'bi-file-zip text-secondary',
             default => 'bi-file-earmark text-secondary',
         };
+
         return "<i class=\"bi {$icon}\"></i>";
     }
 
     public static function hlLang(string $name): string
     {
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
         return match ($ext) {
             'php' => 'php',
             'js', 'jsx', 'mjs' => 'javascript',
@@ -352,7 +365,7 @@ final class RepoViewController
 
         foreach ($lines as $line) {
             if (str_starts_with($line, '```')) {
-                if (!$inPre) {
+                if (! $inPre) {
                     $closeList();
                     $lang = trim(substr($line, 3));
                     $inPre = true;
@@ -393,7 +406,7 @@ final class RepoViewController
                     $html .= "</ol>\n";
                     $inOl = false;
                 }
-                if (!$inUl) {
+                if (! $inUl) {
                     $html .= "<ul>\n";
                     $inUl = true;
                 }
@@ -405,7 +418,7 @@ final class RepoViewController
                     $html .= "</ul>\n";
                     $inUl = false;
                 }
-                if (!$inOl) {
+                if (! $inOl) {
                     $html .= "<ol>\n";
                     $inOl = true;
                 }
@@ -421,9 +434,15 @@ final class RepoViewController
             $html .= '<p>' . self::inlineMarkdown($line) . "</p>\n";
         }
 
-        if ($inPre) $html .= htmlspecialchars($preBuf, ENT_QUOTES, 'UTF-8') . '</code></pre>';
-        if ($inUl) $html .= '</ul>';
-        if ($inOl) $html .= '</ol>';
+        if ($inPre) {
+            $html .= htmlspecialchars($preBuf, ENT_QUOTES, 'UTF-8') . '</code></pre>';
+        }
+        if ($inUl) {
+            $html .= '</ul>';
+        }
+        if ($inOl) {
+            $html .= '</ol>';
+        }
 
         return $html;
     }
@@ -439,6 +458,7 @@ final class RepoViewController
         $s = preg_replace('/_(.+?)_/', '<em>$1</em>', $s) ?? $s;
         $s = preg_replace('/\[([^\]]+)\]\(([^)]+)\)/', '<a href="$2" rel="noopener noreferrer">$1</a>', $s) ?? $s;
         $s = preg_replace('/~~(.+?)~~/', '<del>$1</del>', $s) ?? $s;
+
         return $s;
     }
 
@@ -452,8 +472,7 @@ final class RepoViewController
         string $activePath,
         string $pathSoFar = '',
         int    $depth = 0
-    ): void
-    {
+    ): void {
         $indent = ($depth * 1.1 + 0.5) . 'rem';
         echo '<ul class="rv-tree-ul">';
         foreach ($nodes as $node) {
@@ -475,26 +494,24 @@ final class RepoViewController
                 $toggleIcon = ($isActive || $isAncestor)
                     ? '<i class="bi bi-caret-down-fill"></i>'
                     : '<i class="bi bi-caret-right-fill"></i>';
-                echo "<li>";
+                echo '<li>';
                 echo "<a href=\"{$url}\" class=\"rv-tree-item{$activeClass}\" style=\"--rv-indent:{$indent}\" onclick=\"rvTreeToggle(this,event)\">";
                 echo "<span class=\"rv-tree-toggle\">{$toggleIcon}</span>{$icon} {$name}";
-                echo "</a>";
+                echo '</a>';
                 /** @var list<array{name:string,type:string,children:array<mixed>}> $children */
                 $children = array_values($node['children']);
-                if (!empty($children)) {
-                    echo "<div class=\"rv-tree-children{$childrenOpen}\" id=\"rv-td-" . md5($nodePathEnc) . "\">";
+                if (! empty($children)) {
+                    echo "<div class=\"rv-tree-children{$childrenOpen}\" id=\"rv-td-" . md5($nodePathEnc) . '">';
                     self::renderTree($children, $slug, $branch, $activePath, $nodePath, $depth + 1);
-                    echo "</div>";
+                    echo '</div>';
                 }
-                echo "</li>";
+                echo '</li>';
             } else {
                 echo "<li><a href=\"{$url}\" class=\"rv-tree-item{$activeClass}\" style=\"--rv-indent:{$indent}\">";
                 echo "<span class=\"rv-tree-toggle\"></span>{$icon} {$name}";
-                echo "</a></li>";
+                echo '</a></li>';
             }
         }
         echo '</ul>';
     }
 }
-
-

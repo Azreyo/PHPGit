@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services;
@@ -138,11 +139,12 @@ class GitReaderService
     {
         $exitCode = 1;
         $result = $this->git('rev-parse --verify HEAD 2>/dev/null', $exitCode);
+
         return $exitCode !== 0 || trim($result) === '';
     }
 
     /**
-     * @return list<string>  branch names, default branch first
+     * @return list<string> branch names, default branch first
      */
     public function getBranches(string $defaultBranch = 'main'): array
     {
@@ -156,6 +158,7 @@ class GitReaderService
                 $sorted[] = $b;
             }
         }
+
         return array_values(array_unique($sorted));
     }
 
@@ -177,7 +180,7 @@ class GitReaderService
             if ($line === '') {
                 continue;
             }
-            if (!preg_match('/^(\d+)\s+(blob|tree)\s+([0-9a-f]+)\t(.+)$/', $line, $m)) {
+            if (! preg_match('/^(\d+)\s+(blob|tree)\s+([0-9a-f]+)\t(.+)$/', $line, $m)) {
                 continue;
             }
             $entries[] = [
@@ -192,6 +195,7 @@ class GitReaderService
             if ($a['type'] !== $b['type']) {
                 return $a['type'] === 'tree' ? -1 : 1;
             }
+
             return strcmp($a['name'], $b['name']);
         });
 
@@ -228,7 +232,7 @@ class GitReaderService
                 ];
             } elseif ($current !== null && trim($line) !== '') {
                 $topLevel = explode('/', $line, 2)[0];
-                if (!isset($map[$topLevel])) {
+                if (! isset($map[$topLevel])) {
                     $map[$topLevel] = $current;
                 }
             }
@@ -251,6 +255,7 @@ class GitReaderService
             return null;
         }
         $parts = explode("\x1f", $raw, 6);
+
         return [
             'hash' => $parts[0],
             'short' => $parts[1],
@@ -265,7 +270,8 @@ class GitReaderService
     {
         $safeRef = escapeshellarg($ref);
         $raw = $this->git("rev-list --count {$safeRef}");
-        return max(0, (int)trim($raw));
+
+        return max(0, (int) trim($raw));
     }
 
     public function getReadme(string $ref = 'HEAD'): ?string
@@ -280,13 +286,14 @@ class GitReaderService
                 return $content;
             }
         }
+
         return null;
     }
 
     /**
      * Analyse file sizes by extension to produce a language breakdown.
      *
-     * @return list<array{lang: string, bytes: int, pct: float, color: string}>  sorted desc
+     * @return list<array{lang: string, bytes: int, pct: float, color: string}> sorted desc
      */
     public function getLanguageBreakdown(string $ref = 'HEAD'): array
     {
@@ -305,10 +312,10 @@ class GitReaderService
                 continue;
             }
             // format: mode SP type SP hash SP size TAB name
-            if (!preg_match('/^\d+\s+blob\s+[0-9a-f]+\s+(\d+)\t(.+)$/', $line, $m)) {
+            if (! preg_match('/^\d+\s+blob\s+[0-9a-f]+\s+(\d+)\t(.+)$/', $line, $m)) {
                 continue;
             }
-            $size = (int)$m[1];
+            $size = (int) $m[1];
             $filename = basename($m[2]);
             $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
@@ -379,6 +386,7 @@ class GitReaderService
     public function getPrimaryLanguage(string $ref = 'HEAD'): ?string
     {
         $breakdown = $this->getLanguageBreakdown($ref);
+
         return $breakdown[0]['lang'] ?? null;
     }
 
@@ -394,6 +402,7 @@ class GitReaderService
             return null;
         }
         $type = trim($raw);
+
         return in_array($type, ['blob', 'tree'], true) ? $type : null;
     }
 
@@ -414,7 +423,7 @@ class GitReaderService
             if ($line === '') {
                 continue;
             }
-            if (!preg_match('/^(\d+)\s+(blob|tree)\s+([0-9a-f]+)\t(.+)$/', $line, $m)) {
+            if (! preg_match('/^(\d+)\s+(blob|tree)\s+([0-9a-f]+)\t(.+)$/', $line, $m)) {
                 continue;
             }
             $entries[] = ['mode' => $m[1], 'type' => $m[2], 'hash' => $m[3], 'name' => $m[4]];
@@ -423,8 +432,10 @@ class GitReaderService
             if ($a['type'] !== $b['type']) {
                 return $a['type'] === 'tree' ? -1 : 1;
             }
+
             return strcmp($a['name'], $b['name']);
         });
+
         return $entries;
     }
 
@@ -438,7 +449,7 @@ class GitReaderService
         $safe = escapeshellarg($ref . ':' . $path);
         $exitCode = 1;
         $sizeStr = $this->git("cat-file -s {$safe}", $exitCode);
-        $size = $exitCode === 0 ? (int)trim($sizeStr) : 0;
+        $size = $exitCode === 0 ? (int) trim($sizeStr) : 0;
 
         if ($exitCode !== 0) {
             return ['content' => null, 'binary' => false, 'truncated' => false, 'size' => 0, 'lines' => 0];
@@ -461,6 +472,7 @@ class GitReaderService
         }
 
         $lines = substr_count($raw, "\n") + 1;
+
         return ['content' => $raw, 'binary' => false, 'truncated' => $truncated, 'size' => $size, 'lines' => $lines];
     }
 
@@ -482,6 +494,7 @@ class GitReaderService
         }
         $p = explode("\x1f", $raw, 6);
         $p = array_pad($p, 6, '');
+
         return [
             'hash' => $p[0], 'short' => $p[1],
             'subject' => $p[2], 'time' => $p[3],
@@ -519,7 +532,7 @@ class GitReaderService
             } elseif ($current !== null && trim($line) !== '') {
                 $rel = str_starts_with($line, $prefix) ? substr($line, strlen($prefix)) : $line;
                 $topLevel = explode('/', $rel, 2)[0];
-                if ($topLevel !== '' && !isset($map[$topLevel])) {
+                if ($topLevel !== '' && ! isset($map[$topLevel])) {
                     $map[$topLevel] = $current;
                 }
             }
@@ -554,7 +567,7 @@ class GitReaderService
                     continue;
                 }
                 /** @var array<string, array{name: string, type: string, children: array<mixed>}> $node */
-                if (!array_key_exists($part, $node)) {
+                if (! array_key_exists($part, $node)) {
                     $isLeaf = ($i === count($parts) - 1);
                     $node[$part] = ['name' => $part, 'type' => $isLeaf ? 'blob' : 'tree', 'children' => []];
                 }
@@ -574,17 +587,19 @@ class GitReaderService
                 if ($a['type'] !== $b['type']) {
                     return $a['type'] === 'tree' ? -1 : 1;
                 }
+
                 return strcasecmp($a['name'], $b['name']);
             });
             foreach ($nodes as &$n) {
                 /** @var array{name:string,type:string,children:array<mixed>} $n */
-                if ($n['type'] === 'tree' && !empty($n['children'])) {
+                if ($n['type'] === 'tree' && ! empty($n['children'])) {
                     $sort($n['children']);
                 }
             }
             unset($n);
         };
         $sort($root);
+
         return array_values($root);
     }
 
@@ -594,11 +609,7 @@ class GitReaderService
         $cmd = "git -C {$safePath} {$subCommand} 2>/dev/null 2>&1";
         $output = [];
         exec($cmd, $output, $exitCode);
+
         return implode("\n", $output);
     }
 }
-
-
-
-
-
