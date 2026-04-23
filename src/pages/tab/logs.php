@@ -177,4 +177,4 @@ try {
     </footer>
 </section>
 
-<script src="<?= Assets::url("/assets/js/log.js"); ?>"></script>
+<script src="<?= Assets::url('/assets/js/log.js'); ?>"></script>

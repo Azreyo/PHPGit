@@ -220,7 +220,7 @@ class ApiController extends Controller
         ];
 
         foreach ($logs as $log) {
-            $level = strtolower((string)($log['level'] ?? ''));
+            $level = strtolower((string) ($log['level'] ?? ''));
             if (array_key_exists($level, $counters)) {
                 $counters[$level]++;
             }
@@ -245,11 +245,11 @@ class ApiController extends Controller
         $apcuCleared = null;
 
         if (function_exists('opcache_reset')) {
-            $opcacheCleared = (bool)@opcache_reset();
+            $opcacheCleared = (bool) @opcache_reset();
         }
 
         if (function_exists('apcu_clear_cache')) {
-            $apcuCleared = (bool)@apcu_clear_cache();
+            $apcuCleared = (bool) @apcu_clear_cache();
         }
 
         Logging::loggingToFile('Dashboard maintenance: cache clear requested by admin', 2, true, true);
@@ -307,6 +307,39 @@ class ApiController extends Controller
         } catch (Throwable $e) {
             Logging::loggingToFile('markInboxRead error: ' . $e->getMessage(), 4, true, true);
             $this->error('Could not update inbox');
+        }
+    }
+
+    private function updateInboxStatus(): void
+    {
+        $this->requireMethod('POST');
+        $this->requireAdminSession();
+
+        if ($this->pdo === null) {
+            Logging::loggingToFile('updateInboxStatus error: Database connection is null', 4, true, true);
+            $this->error('Database unavailable', 503);
+        }
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $id = isset($body['id']) ? (int) $body['id'] : 0;
+        $status = isset($body['status']) ? (string) $body['status'] : '';
+
+        if ($id <= 0) {
+            $this->error('Invalid ID', 400);
+        }
+
+        $validStatuses = ['new', 'replied', 'archived'];
+        if (! in_array($status, $validStatuses, true)) {
+            $this->error('Invalid status', 400);
+        }
+
+        try {
+            $stmt = $this->pdo->prepare('UPDATE inbox SET status = ? WHERE id = ?');
+            $stmt->execute([$status, $id]);
+            $this->success(['updated' => $stmt->rowCount()]);
+        } catch (Throwable $e) {
+            Logging::loggingToFile('updateInboxStatus error: ' . $e->getMessage(), 4, true, true);
+            $this->error('Could not update inbox status');
         }
     }
 
@@ -411,6 +444,7 @@ class ApiController extends Controller
             'clearcache' => $this->clearCache(),
             'restartservices' => $this->restartServices(),
             'markinboxread' => $this->markInboxRead(),
+            'updateinboxstatus' => $this->updateInboxStatus(),
             'addsshkey' => $this->addSshKey(),
             'deletesshkey' => $this->deleteSshKey(),
             'listsshkeys' => $this->listSshKeys(),

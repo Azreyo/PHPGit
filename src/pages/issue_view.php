@@ -2,18 +2,21 @@
 declare(strict_types=1);
 
 use App\Config;
+use App\includes\Security;
 use App\Services\RepositoryService;
 
+$security = new Security();
 $_GET['detail'] = 'issue_' . ($_GET['item'] ?? '');
 $is_logged_in = $_SESSION['is_logged_in'] ?? false;
 $role = $_SESSION['role'] ?? '';
 
 $slug = $_GET['slug'] ?? '';
-$itemId = (int)($_GET['item'] ?? 0);
+$itemId = (int) ($_GET['item'] ?? 0);
 
 if ($slug === '' || $itemId <= 0) {
     http_response_code(404);
     echo '<main class="container py-5"><div class="alert alert-warning">Invalid issue URL.</div></main>';
+
     return;
 }
 
@@ -23,6 +26,7 @@ $pdo = $config->getPDO();
 if ($pdo === null) {
     http_response_code(500);
     echo '<main class="container py-5"><div class="alert alert-danger">Database unavailable.</div></main>';
+
     return;
 }
 
@@ -36,11 +40,12 @@ try {
 if ($repo === null) {
     http_response_code(404);
     echo '<main class="container py-5"><div class="alert alert-warning">Repository not found.</div></main>';
+
     return;
 }
 
 $issueStmt = $pdo->prepare(
-        'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
+    'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
             u.username AS author_username, u.email AS author_email,
             COALESCE(u.display_name, \'\') AS author_display_name,
             a.username AS assignee_username,
@@ -50,36 +55,59 @@ $issueStmt = $pdo->prepare(
      LEFT JOIN users a ON a.id = i.assignee_user_id
      WHERE i.id = ? AND i.repository_id = ?'
 );
-$issueStmt->execute([$itemId, (int)$repo['id']]);
+$issueStmt->execute([$itemId, (int) $repo['id']]);
 $issue = $issueStmt->fetch(\PDO::FETCH_ASSOC);
 
 if ($issue === false) {
     http_response_code(404);
     echo '<main class="container py-5"><div class="alert alert-warning">Issue not found.</div></main>';
+
     return;
 }
 
-$issueId = (int)$issue['id'];
-$issueTitle = (string)$issue['title'];
-$issueBody = trim((string)$issue['body']);
-$issueStatus = (string)$issue['status'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $token = $_POST['csrf_token'] ?? '';
+    if (! $security->validateCsrfToken($token)) {
+        echo '<main class="container py-5"><div class="alert alert-danger">Invalid token. Please try again.</div></main>';
+
+        return;
+    }
+    $action = $_POST['repo_action'] ?? '';
+    if ($action === 'close_issue') {
+        $stmt = $pdo->prepare('UPDATE issues SET status = ?, closed_at = NOW() WHERE id = ? AND repository_id = ?');
+        $stmt->execute(['closed', $issue['id'], (int) $repo['id']]);
+        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/issues/' . $issue['id'] . '";</script>';
+        exit;
+    }
+    if ($action === 'reopen_issue') {
+        $stmt = $pdo->prepare('UPDATE issues SET status = ?, closed_at = NULL WHERE id = ? AND repository_id = ?');
+        $stmt->execute(['open', $issue['id'], (int) $repo['id']]);
+        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/issues/' . $issue['id'] . '";</script>';
+        exit;
+    }
+}
+
+$issueId = (int) $issue['id'];
+$issueTitle = (string) $issue['title'];
+$issueBody = trim((string) $issue['body']);
+$issueStatus = (string) $issue['status'];
 $issueStatusClass = $issueStatus === 'open'
         ? 'bg-success-subtle text-success border border-success-subtle'
         : 'bg-secondary-subtle text-secondary border border-secondary-subtle';
-$issueAuthorUsername = (string)$issue['author_username'];
-$issueAuthorDisplay = trim((string)$issue['author_display_name']);
+$issueAuthorUsername = (string) $issue['author_username'];
+$issueAuthorDisplay = trim((string) $issue['author_display_name']);
 $issueAuthorLabel = $issueAuthorDisplay !== ''
         ? $issueAuthorDisplay . ' (@' . $issueAuthorUsername . ')'
         : $issueAuthorUsername;
-$issueAssigneeUsername = (string)($issue['assignee_username'] ?? '');
-$issueAssigneeDisplay = trim((string)($issue['assignee_display_name'] ?? ''));
-$issueCreatedAt = (string)$issue['created_at'];
+$issueAssigneeUsername = (string) ($issue['assignee_username'] ?? '');
+$issueAssigneeDisplay = trim((string) ($issue['assignee_display_name'] ?? ''));
+$issueCreatedAt = (string) $issue['created_at'];
 
-$sessionUserId = (int)($_SESSION['user_id'] ?? 0);
-$isOwner = $is_logged_in && $sessionUserId === (int)$repo['owner_user_id'];
+$sessionUserId = (int) ($_SESSION['user_id'] ?? 0);
+$isOwner = $is_logged_in && $sessionUserId === (int) $repo['owner_user_id'];
 $isAdmin = $is_logged_in && $role === 'ADMIN';
 $isPrivileged = $isOwner || $isAdmin;
-$canModifyIssue = $isPrivileged || $sessionUserId === (int)$issue['author_user_id'] || $sessionUserId === (int)($issue['assignee_user_id'] ?? 0);
+$canModifyIssue = $isPrivileged || $sessionUserId === (int) $issue['author_user_id'] || $sessionUserId === (int) ($issue['assignee_user_id'] ?? 0);
 
 $page_title = 'Issue #' . $issueId . ' - ' . $issueTitle;
 ?>
@@ -100,7 +128,13 @@ $page_title = 'Issue #' . $issueId . ' - ' . $issueTitle;
                 </h4>
             </div>
             <?php if ($canModifyIssue): ?>
+                <?php try {
+                    $csrfToken = $security->generateCsrfToken();
+                } catch (\Exception $e) {
+                    $csrfToken = '';
+                } ?>
                 <form method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="item_id" value="<?= $issueId ?>">
                     <?php if ($issueStatus === 'open'): ?>
                         <button type="submit" name="repo_action" value="close_issue"
@@ -121,7 +155,7 @@ $page_title = 'Issue #' . $issueId . ' - ' . $issueTitle;
                 <span class="text-secondary">
                     opened by <strong><?= htmlspecialchars($issueAuthorLabel) ?></strong>
                     <?php if ($issueCreatedAt !== ''): ?>
-                        on <?= date('d M Y', (int)strtotime($issueCreatedAt)) ?>
+                        on <?= date('d M Y', (int) strtotime($issueCreatedAt)) ?>
                     <?php endif; ?>
                 </span>
                 <?php if ($issueAssigneeUsername !== ''): ?>
