@@ -13,6 +13,7 @@ $csrf_token = '';
 $errors = [];
 $users = [];
 $pdo = $config->getPDO();
+$all_count = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -166,7 +167,6 @@ try {
         $all_count = $stmt->fetchColumn();
     } else {
         $users = [];
-        $all_count = 0;
         Logging::loggingToFile('Database connection is not available: ' . $config->getDb() . ' ' . $config->getHost(), 4);
     }
 } catch (PDOException $e) {
