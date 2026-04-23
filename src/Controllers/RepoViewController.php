@@ -76,6 +76,10 @@ final class RepoViewController
     public int $openIssuesCount = 0;
     public int $openPullRequestsCount = 0;
 
+    public string $detailType = '';
+    /** @var array<string, mixed>|null */
+    public ?array $detailItem = null;
+
     /** @var list<string> */
     public array $tabErrors = [];
     public ?string $tabSuccess = null;
@@ -279,7 +283,7 @@ final class RepoViewController
                 $_SESSION['repo_view_success'] = $postSuccess;
             }
 
-            $redir = '/' . $rawSlug;
+            $redir = '/' . htmlspecialchars($rawSlug, ENT_QUOTES, 'UTF-8');
             if ($activeTab !== 'code') {
                 $redir .= '?tab=' . urlencode($activeTab);
             }
@@ -365,6 +369,8 @@ final class RepoViewController
             }
         }
 
+        $detailType = '';
+        $detailItem = null;
         if ($pdo !== null) {
             try {
                 $issueCountStmt = $pdo->prepare('SELECT COUNT(*) FROM issues WHERE repository_id = ? AND status = ?');
@@ -406,6 +412,41 @@ final class RepoViewController
                 $pullRequests = $pullStmt->fetchAll() ?: [];
             } catch (\PDOException $e) {
                 Logging::loggingToFile('Repo view list query failed: ' . $e->getMessage(), 4);
+            }
+
+            $detailType = '';
+            $detailItem = null;
+            $detailTab = isset($_GET['detail']) ? (string)$_GET['detail'] : '';
+            if ($detailTab !== '' && preg_match('/^(issue|pr)_(\d+)$/', $detailTab, $m)) {
+                $detailType = $m[1];
+                $detailId = (int)$m[2];
+                if ($detailType === 'issue') {
+                    $detailStmt = $pdo->prepare(
+                        'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
+                                u.username AS author_username, u.email AS author_email,
+                                COALESCE(u.display_name, \'\') AS author_display_name,
+                                a.username AS assignee_username,
+                                COALESCE(a.display_name, \'\') AS assignee_display_name
+                         FROM issues i
+                         JOIN users u ON u.id = i.author_user_id
+                         LEFT JOIN users a ON a.id = i.assignee_user_id
+                         WHERE i.id = ? AND i.repository_id = ?'
+                    );
+                    $detailStmt->execute([$detailId, (int)$repo['id']]);
+                    $detailItem = $detailStmt->fetch(\PDO::FETCH_ASSOC);
+                } elseif ($detailType === 'pr') {
+                    $detailStmt = $pdo->prepare(
+                        'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
+                                p.from_branch_name, p.to_branch_name, p.from_head_hash, p.to_head_hash,
+                                u.username AS author_username, u.email AS author_email,
+                                COALESCE(u.display_name, \'\') AS author_display_name
+                         FROM pull_requests p
+                         JOIN users u ON u.id = p.author_user_id
+                         WHERE p.id = ? AND p.repository_id = ?'
+                    );
+                    $detailStmt->execute([$detailId, (int)$repo['id']]);
+                    $detailItem = $detailStmt->fetch(\PDO::FETCH_ASSOC);
+                }
             }
         }
 
@@ -476,6 +517,8 @@ final class RepoViewController
         $this->pullRequests = $pullRequests;
         $this->openIssuesCount = $openIssuesCount;
         $this->openPullRequestsCount = $openPullRequestsCount;
+        $this->detailType = $detailType;
+        $this->detailItem = $detailItem;
         $this->tabErrors = is_array($tabErrors) ? array_values(array_filter($tabErrors, 'is_string')) : [];
         $this->tabSuccess = is_string($tabSuccess) && $tabSuccess !== '' ? $tabSuccess : null;
 

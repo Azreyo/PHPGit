@@ -51,6 +51,8 @@ $openIssuesCount = $rv->openIssuesCount;
 $openPullRequestsCount = $rv->openPullRequestsCount;
 $tabErrors = $rv->tabErrors;
 $tabSuccess = $rv->tabSuccess;
+$detailType = $rv->detailType;
+$detailItem = $rv->detailItem;
 
 $repoDefaultBranch = (string)($rv->repo['default_branch'] ?? $currentBranch);
 $repoDescriptionRaw = (string)($rv->repo['repo_description'] ?? '');
@@ -198,12 +200,14 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                                 $issueAuthorLabel = $issueAuthorDisplay !== '' ? $issueAuthorDisplay : $issueAuthorUsername;
                                 $issueCreatedAt = (string)($issue['created_at'] ?? '');
                                 $issueBody = trim((string)($issue['body'] ?? ''));
+                                $issueDetailUrl = '/' . $rSlug . '/issues/' . (int)($issue['id'] ?? 0);
                                 ?>
                                 <div class="list-group-item px-4 py-3">
                                     <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
                                         <div>
                                             <h6 class="mb-1 fw-semibold d-flex align-items-center gap-2">
-                                                <?= RepoViewController::e((string)($issue['title'] ?? 'Untitled issue')) ?>
+                                                <a href="<?= RepoViewController::e($issueDetailUrl) ?>"
+                                                   class="text-decoration-none"><?= RepoViewController::e((string)($issue['title'] ?? 'Untitled issue')) ?></a>
                                                 <span class="badge fw-normal <?= $issueStatusClass ?>"><?= RepoViewController::e(strtoupper($issueStatus)) ?></span>
                                             </h6>
                                             <div class="text-secondary" style="font-size:.82rem;">
@@ -227,6 +231,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                         </div>
                     <?php endif; ?>
                 </div>
+
             <?php elseif ($activeTab === 'pulls'): ?>
                 <div class="border rounded-3 overflow-hidden">
                     <div class="px-4 py-3 border-bottom bg-body-secondary d-flex align-items-center justify-content-between gap-3 flex-wrap">
@@ -260,10 +265,8 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                                 </div>
                             <?php else: ?>
                                 <?php
-                                $pullFromDefault = (string)($branches[0] ?? '');
-                                $pullToDefault = in_array($repoDefaultBranch, $branches, true)
-                                        ? $repoDefaultBranch
-                                        : $pullFromDefault;
+                                $pullFromDefault = $branches[0];
+                                $pullToDefault = $repoDefaultBranch;
                                 ?>
                                 <form method="POST" class="row g-3">
                                     <input type="hidden" name="csrf_token"
@@ -333,12 +336,14 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                                 $pullAuthorLabel = $pullAuthorDisplay !== '' ? $pullAuthorDisplay : $pullAuthorUsername;
                                 $pullCreatedAt = (string)($pull['created_at'] ?? '');
                                 $pullBody = trim((string)($pull['body'] ?? ''));
+                                $pullDetailUrl = '/' . $rSlug . '/pulls/' . (int)($pull['id'] ?? 0);
                                 ?>
                                 <div class="list-group-item px-4 py-3">
                                     <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
                                         <div>
                                             <h6 class="mb-1 fw-semibold d-flex align-items-center gap-2">
-                                                <?= RepoViewController::e((string)($pull['title'] ?? 'Untitled pull request')) ?>
+                                                <a href="<?= RepoViewController::e($pullDetailUrl) ?>"
+                                                   class="text-decoration-none"><?= RepoViewController::e((string)($pull['title'] ?? 'Untitled pull request')) ?></a>
                                                 <span class="badge fw-normal <?= $pullStatusClass ?>"><?= RepoViewController::e(strtoupper($pullStatus)) ?></span>
                                             </h6>
                                             <div class="text-secondary" style="font-size:.82rem;">

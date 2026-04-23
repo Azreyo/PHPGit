@@ -24,6 +24,8 @@ final class PageController
         'terms' => 'Terms of Service',
         'repo_view' => 'Repository',
         'profile_view' => 'Profile',
+        'issue_view' => 'Issue',
+        'pull_view' => 'Pull Request',
     ];
 
     /** @var array<string, string> */
