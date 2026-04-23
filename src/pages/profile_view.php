@@ -139,10 +139,8 @@ $profilePathUsername = rawurlencode($profileUsername);
             <aside class="col-12 col-lg-4">
                 <div class="card border-0 shadow-sm sticky-lg-top" style="top: 1rem;">
                     <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold mb-3"
-                             style="width: 88px; height: 88px; font-size: 1.5rem; letter-spacing: -.03em;">
-                            <?php echo htmlspecialchars($initials, ENT_QUOTES, 'UTF-8'); ?>
-                        </div>
+                        <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($profile['username']))) ?>?s=88&d=identicon"
+                             class="rounded-circle" width="88" height="88" alt="" loading="lazy">
 
                         <h1 class="h4 mb-0"><?php echo htmlspecialchars($headlineName, ENT_QUOTES, 'UTF-8'); ?></h1>
                         <p class="text-secondary mb-3">

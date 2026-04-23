@@ -63,7 +63,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
     <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
         <i class="bi bi-folder2 text-secondary" style="font-size:1.1rem;"></i>
         <h1 class="mb-0 fs-5 fw-normal">
-            <a href="/<?= $rSlug ?>" class="text-decoration-none"><?= $rOwner ?></a>
+            <a href="/<?= $rOwner ?>" class="text-decoration-none"><?= $rOwner ?></a>
             <span class="text-secondary mx-1">/</span>
             <a href="/<?= $rSlug ?>" class="fw-bold text-decoration-none"><?= $rName ?></a>
         </h1>
@@ -364,7 +364,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                     ?>
                     <?php if ($dispCommit !== null): ?>
                         <div class="border rounded-top-3 rv-latest-commit px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
-                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($dispCommit['author']))) ?>?s=24&d=identicon"
+                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($_SESSION['username']))) ?>?s=24&d=identicon"
                                  class="rounded-circle" width="20" height="20" alt="" loading="lazy">
                             <span class="fw-semibold"
                                   style="font-size:.85rem;"><?= RepoViewController::e($dispCommit['author']) ?></span>

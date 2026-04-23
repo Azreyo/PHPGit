@@ -68,8 +68,8 @@ function inboxInitials(string $name): string
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div class="d-flex gap-2 flex-wrap">
-        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3"
-                onclick="inboxMarkAllRead()">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" id="inboxMarkAllReadBtn"
+                data-mark-read-endpoint="/api/v1/markInboxRead.php">
             <i class="bi bi-check2-all me-2"></i>Mark all read
         </button>
         <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3">
@@ -250,18 +250,22 @@ function inboxInitials(string $name): string
     </small>
     <nav aria-label="Inbox pagination">
         <ul class="pagination pagination-sm mb-0 gap-1">
-            <li class="page-item disabled">
-                <span class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary">
+            <li class="page-item disabled" id="inboxPagePrevItem">
+                <button type="button"
+                        class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary"
+                        id="inboxPagePrev" aria-label="Previous page" disabled>
                     <i class="bi bi-chevron-left"></i>
-                </span>
+                </button>
             </li>
-            <li class="page-item active">
-                <span class="page-link rounded-3 bg-primary border-primary">1</span>
+            <li class="page-item active" id="inboxPageIndicatorItem">
+                <span class="page-link rounded-3 bg-primary border-primary" id="inboxPageIndicator">Page 1 / 1</span>
             </li>
-            <li class="page-item">
-                <a class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary" href="#">
+            <li class="page-item" id="inboxPageNextItem">
+                <button type="button"
+                        class="page-link rounded-3 border-secondary-subtle bg-body-secondary text-secondary"
+                        id="inboxPageNext" aria-label="Next page">
                     <i class="bi bi-chevron-right"></i>
-                </a>
+                </button>
             </li>
         </ul>
     </nav>
