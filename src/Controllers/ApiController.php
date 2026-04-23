@@ -208,7 +208,7 @@ class ApiController extends Controller
             $stmt->execute();
             $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
-            Logging::loggingToFile('Logs fetch error: ' . $e->getMessage(), 4, true, true);
+            Logging::loggingToFile('Logs fetch error: ' . $e->getMessage(), 4, true);
             $this->error('Could not fetch logs');
         }
 
