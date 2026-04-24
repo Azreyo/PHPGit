@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($result['success']) {
                     $_SESSION['repo_flash'] = 'Repository <strong>' . htmlspecialchars($repoName, ENT_QUOTES, 'UTF-8') . '</strong> created successfully.';
-                    echo '<script>window.location.href="/repos";</script>';
+                    echo '<script>window.location.href="' . htmlspecialchars($_SESSION['username'] . '/' . $repoName, ENT_QUOTES, 'UTF-8') . '";</script>';
                     exit;
                 }
 

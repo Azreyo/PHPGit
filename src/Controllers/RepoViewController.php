@@ -271,6 +271,34 @@ final class RepoViewController
                                 $postSuccess = 'Repository settings updated successfully.';
                             }
                         }
+                    } elseif ($action === 'repo_delete') {
+                        if (! $isPrivileged) {
+                            $postErrors[] = 'You do not have permission to delete this repository.';
+                        } else {
+                            $stmt = $pdo->prepare('DELETE FROM repositories WHERE id = ?');
+                            $stmt->execute([(int) $repo['id']]);
+
+                            $dataRoot = $config->getDataRoot();
+                            $bareRepoPath = $dataRoot . '/' . $repo['owner_username'] . '/' . $repo['repo_name'];
+                            if (is_dir($bareRepoPath)) {
+                                $delFunc = static function (string $dir) use (&$delFunc): void {
+                                    $items = scandir($dir);
+                                    foreach ($items as $item) {
+                                        if ($item === '.' || $item === '..') {
+                                            continue;
+                                        }
+                                        $path = $dir . '/' . $item;
+                                        is_dir($path) ? $delFunc($path) : unlink($path);
+                                    }
+                                    rmdir($dir);
+                                };
+                                $delFunc($bareRepoPath);
+                            }
+
+                            $_SESSION['repo_flash'] = 'Repository <strong>' . htmlspecialchars($repo['repo_name'], ENT_QUOTES, 'UTF-8') . '</strong> deleted successfully.';
+                            echo '<script>window.location.href="/' . $repo['owner_username'] . '";</script>';
+                            exit;
+                        }
                     }
                 } catch (\PDOException $e) {
                     Logging::loggingToFile('Repo view tab action failed: ' . $e->getMessage(), 4);

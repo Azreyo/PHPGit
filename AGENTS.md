@@ -7,7 +7,7 @@
 - API v1 system endpoints are file entry points under `src/api/v1/system/` that bootstrap Composer and dispatch to
   `App\\Controllers\\ApiController`. Additional non-system endpoints (`getDashboardInfo.php`, `getDatabaseUptime.php`,
   `health.php`) live directly under `src/api/v1/` and route through `ApiController::api()`.
-- Runtime config is loaded from `src/.env` via `vlucas/phpdotenv` (`src/Config.php`).
+- Runtime config is loaded from `src/.env` via `vlucas/phpdotenv` (`src/Config.php`). `Dotenv::createImmutable(__DIR__)` loads from `src/`.
 - Web server document root is expected to be `src` (README installation notes).
 - composer.json requires PHP ^8.4 and extensions `ext-pdo`, `ext-curl`, `ext-mbstring` (see `composer.json`).
 - Application writes runtime logs to `src/log/`; helper logging is implemented in `App\includes\Logging` (
@@ -84,7 +84,7 @@
 
 - `composer validate --strict` — validate composer.json
 - `find src -type f -name '*.php' -print0 | xargs -0 -n 1 php -l` — syntax check all PHP files
-- `vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff` — style check (CS Fixer)
+- `vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff` — style check (CS Fixer). Note: CI job is commented out in `.github/workflows/ci.yml`.
 - `vendor/bin/phpstan analyse` — static analysis
 - `vendor/bin/psalm` — Psalm type checking
 - `php bin/jslint.php src/assets/js` — JS linting

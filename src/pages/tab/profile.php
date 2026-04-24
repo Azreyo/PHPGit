@@ -40,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $display_name = trim($_POST['display_name'] ?? $user['display_name']);
         $bio = trim($_POST['bio'] ?? $user['bio']);
         $website = trim($_POST['website'] ?? $user['website']);
-
         if (empty($username)) {
             $errors[] = 'Username is required.';
         } elseif (! preg_match('/^[a-zA-Z0-9._-]{3,20}$/', $username)) {
@@ -133,7 +132,7 @@ try {
             </label>
             <input type="text" id="profile-display-name" class="form-control rounded-3"
                    placeholder="Your display name" name="display_name"
-                   value="<?php echo htmlspecialchars($user['display_name'], ENT_QUOTES, 'UTF-8'); ?>">
+                   value="<?php echo htmlspecialchars($user['display_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
             <div class="form-text">The name shown on your public profile page.</div>
         </div>
 
@@ -159,7 +158,7 @@ try {
                 </span>
                 <input type="url" id="profile-website" class="form-control rounded-end-3"
                        placeholder="https://yourwebsite.com" name="website"
-                       value="<?php echo htmlspecialchars($user['website'], ENT_QUOTES, 'UTF-8'); ?>">
+                       value="<?php echo htmlspecialchars($user['website'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
             </div>
             <div class="form-text">Optional portfolio or personal website link.</div>
         </div>
