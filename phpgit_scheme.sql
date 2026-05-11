@@ -162,7 +162,8 @@ CREATE TABLE IF NOT EXISTS ssh_keys
     fingerprint VARCHAR(100) NOT NULL,
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY ux_ssh_keys_fingerprint (fingerprint),
+    UNIQUE KEY ux_ssh_keys_user_fingerprint (user_id, fingerprint),
+    INDEX ix_ssh_keys_fingerprint (fingerprint),
     INDEX ix_ssh_keys_user (user_id),
     CONSTRAINT fk_ssh_keys_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE = InnoDB
@@ -178,4 +179,3 @@ CREATE TABLE IF NOT EXISTS programming_languages
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
-

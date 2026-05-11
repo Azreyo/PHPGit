@@ -626,7 +626,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                     ?>
                     <?php if ($dispCommit !== null): ?>
                         <div class="border rounded-top-3 rv-latest-commit px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
-                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($_SESSION['username']))) ?>?s=24&d=identicon"
+                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim((string) ($dispCommit['author'] ?? '')))) ?>?s=24&d=identicon"
                                  class="rounded-circle" width="20" height="20" alt="" loading="lazy">
                             <span class="fw-semibold"
                                   style="font-size:.85rem;"><?= RepoViewController::e($dispCommit['author']) ?></span>

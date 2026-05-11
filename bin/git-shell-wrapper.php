@@ -5,11 +5,11 @@
  *
  * This script is set as the forced command in ~git/.ssh/authorized_keys:
  *
- *   command="/usr/bin/php /var/www/phpgit/bin/git-shell-wrapper.php 42",\
+ *   command="/usr/bin/php /var/www/phpgit/bin/git-shell-wrapper.php --fingerprint SHA256:...",\
  *   no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty \
  *   ssh-ed25519 AAAA... user@host
  *
- * Where "42" is the PHPGit user ID associated with the SSH key.
+ * The fingerprint is resolved to the PHPGit user associated with the SSH key.
  *
  * The script:
  *  1. Validates the user ID and account status.
@@ -32,9 +32,17 @@ function die_err(string $msg): never
     exit(128);
 }
 
-// ── User ID from argv ──────────────────────────────────────────────────────
-$userId = isset($argv[1]) ? (int)$argv[1] : 0;
-if ($userId <= 0) {
+// ── Identity from argv ──────────────────────────────────────────────────────
+$userId = 0;
+$fingerprint = '';
+if (isset($argv[1]) && $argv[1] === '--fingerprint') {
+    $fingerprint = (string)($argv[2] ?? '');
+} else {
+    // Legacy authorized_keys entries passed the PHPGit user id directly.
+    $userId = isset($argv[1]) ? (int)$argv[1] : 0;
+}
+
+if ($userId <= 0 && $fingerprint === '') {
     die_err('Invalid user.');
 }
 
@@ -45,20 +53,35 @@ if ($pdo === null) {
     die_err('Database unavailable. Contact administrator.');
 }
 
-// ── Validate account ───────────────────────────────────────────────────────
-$userStmt = $pdo->prepare("SELECT id, username, status FROM users WHERE id = ? LIMIT 1");
-$userStmt->execute([$userId]);
-$user = $userStmt->fetch();
-
-if ($user === false || $user['status'] !== 'ACTIVE') {
-    Logging::loggingToFile("SSH access denied for user_id={$userId}: account inactive/missing", 2, true);
-    die_err('Account is inactive or does not exist.');
-}
-
 // ── Parse SSH_ORIGINAL_COMMAND ─────────────────────────────────────────────
 $originalCmd = getenv('SSH_ORIGINAL_COMMAND') ?: ($_SERVER['SSH_ORIGINAL_COMMAND'] ?? '');
 
 if ($originalCmd === '') {
+    $user = null;
+    if ($userId > 0) {
+        $userStmt = $pdo->prepare("SELECT id, username, status FROM users WHERE id = ? LIMIT 1");
+        $userStmt->execute([$userId]);
+        $user = $userStmt->fetch();
+    } elseif ($fingerprint !== '') {
+        $userStmt = $pdo->prepare(
+            "SELECT u.id, u.username, u.status
+               FROM ssh_keys k
+               JOIN users u ON u.id = k.user_id
+              WHERE k.fingerprint = ? AND u.status = 'ACTIVE'
+              ORDER BY u.id
+              LIMIT 2"
+        );
+        $userStmt->execute([$fingerprint]);
+        $users = $userStmt->fetchAll();
+        if (count($users) === 1) {
+            $user = $users[0];
+        }
+    }
+
+    if ($user === null || $user === false || $user['status'] !== 'ACTIVE') {
+        die_err('Authenticated, but this key is registered to multiple or inactive accounts.');
+    }
+
     // Interactive login attempt — greet the user, just like GitHub does.
     $name = (string)$user['username'];
     echo "PTY allocation request failed on channel 0\n";
@@ -93,7 +116,7 @@ if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {
 
 // ── Look up repository ─────────────────────────────────────────────────────
 $repoStmt = $pdo->prepare(
-        'SELECT r.id, r.visibility
+        'SELECT r.id, r.visibility, u.id AS owner_user_id
        FROM repositories r
        JOIN users u ON u.id = r.owner_user_id
       WHERE u.username = ? AND r.repo_name = ?
@@ -108,6 +131,62 @@ if ($repo === false) {
 
 // ── Check permissions ──────────────────────────────────────────────────────
 $isWriteOp = ($gitCmd === 'git-receive-pack');
+
+// ── Validate account ───────────────────────────────────────────────────────
+if ($userId <= 0) {
+    $candidateStmt = $pdo->prepare(
+        "SELECT u.id, u.username, u.status, m.permission
+           FROM ssh_keys k
+           JOIN users u ON u.id = k.user_id
+           LEFT JOIN repository_members m ON m.repository_id = ? AND m.user_id = u.id
+          WHERE k.fingerprint = ? AND u.status = 'ACTIVE'
+          ORDER BY (u.id = ?) DESC, (m.permission IS NOT NULL) DESC, u.id"
+    );
+    $candidateStmt->execute([(int)$repo['id'], $fingerprint, (int)$repo['owner_user_id']]);
+    $candidates = $candidateStmt->fetchAll();
+
+    if ($candidates === []) {
+        Logging::loggingToFile("SSH access denied for fingerprint={$fingerprint}: account inactive/missing", 2, true);
+        die_err('Account is inactive or does not exist.');
+    }
+
+    foreach ($candidates as $candidate) {
+        if ((int)$candidate['id'] === (int)$repo['owner_user_id']) {
+            $userId = (int)$candidate['id'];
+            break;
+        }
+    }
+
+    if ($userId <= 0 && ($isWriteOp || $repo['visibility'] === 'private')) {
+        foreach ($candidates as $candidate) {
+            $permission = (string)($candidate['permission'] ?? '');
+            if ($permission === '') {
+                continue;
+            }
+            if (! $isWriteOp || in_array($permission, ['owner', 'maintainer', 'write'], true)) {
+                $userId = (int)$candidate['id'];
+                break;
+            }
+        }
+    }
+
+    if ($userId <= 0 && ! $isWriteOp && $repo['visibility'] === 'public') {
+        $userId = (int)$candidates[0]['id'];
+    }
+
+    if ($userId <= 0) {
+        die_err('This SSH key is registered to multiple accounts, but none can access this repository.');
+    }
+}
+
+$userStmt = $pdo->prepare("SELECT id, username, status FROM users WHERE id = ? LIMIT 1");
+$userStmt->execute([$userId]);
+$user = $userStmt->fetch();
+
+if ($user === false || $user['status'] !== 'ACTIVE') {
+    Logging::loggingToFile("SSH access denied for user_id={$userId}: account inactive/missing", 2, true);
+    die_err('Account is inactive or does not exist.');
+}
 
 if ($isWriteOp || $repo['visibility'] === 'private') {
     $permStmt = $pdo->prepare(
@@ -163,5 +242,3 @@ pcntl_exec($gitBin, [$gitCmd, $realRepo]);
 // Only reached if exec failed
 Logging::loggingToFile("pcntl_exec failed for git cmd={$gitCmd} path={$realRepo}", 4);
 die_err('Failed to execute git command.');
-
-
