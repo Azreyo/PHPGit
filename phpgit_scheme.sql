@@ -9,9 +9,24 @@
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 
+CREATE TABLE IF NOT EXISTS inbox
+(
+    id         INT(11)                            NOT NULL AUTO_INCREMENT,
+    username   VARCHAR(50)                        NOT NULL,
+    email      VARCHAR(50)                        NOT NULL,
+    subject    VARCHAR(50)                        NOT NULL,
+    body       VARCHAR(500)                       NOT NULL,
+    created_at TIMESTAMP                          NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    unread     TINYINT(1)                         NOT NULL DEFAULT 1,
+    status     ENUM ('new', 'replied', 'closed')  NOT NULL DEFAULT 'new',
+    PRIMARY KEY (id)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS users
 (
-    id            INT UNSIGNED                                      NOT NULL AUTO_INCREMENT,
+    id            INT(10) UNSIGNED                                  NOT NULL AUTO_INCREMENT,
     username      VARCHAR(50)                                       NOT NULL,
     email         VARCHAR(191)                                      NOT NULL,
     password      VARCHAR(255)                                      NOT NULL,
@@ -34,8 +49,8 @@ CREATE TABLE IF NOT EXISTS users
 
 CREATE TABLE IF NOT EXISTS repositories
 (
-    id               INT UNSIGNED               NOT NULL AUTO_INCREMENT,
-    owner_user_id    INT UNSIGNED               NOT NULL,
+    id               INT(10) UNSIGNED           NOT NULL AUTO_INCREMENT,
+    owner_user_id    INT(10) UNSIGNED           NOT NULL,
     repo_name        VARCHAR(100)               NOT NULL,
     slug             VARCHAR(150)               NOT NULL,
     repo_description TEXT                                DEFAULT NULL,
@@ -59,8 +74,8 @@ CREATE TABLE IF NOT EXISTS repositories
 
 CREATE TABLE IF NOT EXISTS repository_members
 (
-    repository_id INT UNSIGNED                                  NOT NULL,
-    user_id       INT UNSIGNED                                  NOT NULL,
+    repository_id INT(10) UNSIGNED                              NOT NULL,
+    user_id       INT(10) UNSIGNED                              NOT NULL,
     permission    ENUM ('owner', 'maintainer', 'write', 'read') NOT NULL DEFAULT 'read',
     added_at      TIMESTAMP                                     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (repository_id, user_id),
@@ -74,10 +89,10 @@ CREATE TABLE IF NOT EXISTS repository_members
 
 CREATE TABLE IF NOT EXISTS issues
 (
-    id               INT UNSIGNED            NOT NULL AUTO_INCREMENT,
-    repository_id    INT UNSIGNED            NOT NULL,
-    author_user_id   INT UNSIGNED            NOT NULL,
-    assignee_user_id INT UNSIGNED                     DEFAULT NULL,
+    id               INT(10) UNSIGNED        NOT NULL AUTO_INCREMENT,
+    repository_id    INT(10) UNSIGNED        NOT NULL,
+    author_user_id   INT(10) UNSIGNED        NOT NULL,
+    assignee_user_id INT(10) UNSIGNED                 DEFAULT NULL,
     title            VARCHAR(160)            NOT NULL,
     body             TEXT                             DEFAULT NULL,
     status           ENUM ('open', 'closed') NOT NULL DEFAULT 'open',
@@ -88,74 +103,54 @@ CREATE TABLE IF NOT EXISTS issues
     INDEX ix_issues_repo_created (repository_id, created_at),
     INDEX ix_issues_author (author_user_id),
     INDEX ix_issues_assignee (assignee_user_id),
-    CONSTRAINT fk_issues_repo FOREIGN KEY (repository_id) REFERENCES repositories (id) ON DELETE CASCADE,
-    CONSTRAINT fk_issues_author FOREIGN KEY (author_user_id) REFERENCES users (id) ON DELETE RESTRICT,
-    CONSTRAINT fk_issues_assignee FOREIGN KEY (assignee_user_id) REFERENCES users (id) ON DELETE SET NULL
+    CONSTRAINT fk_issues_assignee FOREIGN KEY (assignee_user_id) REFERENCES users (id) ON DELETE SET NULL,
+    CONSTRAINT fk_issues_author FOREIGN KEY (author_user_id) REFERENCES users (id),
+    CONSTRAINT fk_issues_repo FOREIGN KEY (repository_id) REFERENCES repositories (id) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS pull_requests
 (
-    id               INT UNSIGNED                      NOT NULL AUTO_INCREMENT,
-    repository_id    INT UNSIGNED                      NOT NULL,
-    author_user_id   INT UNSIGNED                      NOT NULL,
+    id               INT(10) UNSIGNED                  NOT NULL AUTO_INCREMENT,
+    repository_id    INT(10) UNSIGNED                  NOT NULL,
+    author_user_id   INT(10) UNSIGNED                  NOT NULL,
     from_branch_name VARCHAR(100)                      NOT NULL,
     to_branch_name   VARCHAR(100)                      NOT NULL,
     from_head_hash   CHAR(64)                                   DEFAULT NULL,
     to_head_hash     CHAR(64)                                   DEFAULT NULL,
     title            VARCHAR(160)                      NOT NULL,
     body             TEXT                                       DEFAULT NULL,
-    status           ENUM ('open', 'merged', 'closed') NOT NULL DEFAULT 'open',
+    status           ENUM ('open', 'merged', 'archived') NOT NULL DEFAULT 'open',
     created_at       TIMESTAMP                         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     merged_at        TIMESTAMP                         NULL     DEFAULT NULL,
     PRIMARY KEY (id),
     INDEX ix_pull_requests_repo_status (repository_id, status),
     INDEX ix_pull_requests_repo_created (repository_id, created_at),
     INDEX ix_pull_requests_author (author_user_id),
-    CONSTRAINT fk_pr_repo FOREIGN KEY (repository_id) REFERENCES repositories (id) ON DELETE CASCADE,
-    CONSTRAINT fk_pr_author FOREIGN KEY (author_user_id) REFERENCES users (id) ON DELETE RESTRICT
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS inbox
-(
-    id         INT UNSIGNED                        NOT NULL AUTO_INCREMENT,
-    username   VARCHAR(50)                         NOT NULL,
-    email      VARCHAR(191)                        NOT NULL,
-    subject    VARCHAR(255)                        NOT NULL,
-    body       TEXT                                NOT NULL,
-    status     ENUM ('new', 'replied', 'archived') NOT NULL DEFAULT 'new',
-    unread     TINYINT(1)                          NOT NULL DEFAULT 1,
-    created_at TIMESTAMP                           NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    INDEX ix_inbox_status (status),
-    INDEX ix_inbox_unread (unread),
-    INDEX ix_inbox_created (created_at)
+    CONSTRAINT fk_pr_author FOREIGN KEY (author_user_id) REFERENCES users (id),
+    CONSTRAINT fk_pr_repo FOREIGN KEY (repository_id) REFERENCES repositories (id) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS log
 (
-    id       INT UNSIGNED                                                      NOT NULL AUTO_INCREMENT,
+    id       INT(11)                                                           NOT NULL AUTO_INCREMENT,
     level    ENUM ('Debug', 'Info', 'Warning', 'Error', 'Critical', 'Unknown') NOT NULL DEFAULT 'Unknown',
-    message  TEXT                                                              NOT NULL,
+    message  TINYTEXT                                                          NOT NULL,
+    log_time TIMESTAMP                                                         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     security TINYINT(1)                                                        NOT NULL DEFAULT 0,
     ip       TEXT                                                                       DEFAULT NULL,
-    log_time TIMESTAMP                                                         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    INDEX ix_log_level_created (level, log_time),
-    INDEX ix_log_security_created (security, log_time)
+    PRIMARY KEY (id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ssh_keys
 (
-    id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    user_id     INT UNSIGNED NOT NULL,
+    id          INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id     INT(10) UNSIGNED NOT NULL,
     title       VARCHAR(100) NOT NULL,
     key_type    VARCHAR(50)  NOT NULL,
     public_key  TEXT         NOT NULL,

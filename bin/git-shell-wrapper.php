@@ -69,17 +69,21 @@ if ($originalCmd === '') {
                JOIN users u ON u.id = k.user_id
               WHERE k.fingerprint = ? AND u.status = 'ACTIVE'
               ORDER BY u.id
-              LIMIT 2"
+              LIMIT 10"
         );
         $userStmt->execute([$fingerprint]);
         $users = $userStmt->fetchAll();
         if (count($users) === 1) {
             $user = $users[0];
+        } elseif (count($users) > 1) {
+            echo "PTY allocation request failed on channel 0\n";
+            echo "Hi! You've successfully authenticated, but this SSH key is linked to multiple PHPGit accounts and PHPGit does not provide shell access.\n";
+            exit(0);
         }
     }
 
     if ($user === null || $user === false || $user['status'] !== 'ACTIVE') {
-        die_err('Authenticated, but this key is registered to multiple or inactive accounts.');
+        die_err('Authenticated, but this key is not linked to an active account.');
     }
 
     // Interactive login attempt — greet the user, just like GitHub does.
