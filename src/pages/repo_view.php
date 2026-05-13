@@ -483,7 +483,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
             </div>
         <?php endif; ?>
         <div class="<?= ! $isEmpty && ! empty($fullFileTree) ? 'col-lg-8' : 'col-lg-10' ?>">
-            <?php if ($isEmpty): ?>
+            <?php if ($isEmpty && $isOwner): ?>
                 <div class="border rounded-3 overflow-hidden" style="border-color:var(--bs-border-color)!important;">
                     <div class="p-4 text-center border-bottom" style="background:var(--bs-secondary-bg);">
                         <i class="bi bi-folder2-open" style="font-size:2.5rem;color:var(--brand);"></i>
