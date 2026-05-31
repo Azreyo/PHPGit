@@ -11,7 +11,7 @@ namespace App\Services;
  */
 class GitReaderService
 {
-    private string $repoPath;
+    private GitCommandRunner $runner;
 
     private const EXT_MAP = [
         'php' => 'PHP',
@@ -132,13 +132,13 @@ class GitReaderService
 
     public function __construct(string $repoPath)
     {
-        $this->repoPath = rtrim($repoPath, '/');
+        $this->runner = new GitCommandRunner(rtrim($repoPath, '/'));
     }
 
     public function isEmpty(): bool
     {
         $exitCode = 1;
-        $result = $this->git('rev-parse --verify HEAD 2>/dev/null', $exitCode);
+        $result = $this->git(['rev-parse', '--verify', 'HEAD'], $exitCode);
 
         return $exitCode !== 0 || trim($result) === '';
     }
@@ -148,7 +148,7 @@ class GitReaderService
      */
     public function getBranches(string $defaultBranch = 'main'): array
     {
-        $raw = $this->git("branch --format='%(refname:short)'");
+        $raw = $this->git(['branch', '--format=%(refname:short)']);
         $branches = array_filter(array_map('trim', explode("\n", $raw)));
 
         // Put default branch first
@@ -165,12 +165,11 @@ class GitReaderService
     /**
      * Top-level tree entries for a given branch/ref.
      *
-     * @return list<array{type: string, name: string, mode: string}>
+     * @return list<array{type: string, name: string, mode: string, hash: string}>
      */
     public function getTopLevelTree(string $ref = 'HEAD'): array
     {
-        $safeRef = escapeshellarg($ref);
-        $raw = $this->git("ls-tree {$safeRef}");
+        $raw = $this->git(['ls-tree', $ref]);
         if (trim($raw) === '') {
             return [];
         }
@@ -210,10 +209,9 @@ class GitReaderService
      */
     public function getLastCommitPerEntry(string $ref = 'HEAD', int $logLimit = 500): array
     {
-        $safeRef = escapeshellarg($ref);
         // %x00-separated: hash, abbreviated hash, subject, ISO8601 date, relative date, author
         $raw = $this->git(
-            "log {$safeRef} -n {$logLimit} --name-only --format='%x00%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an'"
+            ['log', $ref, '-n', (string)$logLimit, '--name-only', '--format=%x00%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an']
         );
 
         $map = [];
@@ -248,8 +246,7 @@ class GitReaderService
      */
     public function getLatestCommit(string $ref = 'HEAD'): ?array
     {
-        $safeRef = escapeshellarg($ref);
-        $raw = $this->git("log {$safeRef} -1 --format='%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an'");
+        $raw = $this->git(['log', $ref, '-1', '--format=%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an']);
         $raw = trim($raw);
         if ($raw === '') {
             return null;
@@ -268,8 +265,7 @@ class GitReaderService
 
     public function getCommitCount(string $ref = 'HEAD'): int
     {
-        $safeRef = escapeshellarg($ref);
-        $raw = $this->git("rev-list --count {$safeRef}");
+        $raw = $this->git(['rev-list', '--count', $ref]);
 
         return max(0, (int) trim($raw));
     }
@@ -278,10 +274,8 @@ class GitReaderService
     {
         $candidates = ['README.md', 'readme.md', 'README', 'readme', 'README.txt'];
         foreach ($candidates as $name) {
-            $safeRef = escapeshellarg($ref);
-            $safeName = escapeshellarg($name);
             $exitCode = 1;
-            $content = $this->git("show {$safeRef}:{$safeName} 2>/dev/null", $exitCode);
+            $content = $this->git(['show', $ref . ':' . $name], $exitCode);
             if ($exitCode === 0 && $content !== '') {
                 return $content;
             }
@@ -298,8 +292,7 @@ class GitReaderService
     public function getLanguageBreakdown(string $ref = 'HEAD'): array
     {
         // ls-tree -r -l gives: mode type hash size TAB name
-        $safeRef = escapeshellarg($ref);
-        $raw = $this->git("ls-tree -r -l {$safeRef}");
+        $raw = $this->git(['ls-tree', '-r', '-l', $ref]);
         if (trim($raw) === '') {
             return [];
         }
@@ -340,7 +333,6 @@ class GitReaderService
         arsort($totals);
 
         $result = [];
-        $accPct = 0.0;
         $count = 0;
 
         foreach ($totals as $lang => $bytes) {
@@ -369,7 +361,6 @@ class GitReaderService
             }
 
             $result[] = ['lang' => $lang, 'bytes' => $bytes, 'pct' => $pct, 'color' => $color];
-            $accPct += $pct;
             $count++;
         }
 
@@ -395,9 +386,8 @@ class GitReaderService
      */
     public function getObjectType(string $ref, string $path): ?string
     {
-        $safe = escapeshellarg($ref . ':' . $path);
         $exitCode = 1;
-        $raw = $this->git("cat-file -t {$safe}", $exitCode);
+        $raw = $this->git(['cat-file', '-t', $ref . ':' . $path], $exitCode);
         if ($exitCode !== 0) {
             return null;
         }
@@ -413,8 +403,7 @@ class GitReaderService
      */
     public function getTreeAtPath(string $ref, string $path): array
     {
-        $safeRef = escapeshellarg($ref . ':' . $path);
-        $raw = $this->git("ls-tree {$safeRef}");
+        $raw = $this->git(['ls-tree', $ref . ':' . $path]);
         if (trim($raw) === '') {
             return [];
         }
@@ -446,18 +435,17 @@ class GitReaderService
      */
     public function getFileContent(string $ref, string $path, int $maxBytes = 524288): array
     {
-        $safe = escapeshellarg($ref . ':' . $path);
         $exitCode = 1;
-        $sizeStr = $this->git("cat-file -s {$safe}", $exitCode);
+        $sizeStr = $this->git(['cat-file', '-s', $ref . ':' . $path], $exitCode);
         $size = $exitCode === 0 ? (int) trim($sizeStr) : 0;
 
         if ($exitCode !== 0) {
             return ['content' => null, 'binary' => false, 'truncated' => false, 'size' => 0, 'lines' => 0];
         }
 
-        $safePath = escapeshellarg($this->repoPath);
-        $raw = shell_exec("git -C {$safePath} show {$safe} 2>/dev/null");
-        if ($raw === null) {
+        $showExitCode = 1;
+        $raw = $this->git(['show', $ref . ':' . $path], $showExitCode, $maxBytes + 1);
+        if ($showExitCode !== 0) {
             return ['content' => null, 'binary' => false, 'truncated' => false, 'size' => $size, 'lines' => 0];
         }
 
@@ -483,10 +471,8 @@ class GitReaderService
      */
     public function getLastCommitForPath(string $ref, string $path): ?array
     {
-        $safeRef = escapeshellarg($ref);
-        $safePath = escapeshellarg($path);
         $raw = $this->git(
-            "log {$safeRef} -1 --format='%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an' -- {$safePath}"
+            ['log', $ref, '-1', '--format=%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an', '--', $path]
         );
         $raw = trim($raw);
         if ($raw === '') {
@@ -509,11 +495,8 @@ class GitReaderService
      */
     public function getLastCommitPerEntryAtPath(string $ref, string $path, int $logLimit = 500): array
     {
-        $safeRef = escapeshellarg($ref);
-        $safePath = escapeshellarg($path);
         $raw = $this->git(
-            "log {$safeRef} -n {$logLimit} --name-only " .
-            "--format='%x00%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an' -- {$safePath}"
+            ['log', $ref, '-n', (string)$logLimit, '--name-only', '--format=%x00%H%x1f%h%x1f%s%x1f%ai%x1f%ar%x1f%an', '--', $path]
         );
 
         $map = [];
@@ -550,8 +533,7 @@ class GitReaderService
      */
     public function getFullFileTree(string $ref): array
     {
-        $safe = escapeshellarg($ref);
-        $lines = explode("\n", $this->git("ls-tree -r --name-only {$safe}"));
+        $lines = explode("\n", $this->git(['ls-tree', '-r', '--name-only', $ref]));
         /** @var array<string, array{name: string, type: string, children: array<mixed>}> $root */
         $root = [];
         $count = 0;
@@ -603,13 +585,34 @@ class GitReaderService
         return array_values($root);
     }
 
-    private function git(string $subCommand, int &$exitCode = 0): string
+    public function getBlobSize(string $ref, string $path): int
     {
-        $safePath = escapeshellarg($this->repoPath);
-        $cmd = "git -C {$safePath} {$subCommand} 2>/dev/null 2>&1";
-        $output = [];
-        exec($cmd, $output, $exitCode);
+        $exitCode = 1;
+        $raw = $this->git(['cat-file', '-s', $ref . ':' . $path], $exitCode);
 
-        return implode("\n", $output);
+        return $exitCode === 0 && is_numeric(trim($raw)) ? (int)trim($raw) : 0;
+    }
+
+    public function readBlob(string $ref, string $path, ?int $maxBytes = null): string
+    {
+        $exitCode = 1;
+
+        return $this->git(['show', $ref . ':' . $path], $exitCode, $maxBytes);
+    }
+
+    /**
+     * @param callable(string): void $stdout
+     */
+    public function streamBlob(string $ref, string $path, callable $stdout): void
+    {
+        $this->runner->stream(['show', $ref . ':' . $path], $stdout);
+    }
+
+    /**
+     * @param list<string> $arguments
+     */
+    private function git(array $arguments, int &$exitCode = 0, ?int $maxBytes = null): string
+    {
+        return $this->runner->run($arguments, $exitCode, $maxBytes);
     }
 }

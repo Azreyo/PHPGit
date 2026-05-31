@@ -3,6 +3,7 @@
 use App\Config;
 use App\includes\Assets;
 use App\includes\Logging;
+use App\includes\Security;
 
 $config = new Config();
 $pdo = $config->getPDO();
@@ -23,6 +24,13 @@ try {
 }
 
 $unreadCount = count(array_filter($messages, fn ($m) => $m['unread']));
+$csrfToken = '';
+
+try {
+    $csrfToken = (new Security())->generateCsrfToken();
+} catch (Exception $e) {
+    Logging::loggingToFile('Cannot generate inbox csrf token: ' . $e->getMessage(), 4);
+}
 
 $statusMeta = [
     'new' => ['label' => 'New', 'class' => 'text-bg-primary'],
@@ -68,7 +76,8 @@ function inboxInitials(string $name): string
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div class="d-flex gap-2 flex-wrap">
         <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" id="inboxMarkAllReadBtn"
-                data-mark-read-endpoint="/api/v1/markInboxRead.php">
+                data-mark-read-endpoint="/api/v1/markInboxRead.php"
+                data-csrf-token="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <i class="bi bi-check2-all me-2"></i>Mark all read
         </button>
         <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" id="inboxArchiveReadBtn">

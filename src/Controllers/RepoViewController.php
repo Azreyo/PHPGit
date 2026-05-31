@@ -672,7 +672,7 @@ final class RepoViewController
             if (str_starts_with($line, '```')) {
                 if (! $inPre) {
                     $closeList();
-                    $lang = trim(substr($line, 3));
+                    $lang = self::sanitizeCodeLanguage(trim(substr($line, 3)));
                     $inPre = true;
                     $preBuf = '';
                     $html .= '<pre><code' . ($lang ? " class=\"language-{$lang}\"" : '') . '>';
@@ -761,10 +761,39 @@ final class RepoViewController
         $s = preg_replace('/\*(.+?)\*/', '<em>$1</em>', $s) ?? $s;
         $s = preg_replace('/__(.+?)__/', '<strong>$1</strong>', $s) ?? $s;
         $s = preg_replace('/_(.+?)_/', '<em>$1</em>', $s) ?? $s;
-        $s = preg_replace('/\[([^\]]+)\]\(([^)]+)\)/', '<a href="$2" rel="noopener noreferrer">$1</a>', $s) ?? $s;
+        $s = preg_replace_callback(
+            '/\[([^\]]+)\]\(([^)]+)\)/',
+            static fn(array $m): string => self::renderSafeMarkdownLink((string)$m[1], (string)$m[2]),
+            $s
+        ) ?? $s;
         $s = preg_replace('/~~(.+?)~~/', '<del>$1</del>', $s) ?? $s;
 
         return $s;
+    }
+
+    private static function sanitizeCodeLanguage(string $language): string
+    {
+        if (!preg_match('/^[A-Za-z0-9_-]+$/', $language)) {
+            return '';
+        }
+
+        return htmlspecialchars($language, ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function renderSafeMarkdownLink(string $text, string $href): string
+    {
+        $decodedHref = html_entity_decode(trim($href), ENT_QUOTES, 'UTF-8');
+        $isSafe = str_starts_with($decodedHref, '#')
+            || str_starts_with($decodedHref, '/')
+            || preg_match('#^https?://#i', $decodedHref) === 1;
+
+        if (!$isSafe) {
+            return '[' . $text . '](' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . ')';
+        }
+
+        $safeHref = htmlspecialchars($decodedHref, ENT_QUOTES, 'UTF-8');
+
+        return '<a href="' . $safeHref . '" rel="noopener noreferrer">' . $text . '</a>';
     }
 
     /**

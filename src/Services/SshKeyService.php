@@ -14,7 +14,7 @@ use App\includes\Logging;
  *  – Rebuilding the git system user's authorized_keys file after every change.
  *
  * authorized_keys format per entry:
- *   command="/usr/bin/php /var/www/phpgit/bin/git-shell-wrapper.php {user_id}",\
+ *   command="/usr/bin/php /var/www/phpgit/bin/git-shell-wrapper.php --fingerprint {fingerprint}",\
  *   no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty {public_key}
  */
 class SshKeyService
@@ -40,6 +40,7 @@ class SshKeyService
         $this->authorizedKeysPath = $authorizedKeysPath;
         $this->gitShellWrapperPath = $gitShellWrapperPath;
         $this->ensureTableExists();
+        $this->ensureIndexes();
     }
 
     /**
@@ -58,12 +59,39 @@ class SshKeyService
                 fingerprint VARCHAR(100) NOT NULL,
                 created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
-                UNIQUE KEY ux_ssh_keys_fingerprint (fingerprint),
+                UNIQUE KEY ux_ssh_keys_user_fingerprint (user_id, fingerprint),
+                INDEX ix_ssh_keys_fingerprint (fingerprint),
                 INDEX ix_ssh_keys_user (user_id),
                 CONSTRAINT fk_ssh_keys_user FOREIGN KEY (user_id)
                     REFERENCES users (id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
         );
+    }
+
+    private function ensureIndexes(): void
+    {
+        try {
+            if ($this->indexExists('ux_ssh_keys_fingerprint')) {
+                $this->pdo->exec('ALTER TABLE ssh_keys DROP INDEX ux_ssh_keys_fingerprint');
+            }
+
+            if (! $this->indexExists('ux_ssh_keys_user_fingerprint')) {
+                $this->pdo->exec('ALTER TABLE ssh_keys ADD UNIQUE KEY ux_ssh_keys_user_fingerprint (user_id, fingerprint)');
+            }
+
+            if (! $this->indexExists('ix_ssh_keys_fingerprint')) {
+                $this->pdo->exec('ALTER TABLE ssh_keys ADD INDEX ix_ssh_keys_fingerprint (fingerprint)');
+            }
+        } catch (\PDOException $e) {
+            Logging::loggingToFile('SSH key index migration failed: ' . $e->getMessage(), 4);
+        }
+    }
+
+    private function indexExists(string $indexName): bool
+    {
+        $stmt = $this->pdo->query("SHOW INDEX FROM ssh_keys WHERE Key_name = " . $this->pdo->quote($indexName));
+
+        return $stmt !== false && $stmt->fetch() !== false;
     }
 
     // ── Public API ────────────────────────────────────────────────────────
@@ -90,18 +118,23 @@ class SshKeyService
             return ['success' => false, 'error' => 'Could not compute key fingerprint. Ensure ssh-keygen is available.'];
         }
 
-        // Uniqueness check
-        $check = $this->pdo->prepare('SELECT id FROM ssh_keys WHERE fingerprint = ? LIMIT 1');
-        $check->execute([$fingerprint]);
+        $check = $this->pdo->prepare('SELECT id FROM ssh_keys WHERE user_id = ? AND fingerprint = ? LIMIT 1');
+        $check->execute([$userId, $fingerprint]);
         if ($check->fetch() !== false) {
-            return ['success' => false, 'error' => 'This key is already registered (duplicate fingerprint).'];
+            return ['success' => false, 'error' => 'This key is already registered for your account.'];
         }
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO ssh_keys (user_id, title, key_type, public_key, fingerprint)
              VALUES (?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$userId, $title, $parsed['type'], $parsed['normalized'], $fingerprint]);
+        try {
+            $stmt->execute([$userId, $title, $parsed['type'], $parsed['normalized'], $fingerprint]);
+        } catch (\PDOException $e) {
+            Logging::loggingToFile('SSH key insert failed: ' . $e->getMessage(), 4);
+
+            return ['success' => false, 'error' => 'Could not register this SSH key.'];
+        }
         $keyId = (int) $this->pdo->lastInsertId();
 
         Logging::loggingToFile("SSH key added: key_id={$keyId} user_id={$userId} fingerprint={$fingerprint}", 1);
@@ -175,13 +208,18 @@ class SshKeyService
         $phpBin = PHP_BINARY;
         $wrapperEsc = escapeshellarg($this->gitShellWrapperPath);
 
-        // Fetch all active keys joined with their user ID
+        // One authorized_keys line per fingerprint; the wrapper resolves the account.
         $stmt = $this->pdo->prepare(
-            "SELECT k.public_key, k.user_id
+            "SELECT k.public_key, k.fingerprint
                FROM ssh_keys k
-               JOIN users u ON u.id = k.user_id
-              WHERE u.status = 'ACTIVE'
-              ORDER BY k.user_id, k.id"
+               JOIN (
+                    SELECT MIN(k2.id) AS id
+                      FROM ssh_keys k2
+                      JOIN users u2 ON u2.id = k2.user_id
+                     WHERE u2.status = 'ACTIVE'
+                     GROUP BY k2.fingerprint
+               ) chosen ON chosen.id = k.id
+              ORDER BY k.id"
         );
         $stmt->execute();
         $rows = $stmt->fetchAll();
@@ -192,8 +230,8 @@ class SshKeyService
         $lines[] = '';
 
         foreach ($rows as $row) {
-            $userId = (int) $row['user_id'];
             $publicKey = trim((string) $row['public_key']);
+            $fingerprint = (string) $row['fingerprint'];
             // Use a shell entry script so PHP startup warnings (OPcache) can be
             // suppressed without losing real git progress output on stderr.
             $entryScript = dirname($this->gitShellWrapperPath) . '/git-ssh-entry.sh';
@@ -202,9 +240,9 @@ class SshKeyService
                 : $phpBin . ' -d opcache.enable=0 -d opcache.enable_cli=0 ' . $this->gitShellWrapperPath;
 
             $options = sprintf(
-                'command="%s %d",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty',
+                'command="%s --fingerprint %s",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty',
                 str_replace('"', '\\"', $cmdBin),
-                $userId
+                str_replace('"', '\\"', $fingerprint)
             );
             $lines[] = $options . ' ' . $publicKey;
         }

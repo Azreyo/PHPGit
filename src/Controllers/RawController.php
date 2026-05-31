@@ -91,11 +91,8 @@ final class RawController
             $this->abort(404, '404 Not Found: path is not a file');
         }
 
-        $safePath = escapeshellarg($repoPath);
-        $safeRef = escapeshellarg($branch . ':' . $filePath);
-        $sizeStr = trim((string) shell_exec("git -C {$safePath} cat-file -s {$safeRef} 2>/dev/null"));
-        $size = is_numeric($sizeStr) ? (int) $sizeStr : 0;
-        $peek = (string) shell_exec("git -C {$safePath} show {$safeRef} 2>/dev/null | head -c 8192");
+        $size = $git->getBlobSize($branch, $filePath);
+        $peek = $git->readBlob($branch, $filePath, 8192);
         $isBinary = str_contains($peek, "\x00");
 
         header('Content-Type: ' . ($isBinary ? 'application/octet-stream' : 'text/plain; charset=UTF-8'));
@@ -105,7 +102,9 @@ final class RawController
         header('X-Content-Type-Options: nosniff');
         header('Cache-Control: no-store');
 
-        passthru("git -C {$safePath} show {$safeRef} 2>/dev/null");
+        $git->streamBlob($branch, $filePath, static function (string $chunk): void {
+            echo $chunk;
+        });
         exit;
     }
 

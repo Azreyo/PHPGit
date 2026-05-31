@@ -483,7 +483,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
             </div>
         <?php endif; ?>
         <div class="<?= ! $isEmpty && ! empty($fullFileTree) ? 'col-lg-8' : 'col-lg-10' ?>">
-            <?php if ($isEmpty): ?>
+            <?php if ($isEmpty && $isOwner): ?>
                 <div class="border rounded-3 overflow-hidden" style="border-color:var(--bs-border-color)!important;">
                     <div class="p-4 text-center border-bottom" style="background:var(--bs-secondary-bg);">
                         <i class="bi bi-folder2-open" style="font-size:2.5rem;color:var(--brand);"></i>
@@ -626,7 +626,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                     ?>
                     <?php if ($dispCommit !== null): ?>
                         <div class="border rounded-top-3 rv-latest-commit px-3 py-2 d-flex align-items-center gap-2 flex-wrap">
-                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim($_SESSION['username']))) ?>?s=24&d=identicon"
+                            <img src="https://www.gravatar.com/avatar/<?= md5(strtolower(trim((string) ($dispCommit['author'] ?? '')))) ?>?s=24&d=identicon"
                                  class="rounded-circle" width="20" height="20" alt="" loading="lazy">
                             <span class="fw-semibold"
                                   style="font-size:.85rem;"><?= RepoViewController::e($dispCommit['author']) ?></span>

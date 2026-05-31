@@ -1,4 +1,16 @@
-<?php use App\includes\Assets;
+<?php
+
+use App\includes\Assets;
+use App\includes\Logging;
+use App\includes\Security;
+
+$csrfToken = '';
+
+try {
+    $csrfToken = (new Security())->generateCsrfToken();
+} catch (Exception $e) {
+    Logging::loggingToFile('Cannot generate overview csrf token: ' . $e->getMessage(), 4);
+}
 
 ?>
 
@@ -41,11 +53,13 @@
             <p class="text-secondary small mb-0">Use these shortcuts to run common operational tasks.</p>
         </div>
         <div class="d-flex flex-wrap align-items-center gap-2">
-            <button type="button" class="btn btn-outline-secondary rounded-pill px-3" id="overview-clear-cache-btn">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-3" id="overview-clear-cache-btn"
+                    data-csrf-token="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                 Clear Cache
             </button>
             <button type="button" class="btn btn-outline-secondary rounded-pill px-3"
-                    id="overview-restart-services-btn">Restart Services
+                    id="overview-restart-services-btn"
+                    data-csrf-token="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">Restart Services
             </button>
             <div class="alert d-none mb-0 py-2 px-3" id="overview-action-status" role="status"></div>
         </div>

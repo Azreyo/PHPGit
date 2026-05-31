@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Config;
 use App\Core\Controller;
 use App\includes\Logging;
+use App\includes\Security;
 use App\Services\SshKeyService;
 use App\Services\SystemService;
 use PDO;
@@ -102,6 +103,27 @@ class ApiController extends Controller
 
         if (! $isLoggedIn || $role !== 'ADMIN') {
             $this->error('Unauthorized', 401);
+        }
+    }
+
+    private function requireCsrfForUnsafeMethods(): void
+    {
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+            return;
+        }
+
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if ($token === '') {
+            $token = (string)($_POST['csrf_token'] ?? '');
+        }
+
+        if (!(new Security())->validateCsrfToken($token)) {
+            $this->error('Invalid CSRF token', 403);
         }
     }
 
@@ -239,17 +261,18 @@ class ApiController extends Controller
     {
         $this->requireMethod('POST');
         $this->requireAdminSession();
+        $this->requireCsrfForUnsafeMethods();
 
         clearstatcache(true);
         $opcacheCleared = null;
         $apcuCleared = null;
 
         if (function_exists('opcache_reset')) {
-            $opcacheCleared = (bool) @opcache_reset();
+            $opcacheCleared = @opcache_reset();
         }
 
         if (function_exists('apcu_clear_cache')) {
-            $apcuCleared = (bool) @apcu_clear_cache();
+            $apcuCleared = @apcu_clear_cache();
         }
 
         Logging::loggingToFile('Dashboard maintenance: cache clear requested by admin', 2, true, true);
@@ -266,6 +289,7 @@ class ApiController extends Controller
     {
         $this->requireMethod('POST');
         $this->requireAdminSession();
+        $this->requireCsrfForUnsafeMethods();
 
         Logging::loggingToFile('Dashboard maintenance: service restart requested by admin', 3, true, true);
 
@@ -279,6 +303,7 @@ class ApiController extends Controller
     {
         $this->requireMethod('POST');
         $this->requireAdminSession();
+        $this->requireCsrfForUnsafeMethods();
 
         if ($this->pdo === null) {
             Logging::loggingToFile('markInboxRead error: Database connection is null', 4, true, true);
@@ -314,6 +339,7 @@ class ApiController extends Controller
     {
         $this->requireMethod('POST');
         $this->requireAdminSession();
+        $this->requireCsrfForUnsafeMethods();
 
         if ($this->pdo === null) {
             Logging::loggingToFile('updateInboxStatus error: Database connection is null', 4, true, true);
@@ -347,6 +373,7 @@ class ApiController extends Controller
     {
         $this->requireMethod('POST');
         $this->requireLoggedInSession();
+        $this->requireCsrfForUnsafeMethods();
 
         if ($this->pdo === null) {
             $this->error('Database unavailable', 503);
@@ -376,6 +403,7 @@ class ApiController extends Controller
     {
         $this->requireMethod('DELETE');
         $this->requireLoggedInSession();
+        $this->requireCsrfForUnsafeMethods();
 
         if ($this->pdo === null) {
             $this->error('Database unavailable', 503);

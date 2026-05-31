@@ -216,7 +216,8 @@ CREATE TABLE IF NOT EXISTS `ssh_keys`
     `fingerprint` varchar(100)     NOT NULL,
     `created_at`  timestamp        NOT NULL DEFAULT current_timestamp(),
     PRIMARY KEY (`id`),
-    UNIQUE KEY `ux_ssh_keys_fingerprint` (`fingerprint`),
+    UNIQUE KEY `ux_ssh_keys_user_fingerprint` (`user_id`, `fingerprint`),
+    KEY `ix_ssh_keys_fingerprint` (`fingerprint`),
     KEY `ix_ssh_keys_user` (`user_id`),
     CONSTRAINT `fk_ssh_keys_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB

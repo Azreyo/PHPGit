@@ -14,6 +14,17 @@ const actionStatus = document.getElementById(
 );
 const serverLoadValue = document.getElementById("server-load");
 const serverLatencyValue = document.getElementById("server-latency");
+let csrfToken = "";
+if (clearCacheButton && clearCacheButton.dataset.csrfToken) {
+    csrfToken = clearCacheButton.dataset.csrfToken;
+}
+if (
+    csrfToken === "" &&
+    restartServicesButton &&
+    restartServicesButton.dataset.csrfToken
+) {
+    csrfToken = restartServicesButton.dataset.csrfToken;
+}
 
 function escapeHtml(value) {
     let escaped = String(value).replace(/&/g, "&amp;");
@@ -155,7 +166,8 @@ async function runMaintenanceAction(
         const response = await fetch(endpoint, {
             body: "{}",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRF-Token": csrfToken
             },
             method: "POST"
         });

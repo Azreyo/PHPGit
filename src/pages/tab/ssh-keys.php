@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 use App\Config;
+use App\includes\Logging;
+use App\includes\Security;
 use App\Services\SshKeyService;
 
 /** @var bool $is_logged_in */
@@ -24,6 +26,13 @@ if ($pdo !== null && $userId > 0) {
 
 $sshHost = htmlspecialchars($_ENV['SSH_HOST'] ?? $_SERVER['HTTP_HOST'] ?? 'phpgit.local', ENT_QUOTES, 'UTF-8');
 $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'UTF-8');
+$csrfToken = '';
+
+try {
+    $csrfToken = (new Security())->generateCsrfToken();
+} catch (\Exception $e) {
+    Logging::loggingToFile('Cannot generate SSH key csrf token: ' . $e->getMessage(), 4);
+}
 ?>
 
 <div class="d-flex align-items-center gap-3 mb-5 pb-4 border-bottom border-secondary-subtle">
@@ -174,6 +183,7 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
         const alertEl = document.getElementById('ssh-add-alert');
         const keyList = document.getElementById('ssh-keys-list');
         const addBtn = document.getElementById('ssh-add-btn');
+        const csrfToken = '<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>';
 
         function showAlert(msg, type) {
             alertEl.className = 'alert alert-' + type;
@@ -225,7 +235,7 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
 
             try {
                 const res = await fetch('/api/v1/addSshKey.php', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken},
                     body: JSON.stringify({title, public_key: pubKey}),
                 });
                 const data = await res.json();
@@ -257,7 +267,7 @@ $gitSysUser = htmlspecialchars($_ENV['GIT_SYSTEM_USER'] ?? 'git', ENT_QUOTES, 'U
                 this.disabled = true;
                 try {
                     const res = await fetch('/api/v1/deleteSshKey.php', {
-                        method: 'DELETE', headers: {'Content-Type': 'application/json'},
+                        method: 'DELETE', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken},
                         body: JSON.stringify({id: keyId}),
                     });
                     const data = await res.json();
