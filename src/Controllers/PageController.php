@@ -88,14 +88,26 @@ final class PageController
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             $cookieLifetime = 30 * 24 * 60 * 60;
-            session_set_cookie_params([
+            $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
+                || strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+            $secureSetting = strtolower(trim($_ENV['SESSION_COOKIE_SECURE'] ?? 'auto'));
+            $secureCookie = match ($secureSetting) {
+                '1', 'true', 'yes', 'on' => true,
+                '0', 'false', 'no', 'off' => false,
+                default => $isHttps,
+            };
+            $cookieParams = [
                 'lifetime' => $cookieLifetime,
                 'path' => '/',
-                'domain' => 'phpgit.local',
-                'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                'secure' => $secureCookie,
                 'httponly' => true,
                 'samesite' => 'Strict',
-            ]);
+            ];
+            $cookieDomain = trim($_ENV['SESSION_COOKIE_DOMAIN'] ?? '');
+            if ($cookieDomain !== '') {
+                $cookieParams['domain'] = $cookieDomain;
+            }
+            session_set_cookie_params($cookieParams);
 
             ini_set('session.gc_maxlifetime', (string) $cookieLifetime);
             session_start();

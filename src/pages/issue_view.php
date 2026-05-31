@@ -44,8 +44,19 @@ if ($repo === null) {
     return;
 }
 
+$sessionUserId = (int)($_SESSION['user_id'] ?? 0);
+$isOwner = $is_logged_in && $sessionUserId === (int)$repo['owner_user_id'];
+$isAdmin = $is_logged_in && $role === 'ADMIN';
+
+if (($repo['visibility'] ?? '') === 'private' && !$isOwner && !$isAdmin) {
+    http_response_code(403);
+    echo '<main class="container py-5"><div class="alert alert-danger">You do not have permission to view this repository.</div></main>';
+
+    return;
+}
+
 $issueStmt = $pdo->prepare(
-    'SELECT i.id, i.author_user_id, i.title, i.body, i.status, i.created_at, i.closed_at,
+        'SELECT i.id, i.author_user_id, i.assignee_user_id, i.title, i.body, i.status, i.created_at, i.closed_at,
             u.username AS author_username, u.email AS author_email,
             COALESCE(u.display_name, \'\') AS author_display_name,
             a.username AS assignee_username,
@@ -64,6 +75,12 @@ if ($issue === false) {
     return;
 }
 
+$issueId = (int)$issue['id'];
+$isPrivileged = $isOwner || $isAdmin;
+$canModifyIssue = $isPrivileged
+        || ($is_logged_in && $sessionUserId === (int)$issue['author_user_id'])
+        || ($is_logged_in && $sessionUserId === (int)($issue['assignee_user_id'] ?? 0));
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (! $security->validateCsrfToken($token)) {
@@ -72,21 +89,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return;
     }
     $action = $_POST['repo_action'] ?? '';
+    if (in_array($action, ['close_issue', 'reopen_issue'], true) && !$canModifyIssue) {
+        http_response_code(403);
+        echo '<main class="container py-5"><div class="alert alert-danger">You do not have permission to modify this issue.</div></main>';
+
+        return;
+    }
     if ($action === 'close_issue') {
         $stmt = $pdo->prepare('UPDATE issues SET status = ?, closed_at = NOW() WHERE id = ? AND repository_id = ?');
-        $stmt->execute(['closed', $issue['id'], (int) $repo['id']]);
-        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/issues/' . $issue['id'] . '";</script>';
+        $stmt->execute(['closed', $issueId, (int)$repo['id']]);
+        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/issues/' . $issueId . '";</script>';
         exit;
     }
     if ($action === 'reopen_issue') {
         $stmt = $pdo->prepare('UPDATE issues SET status = ?, closed_at = NULL WHERE id = ? AND repository_id = ?');
-        $stmt->execute(['open', $issue['id'], (int) $repo['id']]);
-        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/issues/' . $issue['id'] . '";</script>';
+        $stmt->execute(['open', $issueId, (int)$repo['id']]);
+        echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/issues/' . $issueId . '";</script>';
         exit;
     }
 }
 
-$issueId = (int) $issue['id'];
 $issueTitle = (string) $issue['title'];
 $issueBody = trim((string) $issue['body']);
 $issueStatus = (string) $issue['status'];
@@ -101,12 +123,6 @@ $issueAuthorLabel = $issueAuthorDisplay !== ''
 $issueAssigneeUsername = (string) ($issue['assignee_username'] ?? '');
 $issueAssigneeDisplay = trim((string) ($issue['assignee_display_name'] ?? ''));
 $issueCreatedAt = (string) $issue['created_at'];
-
-$sessionUserId = (int) ($_SESSION['user_id'] ?? 0);
-$isOwner = $is_logged_in && $sessionUserId === (int) $repo['owner_user_id'];
-$isAdmin = $is_logged_in && $role === 'ADMIN';
-$isPrivileged = $isOwner || $isAdmin;
-$canModifyIssue = $isPrivileged || $sessionUserId === (int) $issue['author_user_id'] || $sessionUserId === (int) ($issue['assignee_user_id'] ?? 0);
 
 $page_title = 'Issue #' . $issueId . ' - ' . $issueTitle;
 ?>

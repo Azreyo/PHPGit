@@ -27,6 +27,7 @@
     if (markAllReadButton && markAllReadButton.dataset.markReadEndpoint) {
         markReadEndpoint = markAllReadButton.dataset.markReadEndpoint;
     }
+    const csrfToken = markAllReadButton?.dataset.csrfToken || "";
     const updateStatusEndpoint = "/api/v1/updateInboxStatus.php";
 
     window.inboxOpen = function (article) {
@@ -291,7 +292,10 @@
         return fetch(markReadEndpoint, {
             body: JSON.stringify({ids}),
             credentials: "same-origin",
-            headers: {"Content-Type": "application/json"},
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": csrfToken
+            },
             method: "POST"
         }).then(function (response) {
             if (!response.ok) {
@@ -315,7 +319,10 @@
         return fetch(updateStatusEndpoint, {
             body: JSON.stringify({id, status}),
             credentials: "same-origin",
-            headers: {"Content-Type": "application/json"},
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": csrfToken
+            },
             method: "POST"
         }).then(function (response) {
             if (!response.ok) {

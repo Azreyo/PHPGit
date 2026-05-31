@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Config;
 use App\includes\Security;
+use App\Services\GitCommandRunner;
 use App\Services\RepositoryService;
 
 $security = new Security();
@@ -44,6 +45,18 @@ if ($repo === null) {
     return;
 }
 
+$sessionUserId = (int)($_SESSION['user_id'] ?? 0);
+$isOwner = $is_logged_in && $sessionUserId === (int)$repo['owner_user_id'];
+$isAdmin = $is_logged_in && $role === 'ADMIN';
+$isPrivileged = $isOwner || $isAdmin;
+
+if (($repo['visibility'] ?? '') === 'private' && !$isOwner && !$isAdmin) {
+    http_response_code(403);
+    echo '<main class="container py-5"><div class="alert alert-danger">You do not have permission to view this repository.</div></main>';
+
+    return;
+}
+
 $prStmt = $pdo->prepare(
     'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
             p.from_branch_name, p.to_branch_name, p.from_head_hash, p.to_head_hash,
@@ -81,11 +94,6 @@ $prAuthorLabel = $prAuthorDisplay !== ''
 $prCreatedAt = (string) $pr['created_at'];
 $prMergedAt = (string) ($pr['merged_at'] ?? '');
 
-$sessionUserId = (int) ($_SESSION['user_id'] ?? 0);
-$isOwner = $is_logged_in && $sessionUserId === (int) $repo['owner_user_id'];
-$isAdmin = $is_logged_in && $role === 'ADMIN';
-$isPrivileged = $isOwner || $isAdmin;
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isPrivileged && $prStatus !== 'merged') {
     $token = $_POST['csrf_token'] ?? '';
     if (! $security->validateCsrfToken($token)) {
@@ -95,38 +103,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isPrivileged && $prStatus !== 'mer
     }
     $action = $_POST['repo_action'] ?? '';
     if ($action === 'merge_pull') {
+        $mergeSucceeded = false;
+
         try {
             $repoPath = $config->getDataRoot() . '/' . $repo['owner_username'] . '/' . $repo['repo_name'];
+            $runner = new GitCommandRunner($repoPath);
             $fromBranch = $prFromBranch;
             $toBranch = $prToBranch;
-            $output = [];
             $returnCode = 0;
-            exec('cd ' . escapeshellarg($repoPath) . ' && git fetch origin 2>&1', $output, $returnCode);
+            $output = $runner->run(['fetch', 'origin'], $returnCode);
             if ($returnCode !== 0) {
-                error_log('Fetch failed: ' . implode("\n", $output));
+                error_log('Fetch failed: ' . $output);
             }
-            exec('cd ' . escapeshellarg($repoPath) . ' && git checkout ' . escapeshellarg($toBranch) . ' 2>&1', $output, $returnCode);
+            $output = $runner->run(['checkout', $toBranch], $returnCode);
             if ($returnCode !== 0) {
-                error_log('Checkout failed: ' . implode("\n", $output));
+                error_log('Checkout failed: ' . $output);
             }
-            exec('cd ' . escapeshellarg($repoPath) . ' && git merge --no-ff --no-commit ' . escapeshellarg('origin/' . $fromBranch) . ' 2>&1', $output, $returnCode);
+            $output = $runner->run(['merge', '--no-ff', '--no-commit', 'origin/' . $fromBranch], $returnCode);
             if ($returnCode !== 0) {
-                exec('cd ' . escapeshellarg($repoPath) . ' && git merge --abort 2>&1', $output, $returnCode);
-                error_log('Merge failed: ' . implode("\n", $output));
+                $runner->run(['merge', '--abort'], $returnCode);
+                error_log('Merge failed: ' . $output);
             } else {
-                exec('cd ' . escapeshellarg($repoPath) . ' && git commit -m "Merge pull request #' . $prId . ': ' . escapeshellarg($prTitle) . '" 2>&1', $output, $returnCode);
+                $commitMessage = 'Merge pull request #' . $prId . ': ' . $prTitle;
+                $output = $runner->run(['commit', '-m', $commitMessage], $returnCode);
                 if ($returnCode === 0) {
-                    exec('cd ' . escapeshellarg($repoPath) . ' && git push origin ' . escapeshellarg($toBranch) . ' 2>&1', $output, $returnCode);
+                    $output = $runner->run(['push', 'origin', $toBranch], $returnCode);
                     if ($returnCode !== 0) {
-                        error_log('Push failed: ' . implode("\n", $output));
+                        error_log('Push failed: ' . $output);
+                    } else {
+                        $mergeSucceeded = true;
                     }
+                } else {
+                    error_log('Merge commit failed: ' . $output);
                 }
             }
         } catch (\Exception $e) {
             error_log('Merge exception: ' . $e->getMessage());
         }
-        $stmt = $pdo->prepare('UPDATE pull_requests SET status = ?, merged_at = NOW() WHERE id = ? AND repository_id = ?');
-        $stmt->execute(['merged', $prId, (int) $repo['id']]);
+        if ($mergeSucceeded) {
+            $stmt = $pdo->prepare('UPDATE pull_requests SET status = ?, merged_at = NOW() WHERE id = ? AND repository_id = ?');
+            $stmt->execute(['merged', $prId, (int)$repo['id']]);
+        }
         echo '<script>window.location.href="/' . htmlspecialchars($slug) . '/pulls/' . $prId . '";</script>';
         exit;
     }
