@@ -74,13 +74,20 @@ class Security
 
     public function sanitizeTab(string $tab): string
     {
-        return strtolower(preg_replace('/[^a-z0-9_-]/', '', $tab));
+        $sanitized = preg_replace('/[^a-z0-9_-]/', '', $tab);
+        if ($sanitized !== null) {
+            return strtolower($sanitized);
+        }
+        return '';
     }
 
     public static function sanitizeShellInput(string $input): string
     {
         $input = trim($input);
-
-        return preg_replace('/[^a-zA-Z0-9._:\/\- ]/', '', $input);
+        $sanitized = preg_replace('/[^a-zA-Z0-9._:\/\- ]/', '', $input);
+        if ($sanitized !== null) {
+            return $sanitized;
+        }
+        return '';
     }
 }

@@ -28,7 +28,11 @@ class RepositoryService
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{
+     *     success: bool,
+     *     error: string|null,
+     *     path: string|null
+     * }
      */
     public function create(
         int    $ownerUserId,
@@ -164,7 +168,7 @@ class RepositoryService
         );
         $stmt->execute([$ownerUserId]);
 
-        return $stmt->fetchAll();
+        return array_values($stmt->fetchAll(\PDO::FETCH_ASSOC));
     }
 
     /**

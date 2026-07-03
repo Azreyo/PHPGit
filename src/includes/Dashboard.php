@@ -3,8 +3,11 @@ declare(strict_types=1);
 
 namespace App\includes;
 
+use App\includes\Security;
+
 class Dashboard
 {
+    private Security $security;
     private bool $is_logged_in;
     private string $username;
     private string $role;
@@ -19,6 +22,7 @@ class Dashboard
      */
     public function __construct(array $session, array $get)
     {
+        $this->security = new Security();
         $this->is_logged_in = ! empty($session['is_logged_in']);
         $this->username = $session['username'] ?? '';
         $this->role = $session['role'] ?? '';
@@ -27,14 +31,7 @@ class Dashboard
         if (! is_string($tabParam)) {
             $tabParam = 'overview';
         }
-        $this->current_tab = $this->sanitizeTab($tabParam);
-    }
-
-    private function sanitizeTab(string $tab): string
-    {
-        $tab = strtolower(preg_replace('/[^a-z0-9_-]/', '', $tab));
-
-        return in_array($tab, self::ALLOWED_TABS, true) ? $tab : 'overview';
+        $this->current_tab = in_array($this->security->sanitizeTab($tabParam), self::ALLOWED_TABS, true) ? $this->security->sanitizeTab($tabParam) : 'overview';
     }
 
     private function renderForbidden(): void

@@ -135,7 +135,8 @@ try {
                                   style="font-size:.7rem;">
                                 <?= htmlspecialchars($key['key_type'], ENT_QUOTES, 'UTF-8') ?>
                             </span>
-                            <small class="text-secondary ms-2">Added <?= htmlspecialchars(date('d M Y', strtotime($key['created_at'])), ENT_QUOTES, 'UTF-8') ?></small>
+                            <?php $createdAt = strtotime((string)$key['created_at']); ?>
+                            <small class="text-secondary ms-2">Added <?= htmlspecialchars(date('d M Y', $createdAt === false ? null : $createdAt), ENT_QUOTES, 'UTF-8') ?></small>
                         </div>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-danger ssh-delete-btn flex-shrink-0"

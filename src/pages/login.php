@@ -11,9 +11,11 @@ $config = new Config();
 $security = new Security();
 
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';
-$csrf_token = null;
+$csrf_token = '';
 $errors = $_SESSION['login_errors'] ?? [];
+$errors = is_array($errors) ? array_values(array_filter($errors, 'is_string')) : [];
 $prefill_email = $_SESSION['login_prefill_email'] ?? '';
+$prefill_email = is_string($prefill_email) ? $prefill_email : '';
 unset($_SESSION['login_errors'], $_SESSION['login_prefill_email']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -35,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Logging::loggingToFile('Too many login attempts', 2, true);
     } else {
         $email = trim($_POST['email'] ?? '');
-        $password = (string)$_POST['password'] ?? '';
+        $password = $_POST['password'] ?? '';
 
         if (empty($email)) {
             $post_errors[] = 'Email is required.';
@@ -197,4 +199,3 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
-

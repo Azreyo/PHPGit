@@ -139,6 +139,12 @@ try {
 } catch (RandomException $e) {
     Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
 }
+
+if ($csrf_token === null) {
+    $error = 'Unexpected error occurred. Please try again later.';
+    Logging::loggingToFile('Failed to generate CSRF token', 4);
+    exit();
+}
 ?>
 <div class="d-flex align-items-center gap-3 mb-5 pb-4 border-bottom border-secondary-subtle">
     <div class="d-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary flex-shrink-0"

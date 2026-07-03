@@ -89,7 +89,7 @@ final class RepoViewController
         $config = Config::getInstance();
         $pdo = $config->getPDO();
 
-        $rawSlug = trim($_GET['slug'] ?? '');
+        $rawSlug = trim((string)($_GET['slug'] ?? ''));
         if (strlen($rawSlug) > 200) {
             http_response_code(414);
             include __DIR__ . '/../pages/414.php';
@@ -319,12 +319,12 @@ final class RepoViewController
             exit;
         }
 
-        $currentBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', $_GET['branch'] ?? $repo['default_branch']);
+        $currentBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', (string)($_GET['branch'] ?? $repo['default_branch'])) ?? '';
         if ($currentBranch === '') {
             $currentBranch = (string) $repo['default_branch'];
         }
 
-        $rawPath = trim($_GET['path'] ?? '', '/');
+        $rawPath = trim((string)($_GET['path'] ?? ''), '/');
         $cleanSegments = [];
         foreach (explode('/', $rawPath) as $seg) {
             if ($seg === '' || $seg === '.' || $seg === '..') {
@@ -423,7 +423,7 @@ final class RepoViewController
                      LIMIT 100'
                 );
                 $issuesStmt->execute([(int) $repo['id']]);
-                $issues = $issuesStmt->fetchAll() ?: [];
+                $issues = array_values($issuesStmt->fetchAll(\PDO::FETCH_ASSOC) ?: []);
 
                 $pullStmt = $pdo->prepare(
                     'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
@@ -437,7 +437,7 @@ final class RepoViewController
                      LIMIT 100'
                 );
                 $pullStmt->execute([(int) $repo['id']]);
-                $pullRequests = $pullStmt->fetchAll() ?: [];
+                $pullRequests = array_values($pullStmt->fetchAll(\PDO::FETCH_ASSOC) ?: []);
             } catch (\PDOException $e) {
                 Logging::loggingToFile('Repo view list query failed: ' . $e->getMessage(), 4);
             }
@@ -461,7 +461,8 @@ final class RepoViewController
                          WHERE i.id = ? AND i.repository_id = ?'
                     );
                     $detailStmt->execute([$detailId, (int) $repo['id']]);
-                    $detailItem = $detailStmt->fetch(\PDO::FETCH_ASSOC);
+                    $detailResult = $detailStmt->fetch(\PDO::FETCH_ASSOC);
+                    $detailItem = $detailResult !== false ? $detailResult : null;
                 } elseif ($detailType === 'pr') {
                     $detailStmt = $pdo->prepare(
                         'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
@@ -473,7 +474,8 @@ final class RepoViewController
                          WHERE p.id = ? AND p.repository_id = ?'
                     );
                     $detailStmt->execute([$detailId, (int) $repo['id']]);
-                    $detailItem = $detailStmt->fetch(\PDO::FETCH_ASSOC);
+                    $detailResult = $detailStmt->fetch(\PDO::FETCH_ASSOC);
+                    $detailItem = $detailResult !== false ? $detailResult : null;
                 }
             }
         }

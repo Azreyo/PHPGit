@@ -21,7 +21,9 @@ $config = Config::getInstance();
 $security = new Security();
 
 $errors = $_SESSION['repo_errors'] ?? [];
+$errors = is_array($errors) ? array_values(array_filter($errors, 'is_string')) : [];
 $prefill = $_SESSION['repo_prefill'] ?? [];
+$prefill = is_array($prefill) ? $prefill : [];
 unset($_SESSION['repo_errors'], $_SESSION['repo_prefill']);
 
 $userId = (int) ($_SESSION['user_id'] ?? 0);
@@ -192,5 +194,4 @@ $f = [
         <a href="/repos" class="btn btn-outline-secondary ms-2">Cancel</a>
     </form>
 </main>
-
 
