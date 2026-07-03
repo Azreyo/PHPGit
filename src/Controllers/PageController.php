@@ -110,7 +110,9 @@ final class PageController
             session_set_cookie_params($cookieParams);
 
             ini_set('session.gc_maxlifetime', (string) $cookieLifetime);
-            session_start();
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                session_start();
+            }
 
             if (! isset($_SESSION['initiated'])) {
                 session_regenerate_id(true);

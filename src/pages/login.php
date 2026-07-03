@@ -35,11 +35,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Logging::loggingToFile('Too many login attempts', 2, true);
     } else {
         $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $password = (string)$_POST['password'] ?? '';
 
         if (empty($email)) {
             $post_errors[] = 'Email is required.';
-        } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $post_errors[] = 'Invalid email format.';
         }
 
@@ -59,12 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($post_errors)) {
             if ($pdo !== null) {
                 $stmt = $pdo->prepare(
-                    'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
+                        'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
                 );
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
 
-                if ($user === false || ! password_verify($password, $user['password'])) {
+                if ($user === false || !password_verify($password, $user['password'])) {
                     $security->recordFailedAttempt();
                     $post_errors[] = 'Invalid email or password.';
                 } else {
