@@ -31,7 +31,8 @@ class Dashboard
         if (! is_string($tabParam)) {
             $tabParam = 'overview';
         }
-        $this->current_tab = in_array($this->security->sanitizeTab($tabParam), self::ALLOWED_TABS, true) ? $this->security->sanitizeTab($tabParam) : 'overview';
+        $tabParam = $this->security->sanitizeTab($tabParam);
+        $this->current_tab = in_array($tabParam, self::ALLOWED_TABS, true) ? $tabParam : 'overview';
     }
 
     private function renderForbidden(): void
@@ -132,7 +133,12 @@ class Dashboard
 
     private function renderTabContent(): void
     {
-        $path = self::TAB_DIR . $this->current_tab . '.php';
+        $path = match ($this->current_tab) {
+            'users' => self::TAB_DIR . 'users.php',
+            'logs' => self::TAB_DIR . 'logs.php',
+            'inbox' => self::TAB_DIR . 'inbox.php',
+            default => self::TAB_DIR . 'overview.php',
+        };
         ?>
         <section class="admin-content-wrap">
             <?php

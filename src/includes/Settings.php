@@ -157,7 +157,12 @@ class Settings
 
     private function renderTabContent(): void
     {
-        $path = self::TAB_DIR . $this->current_tab . '.php';
+        $path = match ($this->current_tab) {
+            'security' => self::TAB_DIR . 'security.php',
+            'appearance' => self::TAB_DIR . 'appearance.php',
+            'ssh-keys' => self::TAB_DIR . 'ssh-keys.php',
+            default => self::TAB_DIR . 'profile.php',
+        };
         $username = $this->username;
         ?>
         <section class="card border-0 shadow-sm rounded-4">
