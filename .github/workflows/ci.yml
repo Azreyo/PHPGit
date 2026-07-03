@@ -7,6 +7,9 @@ on:
       - dev
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   php-checks:
     name: PHP ${{ matrix.php }} checks
@@ -82,4 +85,3 @@ jobs:
 
       - name: Run JSLint via bin/jslint.php
         run: php bin/jslint.php src/assets/js
-

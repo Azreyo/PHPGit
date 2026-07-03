@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, dev ]
 
+permissions:
+  contents: read
+
 jobs:
   composer-audit:
     name: Dependency CVE Check
@@ -69,4 +72,3 @@ jobs:
       - run: |
           composer require --dev squizlabs/php_codesniffer pheromone/phpcs-security-audit --no-interaction
           vendor/bin/phpcs --standard=Security src/ --extensions=php --report=full || true
-
