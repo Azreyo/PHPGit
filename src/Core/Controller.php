@@ -12,9 +12,9 @@ class Controller
      * @param  array<mixed>          $data
      * @param  int                   $statusCode
      * @param  array<string, string> $headers
-     * @return void
+     * @return never
      */
-    protected function json(array $data, int $statusCode = 200, array $headers = []): void
+    protected function json(array $data, int $statusCode = 200, array $headers = []): never
     {
         http_response_code($statusCode);
         header('Content-Type: application/json');
@@ -30,9 +30,9 @@ class Controller
     /**
      * @param  array<mixed> $data
      * @param  int          $statusCode
-     * @return void
+     * @return never
      */
-    protected function success(array $data, int $statusCode = 200): void
+    protected function success(array $data, int $statusCode = 200): never
     {
         $this->json($data, $statusCode);
     }
@@ -40,36 +40,36 @@ class Controller
     /**
      * @param  string $message
      * @param  int    $statusCode
-     * @return void
+     * @return never
      */
-    protected function error(string $message, int $statusCode = 500): void
+    protected function error(string $message, int $statusCode = 500): never
     {
         $this->json(['error' => $message], $statusCode);
     }
 
     /**
      * @param  string $message
-     * @return void
+     * @return never
      */
-    protected function badRequest(string $message = 'Bad request'): void
+    protected function badRequest(string $message = 'Bad request'): never
     {
         $this->error($message, 400);
     }
 
     /**
      * @param  string $message
-     * @return void
+     * @return never
      */
-    protected function notFound(string $message = 'Not found'): void
+    protected function notFound(string $message = 'Not found'): never
     {
         $this->error($message, 404);
     }
 
     /**
      * @param  array<string> $allowedMethods
-     * @return void
+     * @return never
      */
-    protected function methodNotAllowed(array $allowedMethods): void
+    protected function methodNotAllowed(array $allowedMethods): never
     {
         $methods = array_values(array_unique(array_map('strtoupper', $allowedMethods)));
         $allowHeader = implode(', ', $methods);

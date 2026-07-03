@@ -142,6 +142,9 @@ class ErrorHandler
         }
 
         $lines = file($file);
+        if ($lines === false) {
+            return '<p class="text-muted small mb-0">Source not readable.</p>';
+        }
         $start = max(0, $errorLine - $context - 1);
         $end = min(count($lines), $errorLine + $context);
         $rows = '';

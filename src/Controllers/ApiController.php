@@ -310,7 +310,9 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
-        $body = json_decode(file_get_contents('php://input'), true);
+        $input = file_get_contents('php://input');
+        $body = json_decode($input === false ? '' : $input, true);
+        $body = is_array($body) ? $body : [];
         $ids = $body['ids'] ?? [];
 
         if (! is_array($ids) || $ids === []) {
@@ -346,7 +348,9 @@ class ApiController extends Controller
             $this->error('Database unavailable', 503);
         }
 
-        $body = json_decode(file_get_contents('php://input'), true);
+        $input = file_get_contents('php://input');
+        $body = json_decode($input === false ? '' : $input, true);
+        $body = is_array($body) ? $body : [];
         $id = isset($body['id']) ? (int) $body['id'] : 0;
         $status = isset($body['status']) ? (string) $body['status'] : '';
 
@@ -380,6 +384,7 @@ class ApiController extends Controller
         }
 
         $body = json_decode((string) file_get_contents('php://input'), true);
+        $body = is_array($body) ? $body : [];
         $title = trim((string) ($body['title'] ?? ''));
         $publicKey = trim((string) ($body['public_key'] ?? ''));
 
@@ -396,7 +401,7 @@ class ApiController extends Controller
             $this->error($result['error'] ?? 'Failed to add key', 400);
         }
 
-        $this->success(['key' => $result['key']]);
+        $this->success(['key' => $result['key'] ?? []]);
     }
 
     public function deleteSshKey(): void
@@ -410,6 +415,7 @@ class ApiController extends Controller
         }
 
         $body = json_decode((string) file_get_contents('php://input'), true);
+        $body = is_array($body) ? $body : [];
         $keyId = (int) ($body['id'] ?? 0);
 
         if ($keyId <= 0) {

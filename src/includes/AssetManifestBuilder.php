@@ -40,7 +40,7 @@ final class AssetManifestBuilder
 
             $hash = self::hashFile($fullPath);
             $info = pathinfo($asset);
-            $versioned = $info['dirname'] . '/' . $info['filename'] . '.' . $hash . '.' . $info['extension'];
+            $versioned = ($info['dirname'] ?? '') . '/' . $info['filename'] . '.' . $hash . '.' . ($info['extension'] ?? '');
 
             $manifest[$asset] = $versioned;
 
@@ -87,7 +87,11 @@ final class AssetManifestBuilder
 
     public static function hashFile(string $fullPath): string
     {
-        return substr(md5_file($fullPath), 0, 8);
+        $md5 = md5_file($fullPath);
+        if (is_string($md5)) {
+            return substr($md5, 0, 8);
+        }
+        return '';
     }
 
     /**

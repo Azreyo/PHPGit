@@ -46,15 +46,15 @@ class Logging
             $pdo = new Config()->getPDO();
 
             try {
-                if ($pdo === null) {
+                if ($pdo !== null) {
+                    $pdo->beginTransaction();
+                    $stmt = $pdo->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
+                    $stmt->execute([$level_message, $sanitized_message, (int)$is_security_alert, $ip]);
+                    $pdo->commit();
+                } else {
                     self::loggingToFile('Cannot log into database', 4);
-
                     return;
                 }
-                $pdo->beginTransaction();
-                $stmt = new Config()->getPDO()->prepare('INSERT INTO log (level, message, security, ip) VALUES (?, ?, ?, ?)');
-                $stmt->execute([$level_message, $sanitized_message, (int) $is_security_alert, $ip]);
-                $pdo->commit();
             } catch (\PDOException $e) {
                 $pdo->rollBack();
                 self::loggingToFile('Database error: ' . $e->getMessage(), 4);

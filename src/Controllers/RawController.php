@@ -19,9 +19,6 @@ final class RawController
 {
     public function run(): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
 
         $rawSlug = trim($_GET['slug'] ?? '');
         if (strlen($rawSlug) > 200) {

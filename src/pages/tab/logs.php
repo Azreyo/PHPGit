@@ -56,18 +56,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Invalid or expired form submission. Please try again.';
     } else {
         try {
-            $pdo->beginTransaction();
-            $stmt = $pdo->prepare('DELETE FROM log');
-            $stmt->execute();
-            $pdo->commit();
-            echo '<script>window.location.href="/dashboard?tab=logs";</script>';
-            exit;
+            if ($pdo !== null) {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare('DELETE FROM log');
+                $stmt->execute();
+                $pdo->commit();
+                echo '<script>window.location.href="/dashboard?tab=logs";</script>';
+                exit;
+            } else {
+                throw new Exception('PDO connection is not available.');
+            }
         } catch (PDOException $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
             Logging::loggingToFile('Cannot execute SQL Query: ' . $e->getMessage(), 4);
             $errors[] = 'An error occurred while wiping logs. Please try again later.';
+        } catch (Exception $e) {
+            Logging::loggingToFile('Unexpected error occurred: ' . $e->getMessage(), 4);
+            $errors[] = 'An unexpected error occurred. Please try again later.';
         }
     }
 }
@@ -76,7 +83,9 @@ try {
     $csrf_token = $security->generateCsrfToken();
 } catch (RandomException $e) {
     Logging::loggingToFile('Cannot generate csrf token: ' . $e->getMessage(), 4);
+    exit();
 }
+
 ?>
 
 <section class="admin-panel p-4 mb-4">

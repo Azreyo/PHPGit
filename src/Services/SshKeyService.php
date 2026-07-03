@@ -94,7 +94,6 @@ class SshKeyService
         return $stmt !== false && $stmt->fetch() !== false;
     }
 
-    // ── Public API ────────────────────────────────────────────────────────
 
     /**
      * @return array{success: bool, error: ?string, key?: array<string,mixed>}
@@ -175,7 +174,7 @@ class SshKeyService
     }
 
     /**
-     * @return list<array<string,mixed>>
+     * @return list<array<string, mixed>>
      */
     public function listKeys(int $userId): array
     {
@@ -186,11 +185,11 @@ class SshKeyService
               ORDER BY created_at DESC'
         );
         $stmt->execute([$userId]);
+        $ssh = array_values($stmt->fetchAll(\PDO::FETCH_ASSOC));
 
-        return $stmt->fetchAll();
+        return $ssh;
     }
 
-    // ── authorized_keys management ────────────────────────────────────────
 
     /**
      * Regenerate the authorized_keys file for the git system user.
@@ -268,7 +267,6 @@ class SshKeyService
         }
     }
 
-    // ── Internal helpers ──────────────────────────────────────────────────
 
     /**
      * Parse and validate a public key string.
@@ -308,14 +306,13 @@ class SshKeyService
      */
     private function computeFingerprint(string $key): ?string
     {
-        // ── Try ssh-keygen (most accurate) ────────────────────────────────
         $tmp = tempnam(sys_get_temp_dir(), 'phpgit_key_');
         if ($tmp !== false) {
             try {
                 file_put_contents($tmp, trim($key) . "\n");
                 $cmd = 'ssh-keygen -l -E sha256 -f ' . escapeshellarg($tmp) . ' 2>/dev/null';
                 $output = shell_exec($cmd);
-                if ($output !== null && $output !== '') {
+                if (is_string($output) && $output !== '') {
                     if (preg_match('/SHA256:[A-Za-z0-9+\/=]+/', $output, $m)) {
                         return $m[0];
                     }
@@ -325,8 +322,6 @@ class SshKeyService
             }
         }
 
-        // ── Pure-PHP fallback ─────────────────────────────────────────────
-        // RFC 4716: fingerprint = SHA-256 of the raw decoded key blob
         $parts = explode(' ', trim($key), 3);
         if (count($parts) < 2) {
             return null;

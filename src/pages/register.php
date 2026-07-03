@@ -71,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($pdo === null) {
         $post_errors[] = 'Database is currently unavailable. Please try again later.';
         Logging::loggingToFile('Unable to connect to database: ' . $config->getDb() . $config->getHost(), 4);
-    } elseif (! empty($post_errors)) {
     } else {
         $post_errors[] = 'Unknown error occurred.';
         Logging::loggingToFile('Unknown error occurred', -1);

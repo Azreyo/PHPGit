@@ -11,9 +11,11 @@ $config = new Config();
 $security = new Security();
 
 $success = isset($_GET['success']) && $_GET['success'] === 'registered';
-$csrf_token = null;
+$csrf_token = '';
 $errors = $_SESSION['login_errors'] ?? [];
+$errors = is_array($errors) ? array_values(array_filter($errors, 'is_string')) : [];
 $prefill_email = $_SESSION['login_prefill_email'] ?? '';
+$prefill_email = is_string($prefill_email) ? $prefill_email : '';
 unset($_SESSION['login_errors'], $_SESSION['login_prefill_email']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -39,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($email)) {
             $post_errors[] = 'Email is required.';
-        } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $post_errors[] = 'Invalid email format.';
         }
 
@@ -59,12 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($post_errors)) {
             if ($pdo !== null) {
                 $stmt = $pdo->prepare(
-                    'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
+                        'SELECT id, username, password, role FROM users WHERE email = ? LIMIT 1'
                 );
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
 
-                if ($user === false || ! password_verify($password, $user['password'])) {
+                if ($user === false || !password_verify($password, $user['password'])) {
                     $security->recordFailedAttempt();
                     $post_errors[] = 'Invalid email or password.';
                 } else {
@@ -197,4 +199,3 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
-

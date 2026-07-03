@@ -3,8 +3,11 @@ declare(strict_types=1);
 
 namespace App\includes;
 
+use App\includes\Security;
+
 class Dashboard
 {
+    private Security $security;
     private bool $is_logged_in;
     private string $username;
     private string $role;
@@ -19,6 +22,7 @@ class Dashboard
      */
     public function __construct(array $session, array $get)
     {
+        $this->security = new Security();
         $this->is_logged_in = ! empty($session['is_logged_in']);
         $this->username = $session['username'] ?? '';
         $this->role = $session['role'] ?? '';
@@ -27,14 +31,8 @@ class Dashboard
         if (! is_string($tabParam)) {
             $tabParam = 'overview';
         }
-        $this->current_tab = $this->sanitizeTab($tabParam);
-    }
-
-    private function sanitizeTab(string $tab): string
-    {
-        $tab = strtolower(preg_replace('/[^a-z0-9_-]/', '', $tab));
-
-        return in_array($tab, self::ALLOWED_TABS, true) ? $tab : 'overview';
+        $tabParam = $this->security->sanitizeTab($tabParam);
+        $this->current_tab = in_array($tabParam, self::ALLOWED_TABS, true) ? $tabParam : 'overview';
     }
 
     private function renderForbidden(): void
@@ -135,7 +133,12 @@ class Dashboard
 
     private function renderTabContent(): void
     {
-        $path = self::TAB_DIR . $this->current_tab . '.php';
+        $path = match ($this->current_tab) {
+            'users' => self::TAB_DIR . 'users.php',
+            'logs' => self::TAB_DIR . 'logs.php',
+            'inbox' => self::TAB_DIR . 'inbox.php',
+            default => self::TAB_DIR . 'overview.php',
+        };
         ?>
         <section class="admin-content-wrap">
             <?php

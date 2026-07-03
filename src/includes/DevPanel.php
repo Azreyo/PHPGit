@@ -121,8 +121,11 @@ class DevPanel
                  . "<tr><td><strong>Username:</strong></td><td>{$sessionUser}</td></tr>"
                  . "<tr><td><strong>Role:</strong></td><td>{$sessionRole}</td></tr>"
                  . '</table>';
-
-        return $this->popoverItem($sessionLabel, $content);
+        if (is_string($sessionLabel)) {
+            return $this->popoverItem($sessionLabel, $content);
+        } else {
+            return $this->popoverItem('no session', $content);
+        }
     }
 
     private function renderDbPopover(): string
@@ -147,6 +150,7 @@ class DevPanel
     private function renderPhpPopover(): string
     {
         $apiStatus = false;
+        $apiResponse = null;
 
         $scheme = (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443 ? 'https' : 'http';
         $url = "{$scheme}://phpgit.local/api/v1/health";
@@ -166,14 +170,18 @@ class DevPanel
             error_log("cURL error: {$error}");
         } else {
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $apiResponse = json_decode($response, true);
+            if (is_string($response)) {
+                $apiResponse = json_decode($response, true);
+            }
             if (json_last_error() !== JSON_ERROR_NONE) {
                 Logging::loggingToFile('Failed to decode API response: ' . json_last_error_msg(), 4, true, true);
                 error_log('JSON error: ' . json_last_error_msg());
             } elseif ($httpCode >= 400) {
                 Logging::loggingToFile("API request failed with status code: {$httpCode}", 4, true, true);
             } else {
-                $apiStatus = ($apiResponse['status'] ?? 'unknown') === 'ok';
+                if (is_array($apiResponse)) {
+                    $apiStatus = ($apiResponse['status'] ?? 'unknown') === 'ok';
+                }
             }
         }
         curl_close($ch);
