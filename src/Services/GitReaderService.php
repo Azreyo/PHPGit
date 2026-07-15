@@ -152,7 +152,7 @@ class GitReaderService
         $branches = array_filter(array_map('trim', explode("\n", $raw)));
 
         // Put default branch first
-        $sorted = [$defaultBranch];
+        $sorted = in_array($defaultBranch, $branches, true) ? [$defaultBranch] : [];
         foreach ($branches as $b) {
             if ($b !== $defaultBranch) {
                 $sorted[] = $b;
@@ -160,6 +160,17 @@ class GitReaderService
         }
 
         return array_values(array_unique($sorted));
+    }
+
+    public function resolveRef(string $ref): ?string
+    {
+        if ($ref === '' || strlen($ref) > 255 || preg_match('/[\x00-\x20\x7f]/', $ref) === 1) {
+            return null;
+        }
+        $exitCode = 1;
+        $resolved = trim($this->git(['rev-parse', '--verify', '--end-of-options', $ref . '^{commit}'], $exitCode));
+
+        return $exitCode === 0 && preg_match('/^[0-9a-f]{40,64}$/D', $resolved) === 1 ? $resolved : null;
     }
 
     /**
@@ -386,8 +397,12 @@ class GitReaderService
      */
     public function getObjectType(string $ref, string $path): ?string
     {
+        $spec = $this->objectSpec($ref, $path);
+        if ($spec === null) {
+            return null;
+        }
         $exitCode = 1;
-        $raw = $this->git(['cat-file', '-t', $ref . ':' . $path], $exitCode);
+        $raw = $this->git(['cat-file', '-t', $spec], $exitCode);
         if ($exitCode !== 0) {
             return null;
         }
@@ -403,7 +418,11 @@ class GitReaderService
      */
     public function getTreeAtPath(string $ref, string $path): array
     {
-        $raw = $this->git(['ls-tree', $ref . ':' . $path]);
+        $spec = $this->objectSpec($ref, $path);
+        if ($spec === null) {
+            return [];
+        }
+        $raw = $this->git(['ls-tree', $spec]);
         if (trim($raw) === '') {
             return [];
         }
@@ -435,8 +454,12 @@ class GitReaderService
      */
     public function getFileContent(string $ref, string $path, int $maxBytes = 524288): array
     {
+        $spec = $this->objectSpec($ref, $path);
+        if ($spec === null) {
+            return ['content' => null, 'binary' => false, 'truncated' => false, 'size' => 0, 'lines' => 0];
+        }
         $exitCode = 1;
-        $sizeStr = $this->git(['cat-file', '-s', $ref . ':' . $path], $exitCode);
+        $sizeStr = $this->git(['cat-file', '-s', $spec], $exitCode);
         $size = $exitCode === 0 ? (int) trim($sizeStr) : 0;
 
         if ($exitCode !== 0) {
@@ -444,7 +467,7 @@ class GitReaderService
         }
 
         $showExitCode = 1;
-        $raw = $this->git(['show', $ref . ':' . $path], $showExitCode, $maxBytes + 1);
+        $raw = $this->git(['show', $spec], $showExitCode, $maxBytes + 1);
         if ($showExitCode !== 0) {
             return ['content' => null, 'binary' => false, 'truncated' => false, 'size' => $size, 'lines' => 0];
         }
@@ -587,17 +610,25 @@ class GitReaderService
 
     public function getBlobSize(string $ref, string $path): int
     {
+        $spec = $this->objectSpec($ref, $path);
+        if ($spec === null) {
+            return 0;
+        }
         $exitCode = 1;
-        $raw = $this->git(['cat-file', '-s', $ref . ':' . $path], $exitCode);
+        $raw = $this->git(['cat-file', '-s', $spec], $exitCode);
 
         return $exitCode === 0 && is_numeric(trim($raw)) ? (int)trim($raw) : 0;
     }
 
     public function readBlob(string $ref, string $path, ?int $maxBytes = null): string
     {
+        $spec = $this->objectSpec($ref, $path);
+        if ($spec === null) {
+            return '';
+        }
         $exitCode = 1;
 
-        return $this->git(['show', $ref . ':' . $path], $exitCode, $maxBytes);
+        return $this->git(['show', $spec], $exitCode, $maxBytes);
     }
 
     /**
@@ -605,7 +636,34 @@ class GitReaderService
      */
     public function streamBlob(string $ref, string $path, callable $stdout): void
     {
-        $this->runner->stream(['show', $ref . ':' . $path], $stdout);
+        $spec = $this->objectSpec($ref, $path);
+        if ($spec !== null) {
+            $this->runner->stream(['show', $spec], $stdout);
+        }
+    }
+
+    private function objectSpec(string $ref, string $path): ?string
+    {
+        $resolved = preg_match('/^[0-9a-f]{40,64}$/D', $ref) === 1 ? $ref : $this->resolveRef($ref);
+        if ($resolved === null || !$this->isValidPath($path)) {
+            return null;
+        }
+
+        return $resolved . ':' . $path;
+    }
+
+    private function isValidPath(string $path): bool
+    {
+        if ($path === '' || strlen($path) > 4096 || !mb_check_encoding($path, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $path) === 1) {
+            return false;
+        }
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..' || strlen($segment) > 255) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -1,3 +1,4 @@
+/*jslint browser, devel, long*/
 document.addEventListener("DOMContentLoaded", function () {
     const logShell = document.querySelector(".admin-log-shell");
     if (!logShell) {

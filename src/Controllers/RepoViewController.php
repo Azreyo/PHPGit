@@ -8,7 +8,10 @@ use App\Config;
 use App\includes\Logging;
 use App\includes\Security;
 use App\Services\GitReaderService;
-use App\Services\RepositoryService;
+use App\Services\RepositoryAccessPolicy;
+use App\Services\RepositoryDeletionService;
+use App\Services\RepositoryLocator;
+use League\CommonMark\GithubFlavoredMarkdownConverter;
 use Random\RandomException;
 
 final class RepoViewController
@@ -86,6 +89,13 @@ final class RepoViewController
 
     public function handle(bool $isLoggedIn, string $role): bool
     {
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        if (!in_array($method, ['GET', 'POST'], true)) {
+            http_response_code(405);
+            header('Allow: GET, POST');
+
+            return false;
+        }
         $config = Config::getInstance();
         $pdo = $config->getPDO();
 
@@ -103,13 +113,18 @@ final class RepoViewController
             return false;
         }
 
+        if ($pdo === null) {
+            http_response_code(503);
+            include __DIR__ . '/../pages/404.php';
+
+            return false;
+        }
         $repo = null;
-        if ($pdo !== null) {
-            try {
-                $repo = (new RepositoryService($pdo, $config->getDataRoot()))->getBySlug($rawSlug);
-            } catch (\PDOException $e) {
-                Logging::loggingToFile('RepoViewController SQL error: ' . $e->getMessage(), 4);
-            }
+
+        try {
+            $repo = (new RepositoryLocator($pdo, $config->getDataRoot()))->find($rawSlug);
+        } catch (\Throwable $e) {
+            Logging::loggingToFile('RepoViewController repository resolution error: ' . $e->getMessage(), 4);
         }
         if ($repo === null) {
             http_response_code(404);
@@ -122,7 +137,8 @@ final class RepoViewController
         $isOwner = $isLoggedIn && $sessionUserId === (int) $repo['owner_user_id'];
         $isAdmin = $isLoggedIn && $role === 'ADMIN';
 
-        if ($repo['visibility'] === 'private' && ! $isOwner && ! $isAdmin) {
+        $policy = new RepositoryAccessPolicy($pdo);
+        if (!$policy->canRead($repo, $sessionUserId, $role)) {
             http_response_code(403);
             include __DIR__ . '/../pages/403.php';
 
@@ -142,12 +158,12 @@ final class RepoViewController
         $tabSuccess = $_SESSION['repo_view_success'] ?? null;
         unset($_SESSION['repo_view_errors'], $_SESSION['repo_view_success']);
 
-        $repoPath = $config->getDataRoot() . '/' . $repo['owner_username'] . '/' . $repo['repo_name'];
+        $repoPath = (string)$repo['path'];
         $git = new GitReaderService($repoPath);
         $isEmpty = $git->isEmpty();
         $availableBranches = ! $isEmpty ? $git->getBranches((string) $repo['default_branch']) : [];
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($method === 'POST') {
             $postErrors = [];
             $postSuccess = null;
             $action = strtolower(trim((string) ($_POST['repo_action'] ?? '')));
@@ -155,8 +171,6 @@ final class RepoViewController
 
             if (! $security->validateCsrfToken($csrfToken)) {
                 $postErrors[] = 'Invalid or expired form submission. Please try again.';
-            } elseif ($pdo === null) {
-                $postErrors[] = 'Database is currently unavailable. Please try again later.';
             } else {
                 try {
                     if ($action === 'create_issue') {
@@ -193,8 +207,8 @@ final class RepoViewController
                         } else {
                             $title = trim((string) ($_POST['pull_title'] ?? ''));
                             $body = trim((string) ($_POST['pull_body'] ?? ''));
-                            $fromBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', (string) ($_POST['from_branch'] ?? '')) ?? '';
-                            $toBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', (string) ($_POST['to_branch'] ?? '')) ?? '';
+                            $fromBranch = is_string($_POST['from_branch'] ?? null) ? $_POST['from_branch'] : '';
+                            $toBranch = is_string($_POST['to_branch'] ?? null) ? $_POST['to_branch'] : '';
 
                             if ($title === '') {
                                 $postErrors[] = 'Pull request title is required.';
@@ -238,7 +252,7 @@ final class RepoViewController
                         } else {
                             $description = trim((string) ($_POST['repo_description'] ?? ''));
                             $visibility = (string) ($_POST['visibility'] ?? 'public');
-                            $defaultBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', (string) ($_POST['default_branch'] ?? '')) ?? '';
+                            $defaultBranch = is_string($_POST['default_branch'] ?? null) ? $_POST['default_branch'] : '';
 
                             if ($defaultBranch === '') {
                                 $defaultBranch = (string) $repo['default_branch'];
@@ -275,32 +289,16 @@ final class RepoViewController
                         if (! $isPrivileged) {
                             $postErrors[] = 'You do not have permission to delete this repository.';
                         } else {
-                            $stmt = $pdo->prepare('DELETE FROM repositories WHERE id = ?');
-                            $stmt->execute([(int) $repo['id']]);
+                            (new RepositoryDeletionService($pdo, $config->getDataRoot()))->delete($repo);
 
-                            $dataRoot = $config->getDataRoot();
-                            $bareRepoPath = $dataRoot . '/' . $repo['owner_username'] . '/' . $repo['repo_name'];
-                            if (is_dir($bareRepoPath)) {
-                                $delFunc = static function (string $dir) use (&$delFunc): void {
-                                    $items = scandir($dir);
-                                    foreach ($items as $item) {
-                                        if ($item === '.' || $item === '..') {
-                                            continue;
-                                        }
-                                        $path = $dir . '/' . $item;
-                                        is_dir($path) ? $delFunc($path) : unlink($path);
-                                    }
-                                    rmdir($dir);
-                                };
-                                $delFunc($bareRepoPath);
-                            }
-
-                            $_SESSION['repo_flash'] = 'Repository <strong>' . htmlspecialchars($repo['repo_name'], ENT_QUOTES, 'UTF-8') . '</strong> deleted successfully.';
-                            echo '<script>window.location.href="/' . $repo['owner_username'] . '";</script>';
+                            $_SESSION['repo_flash'] = 'Repository deleted successfully.';
+                            header('Location: /' . rawurlencode((string)$repo['owner_username']), true, 303);
                             exit;
                         }
+                    } else {
+                        $postErrors[] = 'Unknown repository action.';
                     }
-                } catch (\PDOException $e) {
+                } catch (\Throwable $e) {
                     Logging::loggingToFile('Repo view tab action failed: ' . $e->getMessage(), 4);
                     $postErrors[] = 'Unable to save changes right now. Please try again later.';
                 }
@@ -311,30 +309,37 @@ final class RepoViewController
                 $_SESSION['repo_view_success'] = $postSuccess;
             }
 
-            $redir = '/' . htmlspecialchars($rawSlug, ENT_QUOTES, 'UTF-8');
+            $redir = '/' . implode('/', array_map('rawurlencode', explode('/', $rawSlug)));
             if ($activeTab !== 'code') {
-                $redir .= '?tab=' . urlencode($activeTab);
+                $redir .= '?tab=' . rawurlencode($activeTab);
             }
-            echo '<script>window.location.href="' . $redir . '";</script>';
+            header('Location: ' . $redir, true, 303);
             exit;
         }
 
-        $currentBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', (string)($_GET['branch'] ?? $repo['default_branch'])) ?? '';
-        if ($currentBranch === '') {
-            $currentBranch = (string) $repo['default_branch'];
-        }
+        $branchInput = $_GET['branch'] ?? $repo['default_branch'];
+        $currentBranch = is_string($branchInput) && $branchInput !== ''
+            ? $branchInput
+            : (string)$repo['default_branch'];
 
         $rawPath = trim((string)($_GET['path'] ?? ''), '/');
         $cleanSegments = [];
+        $invalidPath = strlen($rawPath) > 4096 || !mb_check_encoding($rawPath, 'UTF-8');
         foreach (explode('/', $rawPath) as $seg) {
-            if ($seg === '' || $seg === '.' || $seg === '..') {
+            if ($seg === '') {
                 continue;
             }
-            if (! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._\- ]*$/', $seg)) {
-                $cleanSegments = [];
+            if ($seg === '.' || $seg === '..' || strlen($seg) > 255 || preg_match('/[\x00-\x1f\x7f]/', $seg) === 1) {
+                $invalidPath = true;
                 break;
             }
             $cleanSegments[] = $seg;
+        }
+        if ($invalidPath) {
+            http_response_code(400);
+            include __DIR__ . '/../pages/404.php';
+
+            return false;
         }
         $currentPath = implode('/', $cleanSegments);
 
@@ -359,11 +364,18 @@ final class RepoViewController
 
         if (! $isEmpty) {
             $branches = $availableBranches;
-            $commitCount = $git->getCommitCount($currentBranch);
-            $fullFileTree = $git->getFullFileTree($currentBranch);
+            $resolvedRef = $git->resolveRef($currentBranch);
+            if ($resolvedRef === null) {
+                http_response_code(404);
+                include __DIR__ . '/../pages/404.php';
+
+                return false;
+            }
+            $commitCount = $git->getCommitCount($resolvedRef);
+            $fullFileTree = $git->getFullFileTree($resolvedRef);
 
             if ($currentPath !== '') {
-                $objType = $git->getObjectType($currentBranch, $currentPath);
+                $objType = $git->getObjectType($resolvedRef, $currentPath);
                 if ($objType === null) {
                     http_response_code(404);
                     include __DIR__ . '/../pages/404.php';
@@ -372,45 +384,37 @@ final class RepoViewController
                 }
                 if ($objType === 'blob') {
                     $viewMode = 'blob';
-                    $fileData = $git->getFileContent($currentBranch, $currentPath);
-                    $pathLatestCommit = $git->getLastCommitForPath($currentBranch, $currentPath);
+                    $fileData = $git->getFileContent($resolvedRef, $currentPath);
+                    $pathLatestCommit = $git->getLastCommitForPath($resolvedRef, $currentPath);
                 } else {
                     $viewMode = 'tree';
-                    $subEntries = $git->getTreeAtPath($currentBranch, $currentPath);
-                    $subCommitMap = $git->getLastCommitPerEntryAtPath($currentBranch, $currentPath);
-                    $pathLatestCommit = $git->getLastCommitForPath($currentBranch, $currentPath);
+                    $subEntries = $git->getTreeAtPath($resolvedRef, $currentPath);
+                    $subCommitMap = $git->getLastCommitPerEntryAtPath($resolvedRef, $currentPath);
+                    $pathLatestCommit = $git->getLastCommitForPath($resolvedRef, $currentPath);
                 }
             } else {
-                $treeEntries = $git->getTopLevelTree($currentBranch);
-                $commitMap = $git->getLastCommitPerEntry($currentBranch);
-                $latestCommit = $git->getLatestCommit($currentBranch);
-                $langBreakdown = $git->getLanguageBreakdown($currentBranch);
-                $readmeContent = $git->getReadme($currentBranch);
-                $primaryLang = $langBreakdown[0]['lang'] ?? null;
-                if ($pdo !== null && $primaryLang !== null && $primaryLang !== ($repo['lang'] ?? null)) {
-                    try {
-                        $pdo->prepare('UPDATE repositories SET lang = ? WHERE id = ?')
-                            ->execute([$primaryLang, $repo['id']]);
-                    } catch (\PDOException) {
-                    }
-                }
+                $treeEntries = $git->getTopLevelTree($resolvedRef);
+                $commitMap = $git->getLastCommitPerEntry($resolvedRef);
+                $latestCommit = $git->getLatestCommit($resolvedRef);
+                $langBreakdown = $git->getLanguageBreakdown($resolvedRef);
+                $readmeContent = $git->getReadme($resolvedRef);
             }
         }
 
         $detailType = '';
         $detailItem = null;
-        if ($pdo !== null) {
-            try {
-                $issueCountStmt = $pdo->prepare('SELECT COUNT(*) FROM issues WHERE repository_id = ? AND status = ?');
-                $issueCountStmt->execute([(int) $repo['id'], 'open']);
-                $openIssuesCount = (int) $issueCountStmt->fetchColumn();
 
-                $pullCountStmt = $pdo->prepare('SELECT COUNT(*) FROM pull_requests WHERE repository_id = ? AND status = ?');
-                $pullCountStmt->execute([(int) $repo['id'], 'open']);
-                $openPullRequestsCount = (int) $pullCountStmt->fetchColumn();
+        try {
+            $issueCountStmt = $pdo->prepare('SELECT COUNT(*) FROM issues WHERE repository_id = ? AND status = ?');
+            $issueCountStmt->execute([(int)$repo['id'], 'open']);
+            $openIssuesCount = (int)$issueCountStmt->fetchColumn();
 
-                $issuesStmt = $pdo->prepare(
-                    'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
+            $pullCountStmt = $pdo->prepare('SELECT COUNT(*) FROM pull_requests WHERE repository_id = ? AND status = ?');
+            $pullCountStmt->execute([(int)$repo['id'], 'open']);
+            $openPullRequestsCount = (int)$pullCountStmt->fetchColumn();
+
+            $issuesStmt = $pdo->prepare(
+                'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
                             u.username AS author_username,
                             COALESCE(u.display_name, \'\') AS author_display_name,
                             a.username AS assignee_username,
@@ -421,12 +425,12 @@ final class RepoViewController
                      WHERE i.repository_id = ?
                      ORDER BY (i.status = \'open\') DESC, i.created_at DESC
                      LIMIT 100'
-                );
-                $issuesStmt->execute([(int) $repo['id']]);
-                $issues = array_values($issuesStmt->fetchAll(\PDO::FETCH_ASSOC) ?: []);
+            );
+            $issuesStmt->execute([(int)$repo['id']]);
+            $issues = array_values($issuesStmt->fetchAll(\PDO::FETCH_ASSOC) ?: []);
 
-                $pullStmt = $pdo->prepare(
-                    'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
+            $pullStmt = $pdo->prepare(
+                'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
                             p.from_branch_name, p.to_branch_name,
                             u.username AS author_username,
                             COALESCE(u.display_name, \'\') AS author_display_name
@@ -435,22 +439,22 @@ final class RepoViewController
                      WHERE p.repository_id = ?
                      ORDER BY (p.status = \'open\') DESC, p.created_at DESC
                      LIMIT 100'
-                );
-                $pullStmt->execute([(int) $repo['id']]);
-                $pullRequests = array_values($pullStmt->fetchAll(\PDO::FETCH_ASSOC) ?: []);
-            } catch (\PDOException $e) {
-                Logging::loggingToFile('Repo view list query failed: ' . $e->getMessage(), 4);
-            }
+            );
+            $pullStmt->execute([(int)$repo['id']]);
+            $pullRequests = array_values($pullStmt->fetchAll(\PDO::FETCH_ASSOC) ?: []);
+        } catch (\PDOException $e) {
+            Logging::loggingToFile('Repo view list query failed: ' . $e->getMessage(), 4);
+        }
 
-            $detailType = '';
-            $detailItem = null;
-            $detailTab = isset($_GET['detail']) ? (string) $_GET['detail'] : '';
-            if ($detailTab !== '' && preg_match('/^(issue|pr)_(\d+)$/', $detailTab, $m)) {
-                $detailType = $m[1];
-                $detailId = (int) $m[2];
-                if ($detailType === 'issue') {
-                    $detailStmt = $pdo->prepare(
-                        'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
+        $detailType = '';
+        $detailItem = null;
+        $detailTab = isset($_GET['detail']) ? (string)$_GET['detail'] : '';
+        if ($detailTab !== '' && preg_match('/^(issue|pr)_(\d+)$/', $detailTab, $m)) {
+            $detailType = $m[1];
+            $detailId = (int)$m[2];
+            if ($detailType === 'issue') {
+                $detailStmt = $pdo->prepare(
+                    'SELECT i.id, i.title, i.body, i.status, i.created_at, i.closed_at,
                                 u.username AS author_username, u.email AS author_email,
                                 COALESCE(u.display_name, \'\') AS author_display_name,
                                 a.username AS assignee_username,
@@ -459,24 +463,23 @@ final class RepoViewController
                          JOIN users u ON u.id = i.author_user_id
                          LEFT JOIN users a ON a.id = i.assignee_user_id
                          WHERE i.id = ? AND i.repository_id = ?'
-                    );
-                    $detailStmt->execute([$detailId, (int) $repo['id']]);
-                    $detailResult = $detailStmt->fetch(\PDO::FETCH_ASSOC);
-                    $detailItem = $detailResult !== false ? $detailResult : null;
-                } elseif ($detailType === 'pr') {
-                    $detailStmt = $pdo->prepare(
-                        'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
+                );
+                $detailStmt->execute([$detailId, (int)$repo['id']]);
+                $detailResult = $detailStmt->fetch(\PDO::FETCH_ASSOC);
+                $detailItem = $detailResult !== false ? $detailResult : null;
+            } elseif ($detailType === 'pr') {
+                $detailStmt = $pdo->prepare(
+                    'SELECT p.id, p.title, p.body, p.status, p.created_at, p.merged_at,
                                 p.from_branch_name, p.to_branch_name, p.from_head_hash, p.to_head_hash,
                                 u.username AS author_username, u.email AS author_email,
                                 COALESCE(u.display_name, \'\') AS author_display_name
                          FROM pull_requests p
                          JOIN users u ON u.id = p.author_user_id
                          WHERE p.id = ? AND p.repository_id = ?'
-                    );
-                    $detailStmt->execute([$detailId, (int) $repo['id']]);
-                    $detailResult = $detailStmt->fetch(\PDO::FETCH_ASSOC);
-                    $detailItem = $detailResult !== false ? $detailResult : null;
-                }
+                );
+                $detailStmt->execute([$detailId, (int)$repo['id']]);
+                $detailResult = $detailStmt->fetch(\PDO::FETCH_ASSOC);
+                $detailItem = $detailResult !== false ? $detailResult : null;
             }
         }
 
@@ -503,8 +506,11 @@ final class RepoViewController
             }
         }
 
-        $httpBase = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'phpgit.local');
-        $sshHost = $_ENV['SSH_HOST'] ?? $_SERVER['HTTP_HOST'] ?? 'phpgit.local';
+        $httpBase = rtrim((string)($_ENV['APP_BASE_URL'] ?? 'https://phpgit.local'), '/');
+        if (filter_var($httpBase, FILTER_VALIDATE_URL) === false || !preg_match('#^https?://#i', $httpBase)) {
+            $httpBase = 'https://phpgit.local';
+        }
+        $sshHost = preg_replace('/[^A-Za-z0-9.:-]/', '', (string)($_ENV['SSH_HOST'] ?? 'phpgit.local')) ?: 'phpgit.local';
         $gitUser = $_ENV['GIT_SYSTEM_USER'] ?? 'git';
 
         $this->repo = $repo;
@@ -650,152 +656,13 @@ final class RepoViewController
 
     public static function renderMarkdown(string $md): string
     {
-        $lines = explode("\n", $md);
-        $html = '';
-        $inPre = false;
-        $inUl = false;
-        $inOl = false;
-        $preBuf = '';
+        $converter = new GithubFlavoredMarkdownConverter([
+            'html_input' => 'strip',
+            'allow_unsafe_links' => false,
+            'max_nesting_level' => 20,
+        ]);
 
-        $closeList = function () use (&$inUl, &$inOl, &$html): void {
-            // @phpstan-ignore if.alwaysFalse
-            if ($inUl) {
-                $html .= "</ul>\n";
-                $inUl = false;
-            }
-            // @phpstan-ignore if.alwaysFalse
-            if ($inOl) {
-                $html .= "</ol>\n";
-                $inOl = false;
-            }
-        };
-
-        foreach ($lines as $line) {
-            if (str_starts_with($line, '```')) {
-                if (! $inPre) {
-                    $closeList();
-                    $lang = self::sanitizeCodeLanguage(trim(substr($line, 3)));
-                    $inPre = true;
-                    $preBuf = '';
-                    $html .= '<pre><code' . ($lang ? " class=\"language-{$lang}\"" : '') . '>';
-                } else {
-                    $html .= htmlspecialchars($preBuf, ENT_QUOTES, 'UTF-8') . '</code></pre>' . "\n";
-                    $inPre = false;
-                    $preBuf = '';
-                }
-                continue;
-            }
-            if ($inPre) {
-                $preBuf .= $line . "\n";
-                continue;
-            }
-
-            if (preg_match('/^(#{1,6})\s+(.+)$/', $line, $m)) {
-                $closeList();
-                $lvl = strlen($m[1]);
-                $text = self::inlineMarkdown($m[2]);
-                $id = preg_replace('/[^a-z0-9]+/', '-', strtolower(strip_tags($text)));
-                $html .= "<h{$lvl} id=\"{$id}\">{$text}</h{$lvl}>\n";
-                continue;
-            }
-            if (preg_match('/^[-*_]{3,}$/', trim($line))) {
-                $closeList();
-                $html .= "<hr>\n";
-                continue;
-            }
-            if (str_starts_with($line, '> ')) {
-                $closeList();
-                $html .= '<blockquote><p>' . self::inlineMarkdown(substr($line, 2)) . "</p></blockquote>\n";
-                continue;
-            }
-            if (preg_match('/^[-*+]\s+(.+)$/', $line, $m)) {
-                if ($inOl) {
-                    $html .= "</ol>\n";
-                    $inOl = false;
-                }
-                if (! $inUl) {
-                    $html .= "<ul>\n";
-                    $inUl = true;
-                }
-                $html .= '<li>' . self::inlineMarkdown($m[1]) . "</li>\n";
-                continue;
-            }
-            if (preg_match('/^\d+\.\s+(.+)$/', $line, $m)) {
-                if ($inUl) {
-                    $html .= "</ul>\n";
-                    $inUl = false;
-                }
-                if (! $inOl) {
-                    $html .= "<ol>\n";
-                    $inOl = true;
-                }
-                $html .= '<li>' . self::inlineMarkdown($m[1]) . "</li>\n";
-                continue;
-            }
-
-            $closeList();
-            if (trim($line) === '') {
-                $html .= "\n";
-                continue;
-            }
-            $html .= '<p>' . self::inlineMarkdown($line) . "</p>\n";
-        }
-
-        if ($inPre) {
-            $html .= htmlspecialchars($preBuf, ENT_QUOTES, 'UTF-8') . '</code></pre>';
-        }
-        if ($inUl) {
-            $html .= '</ul>';
-        }
-        if ($inOl) {
-            $html .= '</ol>';
-        }
-
-        return $html;
-    }
-
-    public static function inlineMarkdown(string $text): string
-    {
-        $s = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
-        $s = preg_replace('/`([^`]+)`/', '<code>$1</code>', $s) ?? $s;
-        $s = preg_replace('/\*\*\*(.+?)\*\*\*/', '<strong><em>$1</em></strong>', $s) ?? $s;
-        $s = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $s) ?? $s;
-        $s = preg_replace('/\*(.+?)\*/', '<em>$1</em>', $s) ?? $s;
-        $s = preg_replace('/__(.+?)__/', '<strong>$1</strong>', $s) ?? $s;
-        $s = preg_replace('/_(.+?)_/', '<em>$1</em>', $s) ?? $s;
-        $s = preg_replace_callback(
-            '/\[([^\]]+)\]\(([^)]+)\)/',
-            static fn(array $m): string => self::renderSafeMarkdownLink((string)$m[1], (string)$m[2]),
-            $s
-        ) ?? $s;
-        $s = preg_replace('/~~(.+?)~~/', '<del>$1</del>', $s) ?? $s;
-
-        return $s;
-    }
-
-    private static function sanitizeCodeLanguage(string $language): string
-    {
-        if (!preg_match('/^[A-Za-z0-9_-]+$/', $language)) {
-            return '';
-        }
-
-        return htmlspecialchars($language, ENT_QUOTES, 'UTF-8');
-    }
-
-    private static function renderSafeMarkdownLink(string $text, string $href): string
-    {
-        $decodedHref = html_entity_decode(trim($href), ENT_QUOTES, 'UTF-8');
-        $isSafe = str_starts_with($decodedHref, '#')
-            || str_starts_with($decodedHref, '/')
-            || preg_match('#^https?://#i', $decodedHref) === 1;
-
-        if (!$isSafe) {
-            return '[' . $text . '](' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . ')';
-        }
-
-        $safeHref = htmlspecialchars($decodedHref, ENT_QUOTES, 'UTF-8');
-
-        return '<a href="' . $safeHref . '" rel="noopener noreferrer">' . $text . '</a>';
+        return (string)$converter->convert(mb_substr($md, 0, 1048576));
     }
 
     /**
@@ -831,7 +698,7 @@ final class RepoViewController
                     ? '<i class="bi bi-caret-down-fill"></i>'
                     : '<i class="bi bi-caret-right-fill"></i>';
                 echo '<li>';
-                echo "<a href=\"{$url}\" class=\"rv-tree-item{$activeClass}\" style=\"--rv-indent:{$indent}\" onclick=\"rvTreeToggle(this,event)\">";
+                echo "<a href=\"{$url}\" class=\"rv-tree-item js-tree-toggle{$activeClass}\" style=\"--rv-indent:{$indent}\">";
                 echo "<span class=\"rv-tree-toggle\">{$toggleIcon}</span>{$icon} {$name}";
                 echo '</a>';
                 /** @var list<array{name:string,type:string,children:array<mixed>}> $children */

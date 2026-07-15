@@ -1,8 +1,12 @@
 {
   "scripts": {
-    "build": "javascript-obfuscator unobfuscated/js/ --output src/assets/js --config config/obfuscator.json"
+    "build": "javascript-obfuscator unobfuscated/js/ --output src/assets/js --config config/obfuscator.json",
+    "lint:js": "node node_modules/@jslint-org/jslint/jslint.mjs unobfuscated/js"
   },
   "dependencies": {
     "javascript-obfuscator": "^5.4.7"
+  },
+  "devDependencies": {
+    "@jslint-org/jslint": "^2026.6.30"
   }
 }

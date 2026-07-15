@@ -1,3 +1,4 @@
+/*jslint browser, devel, long*/
 const overlay = document.getElementById("overlay");
 const wheel = document.getElementById("wheel");
 

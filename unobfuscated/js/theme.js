@@ -1,3 +1,4 @@
+/*jslint browser, devel, long*/
 (function () {
     var btn = document.getElementById("theme-toggle");
     var themeInputs = Array.prototype.slice.call(

@@ -1,3 +1,4 @@
+/*jslint browser, devel, long*/
 (function () {
     const pageSize = 10;
     let currentPage = 1;

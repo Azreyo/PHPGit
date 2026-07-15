@@ -65,6 +65,27 @@ CREATE TABLE IF NOT EXISTS `issues`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `personal_access_tokens`
+(
+    `id`           int(10) unsigned      NOT NULL AUTO_INCREMENT,
+    `user_id`      int(10) unsigned      NOT NULL,
+    `name`         varchar(100)          NOT NULL,
+    `token_prefix` varchar(24)           NOT NULL,
+    `token_hash`   char(64)              NOT NULL,
+    `scope`        enum ('read','write') NOT NULL DEFAULT 'read',
+    `expires_at`   timestamp             NULL     DEFAULT NULL,
+    `last_used_at` timestamp             NULL     DEFAULT NULL,
+    `revoked_at`   timestamp             NULL     DEFAULT NULL,
+    `created_at`   timestamp             NOT NULL DEFAULT current_timestamp(),
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ux_personal_access_tokens_hash` (`token_hash`),
+    KEY `ix_personal_access_tokens_prefix` (`token_prefix`),
+    KEY `ix_personal_access_tokens_user` (`user_id`),
+    CONSTRAINT `fk_personal_access_tokens_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci;
+
 -- Dumping data for table phpgit.issues: ~2 rows (approximately)
 INSERT IGNORE INTO `issues` (`id`, `repository_id`, `author_user_id`, `assignee_user_id`, `title`, `body`, `status`,
                              `created_at`, `closed_at`)

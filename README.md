@@ -62,6 +62,12 @@ managing Git repositories, users, and access controls.
 
 4. Obfuscate javascript `npm run build`
 
+   Lint JavaScript source before building:
+   ```bash
+   npm ci
+   npm run lint:js
+   ```
+
 If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertificateFile`, and
 `SSLCertificateKeyFile` inside `apache/phpgit.local.conf`.
 
@@ -94,6 +100,18 @@ If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertifica
    The installer also asks for Apache `ServerName` and whether HTTPS should be enabled, then updates
    `apache/phpgit.local.conf` with your current project path and selected mode.
 
+### Upgrading an existing database
+
+Apply new migrations before deploying updated application code. For the personal access token update:
+
+```bash
+mysql -u "$DB_USER" -p "$DB_NAME" < migrations/20260715_personal_access_tokens.sql
+```
+
+Set `APP_BASE_URL` to the canonical HTTPS URL used in clone instructions. Git HTTPS accepts personal access tokens as
+the password. `GIT_HTTP_PASSWORD_AUTH=true` temporarily permits account passwords during migration; set it to `false`
+after users have created tokens under **Settings → Access Tokens**.
+
 ## Usage
 
 - Access the application via your web browser at the configured URL.
@@ -103,4 +121,3 @@ If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertifica
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
-

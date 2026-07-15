@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\includes\Logging;
+use Throwable;
 
 class RepositoryService
 {
@@ -45,7 +46,10 @@ class RepositoryService
         $repoName = trim($repoName);
         $description = trim($description);
         $visibility = in_array($visibility, ['public', 'private'], true) ? $visibility : 'public';
-        $defaultBranch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', trim($defaultBranch)) ?: 'main';
+        $defaultBranch = trim($defaultBranch);
+        if (!self::isValidBranchName($defaultBranch)) {
+            $defaultBranch = 'main';
+        }
 
         if (! self::isValidUsername($ownerUsername)) {
             return ['success' => false, 'error' => 'Invalid owner username.', 'path' => null];
@@ -94,30 +98,38 @@ class RepositoryService
             return ['success' => false, 'error' => 'Failed to create repository directory.', 'path' => null];
         }
 
-        $escapedPath = escapeshellarg($repoPath);
-        $escapedBranch = escapeshellarg($defaultBranch);
-        exec("git init --bare -b {$escapedBranch} {$escapedPath} 2>&1", $output, $exitCode);
+        [$exitCode, $gitOutput] = $this->initializeBareRepository($repoPath, $defaultBranch);
 
         if ($exitCode !== 0) {
             $this->removeDirectory($repoPath);
-            $gitOutput = implode("\n", $output);
             Logging::loggingToFile('git init failed for ' . $repoPath . ': ' . $gitOutput, 4);
 
             return ['success' => false, 'error' => 'Failed to initialise git repository.', 'path' => null];
         }
 
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO repositories (owner_user_id, repo_name, slug, repo_description, visibility, default_branch)
-             VALUES (?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([$ownerUserId, $repoName, $slug, $description ?: null, $visibility, $defaultBranch]);
-        $repoId = (int) $this->pdo->lastInsertId();
+        try {
+            $this->pdo->beginTransaction();
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO repositories (owner_user_id, repo_name, slug, repo_description, visibility, default_branch)
+                 VALUES (?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([$ownerUserId, $repoName, $slug, $description ?: null, $visibility, $defaultBranch]);
+            $repoId = (int)$this->pdo->lastInsertId();
 
-        // Add owner as member
-        $member = $this->pdo->prepare(
-            'INSERT INTO repository_members (repository_id, user_id, permission) VALUES (?, ?, ?)'
-        );
-        $member->execute([$repoId, $ownerUserId, 'owner']);
+            $member = $this->pdo->prepare(
+                'INSERT INTO repository_members (repository_id, user_id, permission) VALUES (?, ?, ?)'
+            );
+            $member->execute([$repoId, $ownerUserId, 'owner']);
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            $this->removeDirectory($repoPath);
+            Logging::loggingToFile('Repository database creation failed for ' . $slug . ': ' . $e->getMessage(), 4);
+
+            return ['success' => false, 'error' => 'Failed to save repository.', 'path' => null];
+        }
 
         Logging::loggingToFile("Repository created: {$slug} (id={$repoId})", 1);
 
@@ -183,18 +195,65 @@ class RepositoryService
         return $path;
     }
 
+    private static function isValidBranchName(string $branch): bool
+    {
+        return $branch !== ''
+            && strlen($branch) <= 255
+            && preg_match('/^[A-Za-z0-9][A-Za-z0-9._\/-]*$/', $branch) === 1
+            && !str_contains($branch, '..')
+            && !str_contains($branch, '//')
+            && !str_contains($branch, '@{')
+            && !str_ends_with($branch, '/')
+            && !str_ends_with($branch, '.')
+            && !str_ends_with($branch, '.lock');
+    }
+
+    /** @return array{int, string} */
+    private function initializeBareRepository(string $path, string $defaultBranch): array
+    {
+        $process = proc_open(
+            ['git', 'init', '--bare', '-b', $defaultBranch, '--', $path],
+            [0 => ['file', '/dev/null', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            null,
+            [
+                'GIT_CONFIG_NOSYSTEM' => '1',
+                'GIT_TERMINAL_PROMPT' => '0',
+                'PATH' => '/usr/bin:/bin',
+            ],
+            ['bypass_shell' => true]
+        );
+        if (!is_resource($process)) {
+            return [1, 'Unable to start git.'];
+        }
+
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        return [proc_close($process), trim((string)$stdout . "\n" . (string)$stderr)];
+    }
+
     private function removeDirectory(string $path): void
     {
+        if (is_link($path) || is_file($path)) {
+            @unlink($path);
+
+            return;
+        }
         if (! is_dir($path)) {
             return;
         }
-        $items = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST
-        );
+        $items = new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS);
         foreach ($items as $item) {
-            $item->isDir() ? rmdir($item->getRealPath()) : unlink($item->getRealPath());
+            $itemPath = $item->getPathname();
+            if ($item->isLink() || !$item->isDir()) {
+                @unlink($itemPath);
+            } else {
+                $this->removeDirectory($itemPath);
+            }
         }
-        rmdir($path);
+        @rmdir($path);
     }
 }

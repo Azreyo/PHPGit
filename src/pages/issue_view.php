@@ -3,14 +3,15 @@ declare(strict_types=1);
 
 use App\Config;
 use App\includes\Security;
-use App\Services\RepositoryService;
+use App\Services\RepositoryAccessPolicy;
+use App\Services\RepositoryLocator;
 
 $security = new Security();
 $_GET['detail'] = 'issue_' . ($_GET['item'] ?? '');
 $is_logged_in = $_SESSION['is_logged_in'] ?? false;
 $role = $_SESSION['role'] ?? '';
 
-$slug = $_GET['slug'] ?? '';
+$slug = is_string($_GET['slug'] ?? null) ? $_GET['slug'] : '';
 $itemId = (int) ($_GET['item'] ?? 0);
 
 if ($slug === '' || $itemId <= 0) {
@@ -31,8 +32,7 @@ if ($pdo === null) {
 }
 
 try {
-    $repoService = new RepositoryService($pdo, $config->getDataRoot());
-    $repo = $repoService->getBySlug($slug);
+    $repo = (new RepositoryLocator($pdo, $config->getDataRoot()))->find((string)$slug);
 } catch (\Exception $e) {
     $repo = null;
 }
@@ -48,7 +48,7 @@ $sessionUserId = (int)($_SESSION['user_id'] ?? 0);
 $isOwner = $is_logged_in && $sessionUserId === (int)$repo['owner_user_id'];
 $isAdmin = $is_logged_in && $role === 'ADMIN';
 
-if (($repo['visibility'] ?? '') === 'private' && !$isOwner && !$isAdmin) {
+if (!(new RepositoryAccessPolicy($pdo))->canRead($repo, $sessionUserId, (string)$role)) {
     http_response_code(403);
     echo '<main class="container py-5"><div class="alert alert-danger">You do not have permission to view this repository.</div></main>';
 
