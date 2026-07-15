@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "javascript-obfuscator unobfuscated/js/ --output src/assets/js --config config/obfuscator.json",
+    "build": "javascript-obfuscator unobfuscated/js/ --output src/assets/js --config config/obfuscator.json && php bin/build-assets.php",
     "lint:js": "node node_modules/@jslint-org/jslint/jslint.mjs unobfuscated/js"
   },
   "dependencies": {
