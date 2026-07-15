@@ -84,4 +84,4 @@ jobs:
         run: node --version
 
       - name: Run JSLint via bin/jslint.php
-        run: php bin/jslint.php src/assets/js
+        run: php bin/jslint.php unobfuscated/js
