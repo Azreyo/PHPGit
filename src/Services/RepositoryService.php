@@ -50,6 +50,7 @@ class RepositoryService
         if (!self::isValidBranchName($defaultBranch)) {
             $defaultBranch = 'main';
         }
+        $defaultBranch = self::untaintShellArgument($defaultBranch);
 
         if (! self::isValidUsername($ownerUsername)) {
             return ['success' => false, 'error' => 'Invalid owner username.', 'path' => null];
@@ -189,10 +190,21 @@ class RepositoryService
      * function is an intentional sanitization point for file paths.
      *
      * @psalm-taint-escape file
+     * @psalm-taint-escape shell
      */
     private static function untaintPath(string $path): string
     {
         return $path;
+    }
+
+    /**
+     * Marks a Git argument as safe after strict branch-name validation.
+     *
+     * @psalm-taint-escape shell
+     */
+    private static function untaintShellArgument(string $argument): string
+    {
+        return $argument;
     }
 
     private static function isValidBranchName(string $branch): bool
@@ -245,8 +257,14 @@ class RepositoryService
         if (! is_dir($path)) {
             return;
         }
-        $items = new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS);
+        $items = new \FilesystemIterator(
+            $path,
+            \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO
+        );
         foreach ($items as $item) {
+            if (!$item instanceof \SplFileInfo) {
+                continue;
+            }
             $itemPath = $item->getPathname();
             if ($item->isLink() || !$item->isDir()) {
                 @unlink($itemPath);

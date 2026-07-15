@@ -66,6 +66,16 @@ final class RepositoryLocator
             throw new RuntimeException('Repository is not a bare Git repository.');
         }
 
-        return $repo;
+        return self::untaintPath($repo);
+    }
+
+    /**
+     * The path is canonical and has been verified to remain under DATA_ROOT.
+     *
+     * @psalm-taint-escape file
+     */
+    private static function untaintPath(string $path): string
+    {
+        return $path;
     }
 }
