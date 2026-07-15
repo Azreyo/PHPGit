@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "javascript-obfuscator unobfuscated/js/ --output src/assets/js --config config/obfuscator.json"
+  },
   "dependencies": {
     "javascript-obfuscator": "^5.4.7"
   }

@@ -1,0 +1,22 @@
+{
+  "compact": true,
+  "controlFlowFlattening": true,
+  "controlFlowFlatteningThreshold": 1,
+  "deadCodeInjection": true,
+  "deadCodeInjectionThreshold": 1,
+  "stringArray": true,
+  "stringArrayThreshold": 1,
+  "stringArrayEncoding": ["rc4"],
+  "splitStrings": true,
+  "splitStringsChunkLength": 3,
+  "renameGlobals": true,
+  "renameProperties": true,
+  "renamePropertiesMode": "safe",
+  "selfDefending": true,
+  "disableConsoleOutput": true,
+  "identifierNamesGenerator": "hexadecimal",
+  "numbersToExpressions": true,
+  "simplify": true,
+  "transformObjectKeys": true,
+  "unicodeEscapeSequence": false
+}

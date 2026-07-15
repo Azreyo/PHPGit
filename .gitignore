@@ -8,6 +8,7 @@ Thumbs.db
 composer.phar
 certs
 apache
+src/assets/js
 /src/assets/manifest.json
 
 .php-cs-fixer.cache

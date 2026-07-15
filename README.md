@@ -1,4 +1,4 @@
-# PHPGit
+``# PHPGit
 
 PHPGit is a web-based Git repository hosting platform developed using PHP. It provides an intuitive interface for
 managing Git repositories, users, and access controls.
@@ -59,6 +59,8 @@ managing Git repositories, users, and access controls.
    echo "127.0.0.1 phpgit.local" | sudo tee -a /etc/hosts
    sudo systemctl reload apache2
 ```
+
+4. Obfuscate javascript `npm run build`
 
 If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertificateFile`, and
 `SSLCertificateKeyFile` inside `apache/phpgit.local.conf`.

@@ -369,7 +369,7 @@ const PHPGIT_SERVE_SEQUENCE = [
         delay: 360,
         html: [
             "<span class='term-ok'>  [ OK ]</span>",
-            " <span class='term-dim'>Static assets mounted</span>"
+            " <span class='term-dim'>Static unobfuscated mounted</span>"
         ].join(""),
         t: "out"
     },
