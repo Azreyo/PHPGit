@@ -10,11 +10,10 @@
     }
 
     function urlFor(proto) {
-        return (
-            proto === "ssh"
-                ? root.dataset.sshUrl
-                : root.dataset.httpUrl
-        );
+        if (proto === "ssh") {
+            return root.dataset.sshUrl;
+        }
+        return root.dataset.httpUrl;
     }
 
     function copy(text) {
