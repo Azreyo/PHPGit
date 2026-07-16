@@ -9,7 +9,7 @@ use App\Services\PersonalAccessTokenService;
 
 $pdo = Config::getInstance()->getPDO();
 $security = new Security();
-$userId = (int)($_SESSION['user_id'] ?? 0);
+$userId = (int) ($_SESSION['user_id'] ?? 0);
 $errors = $_SESSION['token_errors'] ?? [];
 $plainToken = $_SESSION['new_access_token'] ?? null;
 unset($_SESSION['token_errors'], $_SESSION['new_access_token']);
@@ -19,35 +19,36 @@ $csrfToken = '';
 if ($pdo !== null && $userId > 0) {
     $service = new PersonalAccessTokenService($pdo);
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-        $csrf = (string)($_POST['csrf_token'] ?? '');
-        $action = (string)($_POST['token_action'] ?? '');
+        $csrf = (string) ($_POST['csrf_token'] ?? '');
+        $action = (string) ($_POST['token_action'] ?? '');
         $postErrors = [];
-        if (!$security->validateCsrfToken($csrf)) {
+        if (! $security->validateCsrfToken($csrf)) {
             $postErrors[] = 'Invalid or expired form submission.';
         } elseif ($action === 'revoke') {
-            $service->revoke($userId, (int)($_POST['token_id'] ?? 0));
+            $service->revoke($userId, (int) ($_POST['token_id'] ?? 0));
         } elseif ($action === 'create') {
-            $password = (string)($_POST['current_password'] ?? '');
+            $password = (string) ($_POST['current_password'] ?? '');
             $stmt = $pdo->prepare('SELECT password FROM users WHERE id = ? AND status = ? LIMIT 1');
             $stmt->execute([$userId, 'ACTIVE']);
             $passwordHash = $stmt->fetchColumn();
-            if (!is_string($passwordHash) || !password_verify($password, $passwordHash)) {
+            if (! is_string($passwordHash) || ! password_verify($password, $passwordHash)) {
                 $postErrors[] = 'Current password is incorrect.';
             } else {
-                $expiryChoice = (string)($_POST['expires'] ?? '90');
-                $expiresAt = match ($expiryChoice) {
-                    '30' => new DateTimeImmutable('+30 days', new DateTimeZone('UTC')),
-                    '365' => new DateTimeImmutable('+365 days', new DateTimeZone('UTC')),
-                    'never' => null,
-                    default => new DateTimeImmutable('+90 days', new DateTimeZone('UTC')),
-                };
+                $expiryChoice = (string) ($_POST['expires'] ?? '90');
 
                 try {
+                    $expiresAt = match ($expiryChoice) {
+                        '30' => new DateTimeImmutable('+30 days', new DateTimeZone('UTC')),
+                        '365' => new DateTimeImmutable('+365 days', new DateTimeZone('UTC')),
+                        'never' => null,
+                        default => new DateTimeImmutable('+90 days', new DateTimeZone('UTC')),
+                    };
+
                     $created = $service->create(
-                            $userId,
-                            (string)($_POST['name'] ?? ''),
-                            (string)($_POST['scope'] ?? 'read'),
-                            $expiresAt
+                        $userId,
+                        (string) ($_POST['name'] ?? ''),
+                        (string) ($_POST['scope'] ?? 'read'),
+                        $expiresAt
                     );
                     $_SESSION['new_access_token'] = $created['token'];
                     Logging::loggingToFile('Personal access token created for user_id=' . $userId, 1, true);
@@ -71,15 +72,15 @@ try {
     Logging::loggingToFile('Cannot generate token CSRF token: ' . $e->getMessage(), 4);
 }
 
-$e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+$e = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 ?>
 <div class="d-flex align-items-center gap-3 mb-4 pb-4 border-bottom border-secondary-subtle">
     <div class="rounded-3 bg-primary-subtle text-primary p-2"><i class="bi bi-shield-key"></i></div>
     <div><p class="section-label mb-0">Personal access tokens</p><h6 class="fw-bold mb-0">Git over HTTPS</h6></div>
 </div>
 
-<?php foreach ((array)$errors as $error): ?>
-    <div class="alert alert-danger"><?= $e((string)$error) ?></div>
+<?php foreach ((array) $errors as $error): ?>
+    <div class="alert alert-danger"><?= $e((string) $error) ?></div>
 <?php endforeach; ?>
 <?php if (is_string($plainToken) && $plainToken !== ''): ?>
     <div class="alert alert-success">
@@ -122,15 +123,15 @@ $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'U
         <div class="text-secondary text-center py-4">No access tokens.</div><?php endif; ?>
     <?php foreach ($tokens as $token): ?>
         <div class="list-group-item d-flex justify-content-between align-items-start gap-3">
-            <div><strong><?= $e((string)$token['name']) ?></strong> <span
-                        class="badge text-bg-secondary"><?= $e((string)$token['scope']) ?></span><br><code><?= $e((string)$token['token_prefix']) ?>
+            <div><strong><?= $e((string) $token['name']) ?></strong> <span
+                        class="badge text-bg-secondary"><?= $e((string) $token['scope']) ?></span><br><code><?= $e((string) $token['token_prefix']) ?>
                     …</code><br><small
-                        class="text-secondary">Created <?= $e((string)$token['created_at']) ?><?= $token['expires_at'] ? ' · expires ' . $e((string)$token['expires_at']) : ' · no expiry' ?></small>
+                        class="text-secondary">Created <?= $e((string) $token['created_at']) ?><?= $token['expires_at'] ? ' · expires ' . $e((string) $token['expires_at']) : ' · no expiry' ?></small>
             </div>
             <?php if ($token['revoked_at'] === null): ?>
                 <form method="post"><input type="hidden" name="csrf_token" value="<?= $e($csrfToken) ?>"><input
                         type="hidden" name="token_action" value="revoke"><input type="hidden" name="token_id"
-                                                                                value="<?= (int)$token['id'] ?>">
+                                                                                value="<?= (int) $token['id'] ?>">
                 <button class="btn btn-sm btn-outline-danger" type="submit">Revoke</button></form><?php else: ?><span
                     class="badge text-bg-danger">Revoked</span><?php endif; ?>
         </div>

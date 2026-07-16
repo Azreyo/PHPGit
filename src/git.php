@@ -6,4 +6,4 @@ use App\Controllers\GitHttpController;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-(new GitHttpController())->run();
+new GitHttpController()->run();
