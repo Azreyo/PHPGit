@@ -14,6 +14,8 @@ managing Git repositories, users, and access controls.
 - Web-based repository initialization and cloning instructions
 
 ## Requirements
+Some downgraded version are untested and can work.
+If downgraded version is tested and PHPGit is working properly open PR with fixed requirements.
 
 - PHP ^8.4 (see `composer.json`)
 - PHP extensions: pdo (ext-pdo), curl (ext-curl), mbstring (ext-mbstring)
@@ -21,6 +23,7 @@ managing Git repositories, users, and access controls.
 - Composer
 - Web server (Apache, Nginx, etc.)
 - Git 2.43.*
+- Node v20.19.*
 
 ## Security
 1. Allow apache2 *mod_rewrite* and *mod_headers*
