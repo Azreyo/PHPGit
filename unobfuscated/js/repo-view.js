@@ -102,10 +102,10 @@
 
     source = document.getElementById("rv-hl-src");
     table = document.getElementById("rv-code-table");
-    if (source && table && hljs !== undefined) {
+    if (source && table && typeof hljs !== "undefined") {
         hljs.highlightElement(source);
+        var cells = table.querySelectorAll(".rv-line-code");
         source.innerHTML.split("\n").forEach(function (line, index) {
-            var cells = table.querySelectorAll(".rv-line-code");
             if (cells[index]) {
                 cells[index].innerHTML = line;
             }
