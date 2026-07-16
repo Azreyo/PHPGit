@@ -1,4 +1,4 @@
-``# PHPGit
+# PHPGit
 
 PHPGit is a web-based Git repository hosting platform developed using PHP. It provides an intuitive interface for
 managing Git repositories, users, and access controls.
