@@ -1,10 +1,10 @@
 /*jslint browser, devel, long*/
-/*global hljs*/
 (function () {
     "use strict";
     var root = document.getElementById("repo-view");
     var source;
     var table;
+    var cells;
     if (!root) {
         return;
     }
@@ -102,9 +102,9 @@
 
     source = document.getElementById("rv-hl-src");
     table = document.getElementById("rv-code-table");
-    if (source && table && typeof hljs !== "undefined") {
-        hljs.highlightElement(source);
-        var cells = table.querySelectorAll(".rv-line-code");
+    if (source && table && window.hljs !== undefined) {
+        window.hljs.highlightElement(source);
+        cells = table.querySelectorAll(".rv-line-code");
         source.innerHTML.split("\n").forEach(function (line, index) {
             if (cells[index]) {
                 cells[index].innerHTML = line;
