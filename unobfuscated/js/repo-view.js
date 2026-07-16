@@ -1,10 +1,10 @@
 /*jslint browser, devel, long*/
-/*global hljs*/
 (function () {
     "use strict";
     var root = document.getElementById("repo-view");
     var source;
     var table;
+    var cells;
     if (!root) {
         return;
     }
@@ -78,7 +78,10 @@
     });
     document.querySelectorAll(".rv-line-num").forEach(function (line) {
         line.addEventListener("click", function () {
-            line.classList.toggle("rv-line-highlighted");
+            var row = line.closest("tr");
+            if (row) {
+                row.classList.toggle("rv-line-highlighted");
+            }
         });
     });
     document.querySelectorAll(".js-tree-toggle").forEach(function (link) {
@@ -99,10 +102,10 @@
 
     source = document.getElementById("rv-hl-src");
     table = document.getElementById("rv-code-table");
-    if (source && table && hljs !== undefined) {
-        hljs.highlightElement(source);
+    if (source && table && window.hljs !== undefined) {
+        window.hljs.highlightElement(source);
+        cells = table.querySelectorAll(".rv-line-code");
         source.innerHTML.split("\n").forEach(function (line, index) {
-            var cells = table.querySelectorAll(".rv-line-code");
             if (cells[index]) {
                 cells[index].innerHTML = line;
             }
