@@ -7,109 +7,100 @@ namespace App\Controllers;
 use App\Config;
 use App\includes\Logging;
 use App\Services\GitReaderService;
-use App\Services\RepositoryService;
+use App\Services\RepositoryAccessPolicy;
+use App\Services\RepositoryLocator;
+use Throwable;
 
-/**
- * Serves raw file content from a git repository — no HTML, no styling,
- * exactly like GitHub's raw.githubusercontent.com viewer.
- *
- * Route: ?page=raw&slug=owner/repo&branch=main&path=src/file.php
- */
 final class RawController
 {
-    public function run(): void
+    public function run(): never
     {
-
-        $rawSlug = trim($_GET['slug'] ?? '');
-        if (strlen($rawSlug) > 200) {
-            $this->abort(414, '414 URI Too Long');
+        if (strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+            header('Allow: GET');
+            $this->abort(405, 'Method not allowed');
         }
-        if ($rawSlug === '' || ! preg_match('#^[a-zA-Z0-9][a-zA-Z0-9_-]{0,49}/[a-zA-Z0-9][a-zA-Z0-9._-]{0,98}$#', $rawSlug)) {
-            $this->abort(404, '404 Not Found');
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
         }
-
-        $rawPath = trim($_GET['path'] ?? '', '/');
-        $segments = [];
-        foreach (explode('/', $rawPath) as $seg) {
-            if ($seg === '' || $seg === '.' || $seg === '..') {
-                continue;
-            }
-            if (! preg_match('/^[a-zA-Z0-9][a-zA-Z0-9._\- ]*$/', $seg)) {
-                $this->abort(400, '400 Bad Request: invalid path');
-            }
-            $segments[] = $seg;
-        }
-        if (empty($segments)) {
-            $this->abort(400, '400 Bad Request: path is required');
-        }
-        $filePath = implode('/', $segments);
-
-        $branch = preg_replace('/[^a-zA-Z0-9._\/-]/', '', $_GET['branch'] ?? 'main');
-        if ($branch === '') {
-            $branch = 'main';
+        $slug = $this->scalarQuery('slug');
+        $branch = $this->scalarQuery('branch') ?: 'main';
+        $path = trim($this->scalarQuery('path'), '/');
+        if (!RepositoryLocator::isValidSlug($slug) || !$this->isValidPath($path)) {
+            $this->abort(400, 'Bad request');
         }
 
         $config = Config::getInstance();
         $pdo = $config->getPDO();
-        $repo = null;
-
-        if ($pdo !== null) {
-            try {
-                $service = new RepositoryService($pdo, $config->getDataRoot());
-                $repo = $service->getBySlug($rawSlug);
-            } catch (\PDOException $e) {
-                Logging::loggingToFile('RawController SQL error: ' . $e->getMessage(), 4);
-            }
+        if ($pdo === null) {
+            $this->abort(503, 'Service unavailable');
         }
 
+        try {
+            $repo = (new RepositoryLocator($pdo, $config->getDataRoot()))->find($slug);
+        } catch (Throwable $e) {
+            Logging::loggingToFile('Raw repository resolution failed: ' . $e->getMessage(), 3, true);
+            $this->abort(404, 'Not found');
+        }
         if ($repo === null) {
-            $this->abort(404, '404 Not Found');
+            $this->abort(404, 'Not found');
         }
 
-        $sessionUserId = (int) ($_SESSION['user_id'] ?? 0);
-        $isLoggedIn = (bool) ($_SESSION['is_logged_in'] ?? false);
+        $userId = (int)($_SESSION['user_id'] ?? 0);
         $role = (string) ($_SESSION['role'] ?? '');
-        $isOwner = $isLoggedIn && $sessionUserId === (int) $repo['owner_user_id'];
-        $isAdmin = $isLoggedIn && $role === 'ADMIN';
-
-        if ($repo['visibility'] === 'private' && ! $isOwner && ! $isAdmin) {
-            $this->abort(403, '403 Forbidden');
+        if (!(new RepositoryAccessPolicy($pdo))->canRead($repo, $userId, $role)) {
+            $this->abort($userId > 0 ? 403 : 401, 'Access denied');
         }
 
-        $repoPath = $config->getDataRoot() . '/' . $repo['owner_username'] . '/' . $repo['repo_name'];
-        $git = new GitReaderService($repoPath);
-
-        if ($git->isEmpty()) {
-            $this->abort(404, '404 Not Found: repository is empty');
+        $git = new GitReaderService((string)$repo['path']);
+        $commit = $git->resolveRef($branch);
+        if ($commit === null || $git->getObjectType($commit, $path) !== 'blob') {
+            $this->abort(404, 'Not found');
         }
 
-        $objType = $git->getObjectType($branch, $filePath);
-        if ($objType !== 'blob') {
-            $this->abort(404, '404 Not Found: path is not a file');
-        }
-
-        $size = $git->getBlobSize($branch, $filePath);
-        $peek = $git->readBlob($branch, $filePath, 8192);
-        $isBinary = str_contains($peek, "\x00");
-
-        header('Content-Type: ' . ($isBinary ? 'application/octet-stream' : 'text/plain; charset=UTF-8'));
-        if ($size > 0) {
+        $size = $git->getBlobSize($commit, $path);
+        $peek = $git->readBlob($commit, $path, 8192);
+        $binary = str_contains($peek, "\0");
+        header('Content-Type: ' . ($binary ? 'application/octet-stream' : 'text/plain; charset=UTF-8'));
+        if ($size >= 0) {
             header('Content-Length: ' . $size);
         }
+        header('Content-Disposition: inline; filename="' . addcslashes(basename($path), '"\\') . '"');
         header('X-Content-Type-Options: nosniff');
-        header('Cache-Control: no-store');
-
-        $git->streamBlob($branch, $filePath, static function (string $chunk): void {
+        header('Cache-Control: private, no-store');
+        $git->streamBlob($commit, $path, static function (string $chunk): void {
             echo $chunk;
+            flush();
         });
         exit;
     }
 
-    private function abort(int $code, string $message): never
+    private function isValidPath(string $path): bool
     {
-        http_response_code($code);
+        if ($path === '' || strlen($path) > 4096 || !mb_check_encoding($path, 'UTF-8') || preg_match('/[\x00-\x1f\x7f]/', $path) === 1) {
+            return false;
+        }
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..' || strlen($segment) > 255) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function scalarQuery(string $key): string
+    {
+        $value = $_GET[$key] ?? '';
+
+        return is_string($value) ? $value : '';
+    }
+
+    private function abort(int $status, string $message): never
+    {
+        http_response_code($status);
         header('Content-Type: text/plain; charset=UTF-8');
-        echo $message;
+        header('Cache-Control: no-store');
+        echo $message . "\n";
         exit;
     }
 }

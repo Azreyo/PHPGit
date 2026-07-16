@@ -4,7 +4,6 @@ declare(strict_types=1);
 use App\Config;
 use App\Controllers\RepoViewController;
 use App\includes\Assets;
-use App\includes\Logging;
 
 /** @var bool $is_logged_in */
 /** @var string $role */
@@ -80,7 +79,8 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
 
 ?>
 <link rel="stylesheet" href="<?= Assets::url('assets/css/repo_view.css') ?>">
-<main class="container-fluid px-4 px-xl-5 py-5" style="max-width:1600px;margin:0 auto;">
+<main id="repo-view" class="container-fluid px-4 px-xl-5 py-5" style="max-width:1600px;margin:0 auto;"
+      data-http-url="<?= RepoViewController::e($httpUrl) ?>" data-ssh-url="<?= RepoViewController::e($sshUrl) ?>">
     <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
         <i class="bi bi-folder2 text-secondary" style="font-size:1.1rem;"></i>
         <h1 class="mb-0 fs-5 fw-normal">
@@ -461,7 +461,9 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                         <form method="post">
                             <input type="hidden" name="csrf_token" value="<?= RepoViewController::e($csrfToken); ?>">
                             <input type="hidden" name="repo_action" value="repo_delete">
-                            <button class="btn btn-danger text-start" type="submit" onclick="return confirm('Are you sure you want to delete this repository?')">Delete this repository</button>
+                            <button class="btn btn-danger text-start js-confirm-delete" type="submit">Delete this
+                                repository
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -497,14 +499,14 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                         <div class="d-flex align-items-center gap-0 mb-4">
                             <div class="btn-group me-2" role="group">
                                 <input type="radio" class="btn-check" name="cloneProto" id="protoHTTP" checked>
-                                <label class="btn btn-sm btn-outline-secondary" for="protoHTTP"
-                                       onclick="setCloneUrl('http')">HTTPS</label>
+                                <label class="btn btn-sm btn-outline-secondary js-clone-proto" for="protoHTTP"
+                                       data-proto="http">HTTPS</label>
                                 <input type="radio" class="btn-check" name="cloneProto" id="protoSSH">
-                                <label class="btn btn-sm btn-outline-secondary" for="protoSSH"
-                                       onclick="setCloneUrl('ssh')">SSH</label>
+                                <label class="btn btn-sm btn-outline-secondary js-clone-proto" for="protoSSH"
+                                       data-proto="ssh">SSH</label>
                             </div>
                             <code id="cloneUrlDisplay" class="rv-clone-url flex-grow-1"><?= $httpUrl ?></code>
-                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyCloneUrl(this)"
+                            <button class="btn btn-sm btn-outline-secondary ms-2 js-copy-clone-display"
                                     title="Copy URL">
                                 <i class="bi bi-clipboard"></i>
                             </button>
@@ -587,18 +589,16 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                             <p class="fw-semibold mb-2" style="font-size:.85rem;">Clone</p>
                             <ul class="nav nav-pills nav-fill mb-2" style="font-size:.78rem;">
                                 <li class="nav-item">
-                                    <a class="nav-link active py-1" href="#"
-                                       onclick="switchCloneTab('http',this);return false;">HTTPS</a>
+                                    <a class="nav-link active py-1 js-clone-tab" href="#" data-proto="http">HTTPS</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link py-1" href="#"
-                                       onclick="switchCloneTab('ssh',this);return false;">SSH</a>
+                                    <a class="nav-link py-1 js-clone-tab" href="#" data-proto="ssh">SSH</a>
                                 </li>
                             </ul>
                             <div class="input-group input-group-sm">
                                 <input type="text" id="cloneUrlInput" class="form-control font-monospace"
                                        style="font-size:.75rem;" value="<?= $httpUrl ?>" readonly>
-                                <button class="btn btn-outline-secondary" type="button" onclick="copyCloneInput()"
+                                <button class="btn btn-outline-secondary js-copy-clone-input" type="button"
                                         title="Copy">
                                     <i class="bi bi-clipboard"></i>
                                 </button>
@@ -737,8 +737,8 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                             </div>
                             <div class="d-flex gap-2 flex-shrink-0">
                                 <?php if (! $isBinary && $fileContent !== null): ?>
-                                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
-                                            onclick="rvCopyFile(this)" title="Copy file content">
+                                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 js-copy-file"
+                                            title="Copy file content">
                                         <i class="bi bi-clipboard" id="rv-copy-icon"></i>
                                         <span class="d-none d-sm-inline">Copy</span>
                                     </button>
@@ -773,8 +773,7 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                             }
                             foreach ($codeLines as $ln => $codeLine): ?>
                                         <tr id="L<?= $ln + 1 ?>" class="rv-line">
-                                            <td class="rv-line-num"
-                                                onclick="rvToggleLine(<?= $ln + 1 ?>)"><?= $ln + 1 ?></td>
+                                            <td class="rv-line-num" data-line="<?= $ln + 1 ?>"><?= $ln + 1 ?></td>
                                             <td class="rv-line-code"><?= htmlspecialchars($codeLine, ENT_QUOTES, 'UTF-8') ?></td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -852,8 +851,8 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                         <div class="d-flex gap-1">
                             <code class="rv-clone-url flex-grow-1 d-block"
                                   style="font-size:.73rem;"><?= $httpUrl ?></code>
-                            <button class="btn btn-sm btn-outline-secondary"
-                                    onclick="navigator.clipboard.writeText('<?= $httpUrl ?>')" title="Copy HTTPS URL">
+                            <button class="btn btn-sm btn-outline-secondary js-copy-text"
+                                    data-copy-text="<?= RepoViewController::e($httpUrl) ?>" title="Copy HTTPS URL">
                                 <i class="bi bi-clipboard"></i>
                             </button>
                         </div>
@@ -866,8 +865,8 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
                         <div class="d-flex gap-1">
                             <code class="rv-clone-url flex-grow-1 d-block"
                                   style="font-size:.73rem;"><?= $sshUrl ?></code>
-                            <button class="btn btn-sm btn-outline-secondary"
-                                    onclick="navigator.clipboard.writeText('<?= $sshUrl ?>')" title="Copy SSH URL">
+                            <button class="btn btn-sm btn-outline-secondary js-copy-text"
+                                    data-copy-text="<?= RepoViewController::e($sshUrl) ?>" title="Copy SSH URL">
                                 <i class="bi bi-clipboard"></i>
                             </button>
                         </div>
@@ -893,131 +892,9 @@ $settingsTabUrl = '/' . $rSlug . '?tab=settings';
     </div>
     <?php endif; ?>
 </main>
-<script>
-    const HTTP_URL = '<?= $httpUrl ?>';
-    const SSH_URL = '<?= $sshUrl ?>';
-
-    function setCloneUrl(proto) {
-        const url = (proto === "ssh" ? SSH_URL : HTTP_URL);
-        const el = document.getElementById("cloneUrlDisplay");
-        if (el) {
-            el.textContent = url;
-        }
-        document.querySelectorAll(".clone-url-inline")
-            .forEach((e) => e.textContent = url);
-    }
-
-    function copyCloneUrl(btn) {
-        const el = document.getElementById("cloneUrlDisplay");
-        if (!el) {
-            return;
-        }
-        navigator.clipboard.writeText(el.textContent.trim()).then(() => {
-            const orig = btn.innerHTML;
-            btn.innerHTML = "<i class='bi bi-check2 text-success'></i>";
-            setTimeout(() => btn.innerHTML = orig, 1500);
-        });
-    }
-
-    function switchCloneTab(proto, tabEl) {
-        const url = proto === "ssh" ? SSH_URL : HTTP_URL;
-        const inp = document.getElementById("cloneUrlInput");
-        if (inp) {
-            inp.value = url;
-        }
-        tabEl.closest(".nav")
-            .querySelectorAll(".nav-link")
-            .forEach((l) => l.classList.remove("active"));
-        tabEl.classList.add("active");
-    }
-
-    function copyCloneInput() {
-        const inp = document.getElementById("cloneUrlInput");
-        if (!inp) {
-            return;
-        }
-        navigator.clipboard.writeText(inp.value);
-    }
-
-    function rvCopyFile(btn) {
-        const src = document.getElementById("rv-hl-src");
-        if (!src) {
-            return;
-        }
-        navigator.clipboard.writeText(src.textContent).then(() => {
-            const icon = document.getElementById("rv-copy-icon");
-            if (icon) {
-                icon.className = "bi bi-check2 text-success";
-                setTimeout(() => {
-                    icon.className = "bi bi-clipboard";
-                }, 1800);
-            }
-        });
-    }
-
-    function rvToggleLine(n) {
-        const row = document.getElementById("L" + n);
-        if (!row) {
-            return;
-        }
-        row.classList.toggle("rv-line-highlighted");
-    }
-
-    function rvTreeToggle(el, e) {
-        const li = el.parentElement;
-        if (!li) {
-            return;
-        }
-        const children = li.querySelector(".rv-tree-children");
-        if (!children) {
-            return;
-        }
-        e.preventDefault();
-        const isOpen = children.classList.toggle("rv-open");
-        const caret = el.querySelector(".rv-tree-toggle i");
-        if (caret) {
-            caret.className = (
-                isOpen ? "bi bi-caret-down-fill" : "bi bi-caret-right-fill"
-            );
-        }
-        window.location.href = el.href;
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const src = document.getElementById("rv-hl-src");
-        const table = document.getElementById("rv-code-table");
-        if (!src || !table || typeof hljs === "undefined") {
-            return;
-        }
-
-        hljs.highlightElement(src);
-
-        const highlightedLines = src.innerHTML.split("\n");
-        const codeCells = table.querySelectorAll(".rv-line-code");
-        codeCells.forEach(function (cell, i) {
-            cell.innerHTML = (
-                highlightedLines[i] !== undefined ? highlightedLines[i] : ""
-            );
-        });
-    });
-
-    (function () {
-        const el = document.getElementById("hljs-css");
-        if (!el) {
-            return;
-        }
-        const t = document.documentElement.getAttribute("data-bs-theme");
-        if (t === "light") {
-            el.href =
-                "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/" +
-                "styles/github.min.css";
-        }
-    })();
-
-
-</script>
 <?php if ($viewMode === 'blob' && $fileData !== null && ! $fileData['binary'] && $fileData['content'] !== null): ?>
     <link rel="stylesheet" id="hljs-css"
           href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark-dimmed.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
 <?php endif; ?>
+<script src="<?= Assets::url('assets/js/repo-view.js') ?>"></script>

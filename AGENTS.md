@@ -87,7 +87,7 @@
 - `vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff` — style check (CS Fixer). Note: CI job is commented out in `.github/workflows/ci.yml`.
 - `vendor/bin/phpstan analyse` — static analysis
 - `vendor/bin/psalm` — Psalm type checking
-- `php bin/jslint.php src/assets/js` — JS linting
+- `npm run lint:js` — lint unobfuscated JavaScript sources
 - `php bin/build-assets.php` — rebuild asset manifest.json
 
 ## Agent Guardrails

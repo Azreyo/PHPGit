@@ -51,6 +51,7 @@ class Config
 
         try {
             $this->pdo = new \PDO($dsn, $this->dbUser, $this->dbPass, $options);
+            $this->pdo->exec("SET time_zone = '+00:00'");
             $this->dbOnline = true;
         } catch (\PDOException $e) {
             if ($this->isDev) {

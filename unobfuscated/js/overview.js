@@ -1,3 +1,4 @@
+/*jslint browser, devel, long*/
 let has_run = false;
 const recentSecurityLogLimit = 5;
 const recentSecurityLogList = document.getElementById(

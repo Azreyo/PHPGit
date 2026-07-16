@@ -1,3 +1,5 @@
+/*jslint browser, devel, long*/
+/*global bootstrap*/
 (function () {
     const statusBadge = {
         archived: {

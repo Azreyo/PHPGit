@@ -9,7 +9,7 @@ class Settings
     private string $username;
     private string $current_tab;
 
-    private const array ALLOWED_TABS = ['profile', 'security', 'appearance', 'ssh-keys'];
+    private const array ALLOWED_TABS = ['profile', 'security', 'appearance', 'ssh-keys', 'access-tokens'];
     private const  string TAB_DIR = __DIR__ . '/../pages/tab/';
 
     /**
@@ -88,6 +88,12 @@ class Settings
                         'icon' => 'bi-key',
                         'group' => 'Developer',
             ],
+                'access-tokens' => [
+                        'label' => 'Access Tokens',
+                        'description' => 'Git HTTPS credentials',
+                        'icon' => 'bi-shield-key',
+                        'group' => 'Developer',
+                ],
         ];
         $initials = htmlspecialchars(strtoupper(substr($this->username, 0, 2)), ENT_QUOTES, 'UTF-8');
         $username = htmlspecialchars($this->username, ENT_QUOTES, 'UTF-8');
@@ -161,6 +167,7 @@ class Settings
             'security' => self::TAB_DIR . 'security.php',
             'appearance' => self::TAB_DIR . 'appearance.php',
             'ssh-keys' => self::TAB_DIR . 'ssh-keys.php',
+            'access-tokens' => self::TAB_DIR . 'access-tokens.php',
             default => self::TAB_DIR . 'profile.php',
         };
         $username = $this->username;

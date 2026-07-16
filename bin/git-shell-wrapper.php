@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 /**
  * PHPGit SSH shell wrapper
  *
@@ -25,6 +26,8 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use App\Config;
 use App\includes\Logging;
+use App\Services\RepositoryAccessPolicy;
+use App\Services\RepositoryLocator;
 
 function die_err(string $msg): never
 {
@@ -59,7 +62,7 @@ $originalCmd = getenv('SSH_ORIGINAL_COMMAND') ?: ($_SERVER['SSH_ORIGINAL_COMMAND
 if ($originalCmd === '') {
     $user = null;
     if ($userId > 0) {
-        $userStmt = $pdo->prepare("SELECT id, username, status FROM users WHERE id = ? LIMIT 1");
+        $userStmt = $pdo->prepare('SELECT id, username, status FROM users WHERE id = ? LIMIT 1');
         $userStmt->execute([$userId]);
         $user = $userStmt->fetch();
     } elseif ($fingerprint !== '') {
@@ -97,7 +100,7 @@ if ($originalCmd === '') {
 //              or: git-receive-pack 'owner/repo.git'
 //              or: git-upload-archive 'owner/repo.git'
 if (!preg_match(
-        '/^(git-upload-pack|git-receive-pack|git-upload-archive)\s+\'([a-zA-Z0-9][a-zA-Z0-9_\/-]{0,149}(?:\.git)?)\'$/',
+        '/^(git-upload-pack|git-receive-pack|git-upload-archive)\s+\'([A-Za-z0-9][A-Za-z0-9_-]{0,49}\/[A-Za-z0-9][A-Za-z0-9._-]{0,98}(?:\.git)?)\'$/D',
         $originalCmd,
         $m
 )) {
@@ -118,18 +121,13 @@ if (count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {
 
 [$ownerUsername, $repoName] = $parts;
 
-// ── Look up repository ─────────────────────────────────────────────────────
-$repoStmt = $pdo->prepare(
-        'SELECT r.id, r.visibility, u.id AS owner_user_id
-       FROM repositories r
-       JOIN users u ON u.id = r.owner_user_id
-      WHERE u.username = ? AND r.repo_name = ?
-      LIMIT 1'
-);
-$repoStmt->execute([$ownerUsername, $repoName]);
-$repo = $repoStmt->fetch();
-
-if ($repo === false) {
+try {
+    $repo = (new RepositoryLocator($pdo, $config->getDataRoot()))->find($slug);
+} catch (Throwable $e) {
+    Logging::loggingToFile('SSH repository resolution failed: ' . $e->getMessage(), 3, true);
+    die_err('Repository not accessible.');
+}
+if ($repo === null) {
     die_err('Repository not found.');
 }
 
@@ -183,7 +181,7 @@ if ($userId <= 0) {
     }
 }
 
-$userStmt = $pdo->prepare("SELECT id, username, status FROM users WHERE id = ? LIMIT 1");
+$userStmt = $pdo->prepare('SELECT id, username, status, role FROM users WHERE id = ? LIMIT 1');
 $userStmt->execute([$userId]);
 $user = $userStmt->fetch();
 
@@ -192,49 +190,19 @@ if ($user === false || $user['status'] !== 'ACTIVE') {
     die_err('Account is inactive or does not exist.');
 }
 
-if ($isWriteOp || $repo['visibility'] === 'private') {
-    $permStmt = $pdo->prepare(
-            'SELECT permission
-           FROM repository_members
-          WHERE repository_id = ? AND user_id = ?
-          LIMIT 1'
-    );
-    $permStmt->execute([$repo['id'], $userId]);
-    $member = $permStmt->fetch();
-
-    if ($member === false) {
-        Logging::loggingToFile(
-                "SSH access denied: user_id={$userId} has no membership in repo_id={$repo['id']}",
-                2,
-                true
-        );
-        die_err('Access denied.');
-    }
-
-    if ($isWriteOp && !in_array($member['permission'], ['owner', 'maintainer', 'write'], true)) {
-        Logging::loggingToFile(
-                "SSH write access denied: user_id={$userId} permission={$member['permission']} repo_id={$repo['id']}",
-                2,
-                true
-        );
-        die_err('Write access denied.');
-    }
+$policy = new RepositoryAccessPolicy($pdo);
+$allowed = $isWriteOp
+        ? $policy->canWrite($repo, $userId, (string)$user['role'])
+        : $policy->canRead($repo, $userId, (string)$user['role']);
+if (!$allowed) {
+    Logging::loggingToFile("SSH access denied: user_id={$userId} repo_id={$repo['id']}", 2, true, true);
+    die_err('Access denied.');
 }
 
-// ── Resolve repo path safely ───────────────────────────────────────────────
-$dataRoot = $config->getDataRoot();
-$repoRelPath = $ownerUsername . '/' . $repoName;
-$repoPath = $dataRoot . '/' . $repoRelPath;
-$realRepo = realpath($repoPath);
-$realData = realpath($dataRoot);
-
-if ($realRepo === false || $realData === false || !str_starts_with($realRepo, $realData . '/')) {
-    Logging::loggingToFile("SSH path validation failed: {$repoPath}", 3);
-    die_err('Repository not accessible.');
-}
+$realRepo = (string)$repo['path'];
 
 // ── Exec git command ───────────────────────────────────────────────────────
-$gitBin = trim((string)shell_exec('which git')) ?: '/usr/bin/git';
+$gitBin = '/usr/bin/git';
 
 if (!is_executable($gitBin)) {
     die_err('git binary not found on this server.');

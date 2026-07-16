@@ -29,7 +29,7 @@ jobs:
           php-version: ${{ matrix.php }}
           coverage: none
           tools: composer:v2
-          extensions: pdo
+          extensions: pdo, pdo_sqlite
 
       - name: Show PHP version
         run: php -v
@@ -43,6 +43,9 @@ jobs:
       - name: Lint PHP sources
         run: |
           find src -type f -name '*.php' -print0 | xargs -0 -n 1 php -l
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit
 
   #php-cs-fixer:
   #  name: PHP CS Fixer (style check)
@@ -74,14 +77,20 @@ jobs:
   #          --verbose
 
   js-lint:
-    name: JSLint (no npm)
+    name: JSLint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show Node.js version
-        run: node --version
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
 
-      - name: Run JSLint via bin/jslint.php
-        run: php bin/jslint.php src/assets/js
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Run JSLint
+        run: npm run lint:js
