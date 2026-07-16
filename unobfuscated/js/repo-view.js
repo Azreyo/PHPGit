@@ -78,7 +78,10 @@
     });
     document.querySelectorAll(".rv-line-num").forEach(function (line) {
         line.addEventListener("click", function () {
-            line.classList.toggle("rv-line-highlighted");
+            var row = line.closest("tr");
+            if (row) {
+                row.classList.toggle("rv-line-highlighted");
+            }
         });
     });
     document.querySelectorAll(".js-tree-toggle").forEach(function (link) {
