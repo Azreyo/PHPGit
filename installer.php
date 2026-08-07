@@ -347,7 +347,67 @@ function runShellCommandSafe(string $command): bool
     return true;
 }
 
-function configureApacheSite(string $apacheConfigPath, string $serverName, bool $httpsEnabled, array $modules): void
+function ensureApacheDocumentRootAccess(string $documentRoot, string $webUser = 'www-data'): void
+{
+    $resolvedDocumentRoot = realpath($documentRoot);
+    if ($resolvedDocumentRoot === false || !is_dir($resolvedDocumentRoot)) {
+        throw new RuntimeException("Apache document root does not exist: {$documentRoot}");
+    }
+
+    if (!commandExists('setfacl')) {
+        throw new RuntimeException(
+            'setfacl is required to grant Apache access without weakening parent-directory permissions. '
+            . 'Install the acl package and run the installer again.'
+        );
+    }
+
+    runShellCommand('id ' . escapeshellarg($webUser));
+
+    $directories = [];
+    $directory = $resolvedDocumentRoot;
+    while ($directory !== DIRECTORY_SEPARATOR) {
+        $directories[] = $directory;
+        $parent = dirname($directory);
+        if ($parent === $directory) {
+            break;
+        }
+        $directory = $parent;
+    }
+
+    foreach (array_reverse($directories) as $directory) {
+        $output = [];
+        $exitCode = 1;
+        exec(
+            'sudo -u ' . escapeshellarg($webUser) . ' test -x ' . escapeshellarg($directory) . ' 2>/dev/null',
+            $output,
+            $exitCode
+        );
+
+        if ($exitCode === 0) {
+            continue;
+        }
+
+        runShellCommand(
+            'sudo setfacl -m '
+            . escapeshellarg("u:{$webUser}:x")
+            . ' '
+            . escapeshellarg($directory)
+        );
+        echo "Granted {$webUser} traverse access to {$directory}\n";
+    }
+
+    runShellCommand(
+        'sudo -u ' . escapeshellarg($webUser) . ' test -x ' . escapeshellarg($resolvedDocumentRoot)
+    );
+}
+
+function configureApacheSite(
+    string $apacheConfigPath,
+    string $serverName,
+    bool $httpsEnabled,
+    array $modules,
+    string $documentRoot
+): void
 {
     if (!commandExists('sudo')) {
         throw new RuntimeException('sudo command not found. Install/configure sudo before running Apache setup.');
@@ -356,6 +416,8 @@ function configureApacheSite(string $apacheConfigPath, string $serverName, bool 
     $safeConfigPath = Security::sanitizeShellInput($apacheConfigPath);
     $safeServerName = Security::sanitizeShellInput($serverName);
     $hostsEntry = "127.0.0.1 {$safeServerName}";
+
+    ensureApacheDocumentRootAccess($documentRoot);
 
     foreach ($modules as $module) {
         runShellCommandSafe('sudo a2enmod ' . escapeshellarg($module));
@@ -435,7 +497,7 @@ function installPhpGit(): void
             echo "Apache config generated at {$apacheConfigPath}\n";
             echo "HTTPS enabled: " . ($httpsEnabled ? 'true' : 'false') . "\n";
             echo "Modules enabled from .htaccess: " . implode(', ', $apacheModules) . "\n";
-            configureApacheSite($apacheConfigPath, $serverName, $httpsEnabled, $apacheModules);
+            configureApacheSite($apacheConfigPath, $serverName, $httpsEnabled, $apacheModules, $documentRoot);
             echo "Apache site configured successfully.\n";
         } catch (RuntimeException $e) {
             echo "Configuration error: " . $e->getMessage() . "\n";

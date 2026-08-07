@@ -81,7 +81,7 @@ If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertifica
    
 2. Install php8.*
    ```bash
-   sudo apt install php8.4-cli php8.4-fpm php8.4-mysql php8.4-xml php8.4-mbstring php8.4-curl php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath php8.4-opcache libapache2-mod-php
+   sudo apt install acl php8.4-cli php8.4-fpm php8.4-mysql php8.4-xml php8.4-mbstring php8.4-curl php8.4-zip php8.4-gd php8.4-intl php8.4-bcmath php8.4-opcache libapache2-mod-php
    ```
 3. Install dependencies using Composer:
    ```bash
@@ -98,7 +98,8 @@ If your project is not in `/home/x/PHPGit`, update `DocumentRoot`, `SSLCertifica
    php installer.php
    ```
    The installer also asks for Apache `ServerName` and whether HTTPS should be enabled, then updates
-   `apache/phpgit.local.conf` with your current project path and selected mode.
+   `apache/phpgit.local.conf` with your current project path and selected mode. When the project is inside a private
+   home directory, it grants Apache traverse-only ACL access to the inaccessible parent directories.
 
 ### Upgrading an existing database
 
